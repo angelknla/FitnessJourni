@@ -11,8 +11,8 @@ import { isUnlocked, readViewer } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
 
 export const metadata: Metadata = {
-  title: 'Today — FitnessJourni',
-  description: 'Steps, water, calories and macros for everyone, today',
+  title: 'Home — FitnessJourni',
+  description: 'Shared daily steps, water, calories, macros and workouts',
 };
 
 /** Always render fresh: the whole point is seeing what the others just logged. */
@@ -21,6 +21,24 @@ export const dynamic = 'force-dynamic';
 interface HomepageProps {
   searchParams: Promise<{ date?: string }>;
 }
+
+const resolveHomeDate = (requestedDate?: string) => {
+  const today = toISODate(new Date());
+  const date =
+    requestedDate &&
+    /^\d{4}-\d{2}-\d{2}$/.test(requestedDate) &&
+    toISODate(fromISODate(requestedDate)) === requestedDate &&
+    requestedDate <= today
+      ? requestedDate
+      : today;
+  const dateLabel = new Intl.DateTimeFormat('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  }).format(fromISODate(date));
+
+  return { date, dateLabel, today };
+};
 
 const Homepage = async ({ searchParams }: HomepageProps) => {
   // Before any fetch: a locked visitor must not cause member data to be loaded,
@@ -33,23 +51,10 @@ const Homepage = async ({ searchParams }: HomepageProps) => {
     return <SetupNotice />;
   }
 
-  // Resolved on the server because the data fetch is keyed by it. Set TZ in the
-  // host environment if the deployed date ever disagrees with yours.
-  const now = new Date();
-  const today = toISODate(now);
   const { date: requestedDate } = await searchParams;
-  const date =
-    requestedDate &&
-      /^\d{4}-\d{2}-\d{2}$/.test(requestedDate) &&
-      toISODate(fromISODate(requestedDate)) === requestedDate &&
-      requestedDate <= today
-      ? requestedDate
-      : today;
-  const dateLabel = new Intl.DateTimeFormat('en-GB', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  }).format(fromISODate(date));
+  // Resolved on the server because both metadata and data fetching are keyed by it.
+  // Set TZ in the host environment if the deployed date ever disagrees with yours.
+  const { date, dateLabel, today } = resolveHomeDate(requestedDate);
   const yesterday = fromISODate(today);
   yesterday.setDate(yesterday.getDate() - 1);
   const datePickerLabel =
