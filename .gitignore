@@ -37,3 +37,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# This project installs with yarn (netlify.toml runs `yarn build`). pnpm artifacts
+# are ignored so an accidental `pnpm install` cannot land a second, disagreeing
+# lockfile in the repo. To switch to pnpm deliberately: remove these two lines
+# and yarn.lock.
+pnpm-lock.yaml
+pnpm-workspace.yaml

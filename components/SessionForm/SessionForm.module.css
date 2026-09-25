@@ -90,13 +90,29 @@
 /* ---- Date rail: 14 days, scroll-snapped, no calendar dependency ---- */
 .rail {
   min-width: 0;
+  max-width: 100%;
   display: flex;
   gap: 0.4rem;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
-  padding-bottom: 0.4rem;
+  padding-bottom: 0.5rem;
   scrollbar-width: thin;
   scrollbar-color: var(--c-border-strong) transparent;
+}
+
+/* Keep a visible scrollbar on WebKit so the rail does not look like a dead end. */
+.rail::-webkit-scrollbar {
+  height: 5px;
+}
+
+.rail::-webkit-scrollbar-thumb {
+  background: var(--c-border-strong);
+  border-radius: var(--r-pill);
+}
+
+.rail::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .dateCard {

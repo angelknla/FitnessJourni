@@ -1,6 +1,5 @@
 import { Footer } from '@components/Footer/Footer';
 import { Header } from '@components/Header/Header';
-import { Landing } from '@components/Landing/Landing';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { isUnlocked } from '@/lib/session';
@@ -20,8 +19,12 @@ export const metadata: Metadata = {
 };
 
 const RootLayout = async ({ children }: LayoutProps) => {
-  // Locked visitors never reach the pages, so no data is fetched for them —
-  // `children` is only evaluated if it is actually rendered.
+  /*
+   * Only used to swap the nav for a Log in button. The gate itself lives in each
+   * page, NOT here: Next renders the page concurrently with the layout, so a
+   * layout that declines to render `children` does not stop the page executing —
+   * its fetched data still lands in the RSC payload for anyone to read.
+   */
   const locked = !(await isUnlocked());
 
   return (
@@ -29,7 +32,7 @@ const RootLayout = async ({ children }: LayoutProps) => {
       <body className={inter.className}>
         <div className={styles.appWrapper}>
           <Header locked={locked} />
-          <main className={styles.content}>{locked ? <Landing /> : children}</main>
+          <main className={styles.content}>{children}</main>
           <Footer />
         </div>
       </body>

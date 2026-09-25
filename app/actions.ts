@@ -140,18 +140,47 @@ export const updateTargets = async (
     return fail('Pick who these targets are for.');
   }
 
-  const { error } = await supabase
-    .from('members')
-    .update({
-      target_calories: toInt(formData.get('calories'), 20000),
-      target_protein: toInt(formData.get('protein'), 1000),
-      target_carbs: toInt(formData.get('carbs'), 2000),
-      target_fat: toInt(formData.get('fat'), 1000),
-      target_steps: toInt(formData.get('steps'), 200000),
-      target_steps_min: toInt(formData.get('stepsMin'), 200000),
-      target_water_ml: toInt(formData.get('waterMl'), 20000),
-    })
-    .eq('id', memberId);
+  /*
+   * Patch only the fields actually submitted. Writing all seven every time meant
+   * a form covering just the macros would send nothing for steps, water and
+   * calories and silently zero those targets — and a zero target makes its meter
+   * read "of 0". A target of 0 is never meaningful, so each one must be >= 1.
+   */
+  const patch: Record<string, number> = {};
+  const invalid: string[] = [];
+
+  const field = (name: string, column: string, max: number, label: string) => {
+    const raw = formData.get(name);
+    if (raw === null || String(raw).trim() === '') {
+      return;
+    }
+
+    const value = toInt(raw, max);
+    if (value < 1) {
+      invalid.push(label);
+      return;
+    }
+
+    patch[column] = value;
+  };
+
+  field('calories', 'target_calories', 20000, 'calories');
+  field('protein', 'target_protein', 1000, 'protein');
+  field('carbs', 'target_carbs', 2000, 'carbs');
+  field('fat', 'target_fat', 1000, 'fat');
+  field('steps', 'target_steps', 200000, 'steps');
+  field('stepsMin', 'target_steps_min', 200000, 'step minimum');
+  field('waterMl', 'target_water_ml', 20000, 'water');
+
+  if (invalid.length > 0) {
+    return fail(`A target has to be at least 1 — check ${invalid.join(', ')}.`);
+  }
+
+  if (Object.keys(patch).length === 0) {
+    return fail('Nothing to change.');
+  }
+
+  const { error } = await supabase.from('members').update(patch).eq('id', memberId);
 
   if (error) {
     console.error('[updateTargets]', error.message);

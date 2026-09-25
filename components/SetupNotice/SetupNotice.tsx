@@ -15,7 +15,7 @@ export const SetupNotice = () => (
     <ol className={styles.steps}>
       <li>
         Run <code className={styles.code}>supabase/schema.sql</code> in your Supabase project's SQL
-        editor. It creates the tables and adds Dillon, Angel and Bradley.
+        editor. It creates the tables and adds the starting members.
       </li>
       <li>
         Create <code className={styles.code}>.env.local</code> in the project root with your project

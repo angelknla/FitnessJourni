@@ -1,9 +1,11 @@
+import { Landing } from '@components/Landing/Landing';
 import { SetupNotice } from '@components/SetupNotice/SetupNotice';
 import { Today } from '@components/Today/Today';
 import { toISODate } from '@utils/date';
 import type { Metadata } from 'next';
 import { getLogsForDate } from '@/lib/data/logs';
 import { getMembers } from '@/lib/data/members';
+import { isUnlocked } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
 
 export const metadata: Metadata = {
@@ -15,6 +17,12 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 const Homepage = async () => {
+  // Before any fetch: a locked visitor must not cause member data to be loaded,
+  // because it would be serialised into the RSC payload even if never displayed.
+  if (!(await isUnlocked())) {
+    return <Landing />;
+  }
+
   if (!isSupabaseConfigured()) {
     return <SetupNotice />;
   }

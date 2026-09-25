@@ -41,7 +41,7 @@ export const LoginButton = ({ variant = 'header' }: LoginButtonProps) => {
           <h2 className={styles.title} id="login-heading">
             Enter the passcode
           </h2>
-          <p className={styles.body}>The one the three of you share.</p>
+          <p className={styles.body}>The one your group shares.</p>
 
           <label className={styles.field}>
             <span className={styles.label}>Passcode</span>

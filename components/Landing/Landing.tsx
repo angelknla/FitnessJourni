@@ -9,11 +9,11 @@ const points = [
   },
   {
     title: 'See each other',
-    copy: "Everyone's day side by side, so a quiet week is visible before it becomes a quiet month.",
+    copy: "Everyone's day side by side, so a quiet week shows up before it becomes a quiet month.",
   },
   {
     title: 'Train together',
-    copy: 'Agree a day, a time and an activity, and it shows up for all three of you.',
+    copy: 'Agree a day, a time and an activity, and everyone in the group sees it.',
   },
 ];
 
@@ -25,8 +25,8 @@ export const Landing = () => (
         Own your <span className={styles.accent}>fitness journey</span>
       </h1>
       <p className={styles.subtitle}>
-        A shared log for Dillon, Angel and Bradley — training, steps and food, kept honest by being
-        visible to each other.
+        A shared log for you and your fitness friends — training, steps and food, kept honest by
+        being visible to each other.
       </p>
 
       <div className={styles.cta}>

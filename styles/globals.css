@@ -177,6 +177,17 @@ input[type="number"]::-webkit-inner-spin-button {
   margin: 0;
 }
 
+/*
+ * A fieldset defaults to min-inline-size: min-content, so it refuses to shrink
+ * below its content and grows instead — which stops any scrolling child inside
+ * it (the session date rail) from ever scrolling, and pushes the page sideways.
+ * min-width: 0 alone does not override it; the logical property must be reset.
+ */
+fieldset {
+  min-inline-size: 0;
+  min-width: 0;
+}
+
 ol,
 ul {
   list-style: none;

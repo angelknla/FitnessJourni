@@ -11,7 +11,7 @@ describe('Landing', () => {
     render(<Landing />);
 
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Own your fitness journey');
-    expect(screen.getByText(/shared log for Dillon, Angel and Bradley/)).toBeInTheDocument();
+    expect(screen.getByText(/shared log for you and your fitness friends/)).toBeInTheDocument();
   });
 
   it('explains what it does in three points', () => {
@@ -24,6 +24,14 @@ describe('Landing', () => {
     render(<Landing />);
 
     expect(screen.getByRole('button', { name: 'Log in' })).toBeInTheDocument();
+  });
+
+  it('does not hard-code who the group is, so new people can join', () => {
+    const { container } = render(<Landing />);
+
+    for (const name of ['Dillon', 'Angel', 'Bradley']) {
+      expect(container.textContent).not.toContain(name);
+    }
   });
 
   it('leaks no logged values to someone who has not signed in', () => {

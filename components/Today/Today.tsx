@@ -2,6 +2,8 @@
 
 import { AddMemberForm } from '@components/AddMemberForm/AddMemberForm';
 import { CompareStrip } from '@components/CompareStrip/CompareStrip';
+import { EditTargets } from '@components/EditTargets/EditTargets';
+import { PencilIcon } from '@components/Icons/Icons';
 import { MacroBars } from '@components/MacroBars/MacroBars';
 import { MemberTabs } from '@components/MemberTabs/MemberTabs';
 import { ProgressRing } from '@components/ProgressRing/ProgressRing';
@@ -22,10 +24,12 @@ interface TodayProps {
 }
 
 const PANEL_ID = 'member-panel';
+const TARGETS_ID = 'macro-targets';
 
 export const Today = ({ members, logs, date, dateLabel }: TodayProps) => {
   const [activeId, setActiveId] = useState(members[0]?.id ?? '');
   const [addOpen, setAddOpen] = useState(false);
+  const [editingTargets, setEditingTargets] = useState(false);
 
   // A deleted or renamed member shouldn't leave the panel pointing at nothing.
   const active = members.find((member) => member.id === activeId) ?? members[0];
@@ -35,8 +39,7 @@ export const Today = ({ members, logs, date, dateLabel }: TodayProps) => {
       <section className={styles.empty}>
         <h2 className={styles.emptyTitle}>No one here yet</h2>
         <p className={styles.emptyBody}>
-          Run <code>supabase/schema.sql</code> to add Dillon, Angel and Bradley, or add someone
-          below.
+          Run <code>supabase/schema.sql</code> to add the starting members, or add someone below.
         </p>
         <AddMemberForm members={members} />
       </section>
@@ -56,7 +59,10 @@ export const Today = ({ members, logs, date, dateLabel }: TodayProps) => {
       <MemberTabs
         members={members}
         activeId={active.id}
-        onSelect={setActiveId}
+        onSelect={(id) => {
+          setActiveId(id);
+          setEditingTargets(false);
+        }}
         onAdd={() => setAddOpen((open) => !open)}
         addOpen={addOpen}
         panelId={PANEL_ID}
@@ -104,7 +110,28 @@ export const Today = ({ members, logs, date, dateLabel }: TodayProps) => {
         </p>
 
         <div className={styles.macros}>
-          <h2 className={styles.sectionHeading}>Macros</h2>
+          <div className={styles.macrosHead}>
+            <h2 className={styles.sectionHeading}>Macros</h2>
+            <button
+              type="button"
+              className={styles.editButton}
+              onClick={() => setEditingTargets((open) => !open)}
+              aria-expanded={editingTargets}
+              aria-controls={TARGETS_ID}
+              aria-label={
+                editingTargets
+                  ? 'Stop editing macro targets'
+                  : `Edit ${active.name}'s macro targets`
+              }
+            >
+              <PencilIcon />
+            </button>
+          </div>
+
+          {editingTargets && (
+            <EditTargets member={active} id={TARGETS_ID} onSaved={() => setEditingTargets(false)} />
+          )}
+
           <MacroBars
             rows={[
               { label: 'Protein', value: log.proteinG, target: targets.protein },

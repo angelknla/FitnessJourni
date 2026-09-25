@@ -64,9 +64,39 @@
 
 .macros,
 .empty {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 0.7rem;
+}
+
+.macrosHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.editButton {
+  flex-shrink: 0;
+  width: 1.9rem;
+  height: 1.9rem;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  line-height: 0;
+  color: var(--c-ink-soft);
+  background: transparent;
+  border-color: var(--c-border);
+}
+
+.editButton:hover:not(:disabled) {
+  color: var(--c-ink);
+  background: var(--c-surface-hover);
+}
+
+.editButton svg {
+  display: block;
 }
 
 .sectionHeading {
