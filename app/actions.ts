@@ -1,5 +1,6 @@
 'use server';
 
+import { isAvatarPath } from '@data/avatarData';
 import {
   accentNames,
   activityLabels,
@@ -69,6 +70,42 @@ const toText = (value: FormDataEntryValue | null) =>
 const toOptionalNumber = (value: FormDataEntryValue | null): number | null => {
   const text = toText(value);
   return text === '' ? null : Number(text);
+};
+
+export const saveAvatar = async (_prev: ActionState, formData: FormData): Promise<ActionState> => {
+  if (!(await isUnlocked())) {
+    return fail(LOCKED);
+  }
+
+  const supabase = getSupabase();
+  if (!supabase) {
+    return fail(NOT_CONFIGURED);
+  }
+
+  const memberId = toText(formData.get('memberId'));
+  const avatarPath = toText(formData.get('avatarPath'));
+  const notYours = await refuseUnlessOwn(memberId);
+
+  if (notYours) {
+    return fail(notYours);
+  }
+  if (!isAvatarPath(avatarPath)) {
+    return fail('Choose one of the available profile pictures.');
+  }
+
+  const { error } = await supabase
+    .from('members')
+    .update({ avatar_path: avatarPath || null })
+    .eq('id', memberId);
+
+  if (error) {
+    console.error('[saveAvatar]', error.message);
+    return fail('Could not save your profile picture.');
+  }
+
+  revalidatePath('/profile');
+  revalidatePath('/', 'layout');
+  return { ok: true, message: 'Profile picture saved.', bookedAt: Date.now() };
 };
 
 export const saveProfileDetails = async (

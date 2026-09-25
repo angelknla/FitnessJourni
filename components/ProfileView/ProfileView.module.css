@@ -5,15 +5,15 @@
 }
 
 .identity {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0.75rem;
 }
 
 .avatar {
-  flex: 0 0 auto;
-  width: 3.4rem;
-  height: 3.4rem;
+  width: 5.5rem;
+  height: 5.5rem;
   display: grid;
   place-items: center;
   font-size: 1.35rem;
@@ -21,6 +21,133 @@
   color: var(--c-bg);
   background: var(--profile-accent, var(--c-accent));
   border-radius: 50%;
+}
+
+.identityDetails {
+  min-width: 0;
+  min-height: 5.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.35rem;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+.chooseAvatar {
+  width: fit-content;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.8rem;
+  color: var(--c-ink-soft);
+  background: var(--c-surface-raised);
+  border-radius: var(--r-sm);
+}
+
+.avatarPicker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 1rem;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
+}
+
+.avatarPicker fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.avatarPicker legend {
+  margin-bottom: 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--c-ink-soft);
+}
+
+.avatarOptions {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(4.25rem, 1fr));
+  gap: 0.6rem;
+}
+
+.avatarOption {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.35rem;
+  font-size: 0.7rem;
+  color: var(--c-ink-muted);
+  background: var(--c-bg-alt);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+}
+
+.avatarOption:has(input:checked) {
+  color: var(--c-ink);
+  border-color: var(--profile-accent);
+  background: color-mix(in oklab, var(--profile-accent) 10%, var(--c-bg-alt));
+}
+
+.avatarOption input {
+  align-self: flex-start;
+  width: 0.9rem;
+  height: 0.9rem;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--profile-accent);
+  cursor: pointer;
+}
+
+.avatarOption:has(input:focus-visible) {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
+.avatarOption img,
+.initialOption {
+  width: 2.9rem;
+  height: 2.9rem;
+  border-radius: 50%;
+}
+
+.avatarOption img {
+  display: block;
+  object-fit: cover;
+}
+
+.initialOption {
+  display: grid;
+  place-items: center;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--c-bg);
+  background: var(--profile-accent);
+}
+
+.avatarActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.avatarActions button {
+  padding: 0.45rem 1.05rem;
+  font-size: 0.88rem;
+  color: #fff;
+  background: var(--c-accent);
+  border-color: transparent;
 }
 
 .identity p,
@@ -268,6 +395,10 @@
 }
 
 @media (max-width: 620px) {
+  .avatarOptions {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
   .stats {
     grid-template-columns: 1fr;
   }

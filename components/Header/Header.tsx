@@ -127,7 +127,7 @@ export const Header = ({
                   }
                   aria-label={`Open ${identityLabel} profile`}
                 >
-                  {identityInitial}
+                  {you?.avatarPath ? <img src={you.avatarPath} alt="" /> : identityInitial}
                 </Link>
               )}
 

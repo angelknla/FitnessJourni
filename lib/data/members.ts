@@ -6,6 +6,7 @@ export interface MemberRow {
   id: string;
   name: string;
   accent: string;
+  avatar_path: string | null;
   sort_order: number;
   target_calories: number | null;
   target_protein: number | null;
@@ -22,6 +23,7 @@ export const mapMember = (row: MemberRow): Member => ({
   id: row.id,
   name: row.name,
   accent: resolveAccent(row.accent, row.sort_order),
+  avatarPath: row.avatar_path ?? null,
   sortOrder: row.sort_order,
   /*
    * Each target falls back to the playbook default. A column added later but not

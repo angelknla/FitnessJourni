@@ -209,6 +209,14 @@
   box-shadow: none;
 }
 
+.identity img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
 @media (max-width: 960px) {
   .identity {
     width: 1.9rem;

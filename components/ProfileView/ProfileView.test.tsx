@@ -6,6 +6,7 @@ import type { Member, MemberProfile } from '@/types/fitness';
 vi.mock('@/app/actions', () => ({
     saveProfileDetails: vi.fn(async () => ({ ok: true })),
     saveWeightMeasurement: vi.fn(async () => ({ ok: true })),
+    saveAvatar: vi.fn(async () => ({ ok: true })),
     addMember: vi.fn(async () => ({ ok: false })),
     removeMember: vi.fn(async () => ({ ok: false })),
 }));
@@ -139,5 +140,24 @@ describe('ProfileView', () => {
         expect(screen.getByRole('dialog', { name: 'Remove someone', hidden: true })).toHaveAttribute(
             'open'
         );
+    });
+
+    it('offers local avatar previews and keeps the initial as an option', async () => {
+        const user = userEvent.setup();
+        render(
+            <ProfileView
+                members={[member]}
+                member={member}
+                profile={profile}
+                measurements={[]}
+                currentMonth="2026-09"
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: 'Choose profile picture' }));
+
+        expect(screen.getByRole('radio', { name: 'Initial' })).toBeChecked();
+        expect(screen.getAllByRole('radio')).toHaveLength(7);
+        expect(screen.getByRole('button', { name: 'Save picture' })).toBeInTheDocument();
     });
 });

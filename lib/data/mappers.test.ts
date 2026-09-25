@@ -7,6 +7,7 @@ const memberRow: MemberRow = {
   id: 'm1',
   name: 'Dillon',
   accent: 'blue',
+  avatar_path: null,
   sort_order: 0,
   target_calories: 2500,
   target_protein: 156,
@@ -24,6 +25,7 @@ describe('mapMember', () => {
       id: 'm1',
       name: 'Dillon',
       accent: 'blue',
+      avatarPath: null,
       sortOrder: 0,
       targets: {
         calories: 2500,
@@ -36,6 +38,12 @@ describe('mapMember', () => {
         workoutsPerWeek: 4,
       },
     });
+  });
+
+  it('maps a selected local avatar path', () => {
+    expect(mapMember({ ...memberRow, avatar_path: '/avatars/tempo.svg' }).avatarPath).toBe(
+      '/avatars/tempo.svg'
+    );
   });
 });
 

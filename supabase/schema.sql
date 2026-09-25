@@ -53,7 +53,8 @@ alter table public.members
   add column if not exists age integer,
   add column if not exists height_cm numeric(5, 2),
   add column if not exists target_weight_kg numeric(5, 2),
-  add column if not exists target_bmi numeric(4, 1);
+  add column if not exists target_bmi numeric(4, 1),
+  add column if not exists avatar_path text;
 
 alter table public.members drop constraint if exists members_age_check;
 alter table public.members add constraint members_age_check

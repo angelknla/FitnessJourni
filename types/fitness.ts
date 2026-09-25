@@ -35,6 +35,7 @@ export interface Member {
   id: string;
   name: string;
   accent: AccentName;
+  avatarPath?: string | null;
   sortOrder: number;
   targets: MemberTargets;
 }

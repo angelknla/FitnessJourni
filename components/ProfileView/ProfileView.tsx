@@ -2,11 +2,13 @@
 
 import { IdentityDialog } from '@components/IdentityDialog/IdentityDialog';
 import { RemoveMemberDialog } from '@components/RemoveMemberDialog/RemoveMemberDialog';
+import { avatarOptions } from '@data/avatarData';
 import { accentHex } from '@data/fitnessData';
 import { useRouter } from 'next/navigation';
-import { type CSSProperties, useActionState, useState, useTransition } from 'react';
+import { type CSSProperties, useActionState, useEffect, useState, useTransition } from 'react';
 import {
     type ActionState,
+    saveAvatar,
     saveProfileDetails,
     saveWeightMeasurement,
 } from '@/app/actions';
@@ -39,6 +41,7 @@ export const ProfileView = ({
     const router = useRouter();
     const [identityOpen, setIdentityOpen] = useState(false);
     const [removeOpen, setRemoveOpen] = useState(false);
+    const [avatarOpen, setAvatarOpen] = useState(false);
     const [signingOut, startSignOut] = useTransition();
     const [profileState, profileAction, profilePending] = useActionState(
         saveProfileDetails,
@@ -48,6 +51,13 @@ export const ProfileView = ({
         saveWeightMeasurement,
         initial
     );
+    const [avatarState, avatarAction, avatarPending] = useActionState(saveAvatar, initial);
+
+    useEffect(() => {
+        if (avatarState.ok && avatarState.bookedAt) {
+            setAvatarOpen(false);
+        }
+    }, [avatarState.ok, avatarState.bookedAt]);
 
     const currentWeight = measurements.at(-1)?.weightKg ?? null;
     const currentBmi = calculateBmi(currentWeight, profile?.heightCm ?? null);
@@ -98,12 +108,74 @@ export const ProfileView = ({
     return (
         <div className={styles.profile} style={{ '--profile-accent': accent } as CSSProperties}>
             <section className={styles.identity} aria-labelledby="profile-name">
-                <div className={styles.avatar}>{member.name.charAt(0).toUpperCase()}</div>
-                <div>
-                    <p>Your profile</p>
-                    <h2 id="profile-name">{member.name}</h2>
+                <div className={styles.avatar}>
+                    {member.avatarPath ? (
+                        <img src={member.avatarPath} alt="" />
+                    ) : (
+                        member.name.charAt(0).toUpperCase()
+                    )}
+                </div>
+                <div className={styles.identityDetails}>
+                    <div>
+                        <p>Your profile</p>
+                        <h2 id="profile-name">{member.name}</h2>
+                    </div>
+                    <button
+                        type="button"
+                        className={styles.chooseAvatar}
+                        onClick={() => setAvatarOpen((open) => !open)}
+                        aria-expanded={avatarOpen}
+                        aria-controls="avatar-picker"
+                    >
+                        Choose profile picture
+                    </button>
                 </div>
             </section>
+
+            {avatarOpen && (
+                <form id="avatar-picker" className={styles.avatarPicker} action={avatarAction}>
+                    <input type="hidden" name="memberId" value={member.id} />
+                    <fieldset>
+                        <legend>Profile picture</legend>
+                        <div className={styles.avatarOptions}>
+                            <label className={styles.avatarOption}>
+                                <input
+                                    type="radio"
+                                    name="avatarPath"
+                                    value=""
+                                    defaultChecked={!member.avatarPath}
+                                />
+                                <span className={styles.initialOption} aria-hidden="true">
+                                    {member.name.charAt(0).toUpperCase()}
+                                </span>
+                                <span>Initial</span>
+                            </label>
+                            {avatarOptions.map((option) => (
+                                <label className={styles.avatarOption} key={option.path}>
+                                    <input
+                                        type="radio"
+                                        name="avatarPath"
+                                        value={option.path}
+                                        defaultChecked={member.avatarPath === option.path}
+                                    />
+                                    <img src={option.path} alt="" />
+                                    <span>{option.label}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </fieldset>
+                    <div className={styles.avatarActions}>
+                        <button type="submit" disabled={avatarPending}>
+                            {avatarPending ? 'Saving…' : 'Save picture'}
+                        </button>
+                        {(avatarState.error || avatarState.message) && (
+                            <p className={avatarState.error ? styles.error : styles.success} role="status">
+                                {avatarState.error ?? avatarState.message}
+                            </p>
+                        )}
+                    </div>
+                </form>
+            )}
 
             <section className={styles.stats} aria-label="Current measurements">
                 <div>

@@ -92,6 +92,15 @@ describe('Header', () => {
     expect(profile).toHaveStyle({ '--identity-accent': '#d95926' });
   });
 
+  it('shows the selected avatar instead of the initial', () => {
+    const withAvatar = [{ ...members[1], avatarPath: '/avatars/tempo.svg' }];
+    render(<Header members={withAvatar} viewer={{ memberId: 'm2', chosen: true }} />);
+
+    const profile = screen.getByRole('link', { name: 'Open Angel profile' });
+    expect(profile.querySelector('img')).toHaveAttribute('src', '/avatars/tempo.svg');
+    expect(profile).not.toHaveTextContent('A');
+  });
+
   it('uses a visitor initial for someone looking around', () => {
     render(<Header members={members} viewer={{ memberId: null, chosen: true }} />);
 
