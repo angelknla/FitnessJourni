@@ -1,37 +1,9 @@
 .pulse {
-  position: relative;
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
   /* Optical alignment with the logo's baseline. */
   margin-bottom: -1px;
-}
-
-.signal {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.1rem;
-  color: var(--accent-green);
-}
-
-.signalTrack {
-  opacity: 0.34;
-}
-
-.signalSweep {
-  position: absolute;
-  inset: 0;
-  filter: drop-shadow(0 0 0.3rem color-mix(in oklab, var(--accent-green) 55%, transparent));
-}
-
-.signalSweep .trace {
-  stroke-dasharray: 18 100;
-  animation: sweep 2.8s linear infinite;
-}
-
-.signalSweep .runner {
-  opacity: 0;
-  animation: runnerPulse 2.8s ease-out infinite;
 }
 
 .svg {
@@ -41,20 +13,26 @@
   overflow: visible;
 }
 
-.trace {
-  stroke: currentColor;
-  stroke-width: 2.4;
+.track,
+.sweep {
   stroke-linecap: round;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
 }
 
-.runner {
-  width: 1.75rem;
-  height: 1.75rem;
-  flex: 0 0 1.75rem;
-  display: grid;
-  place-items: center;
+/* Always present, deliberately quiet. */
+.track {
+  stroke: var(--accent-green);
+  stroke-width: 2.2;
+  opacity: 0.34;
+}
+
+/* A short bright segment travelling the length of the trace. */
+.sweep {
+  stroke: var(--accent-green);
+  stroke-width: 2.4;
+  stroke-dasharray: 18 100;
+  animation: sweep 2.8s linear infinite;
 }
 
 @keyframes sweep {
@@ -66,32 +44,12 @@
   }
 }
 
-@keyframes runnerPulse {
-  0%,
-  88% {
-    opacity: 0;
-    transform: translateX(-1px);
-  }
-  91% {
-    opacity: 1;
-    transform: translateX(0);
-  }
-  98% {
-    opacity: 1;
-    transform: translateX(1px);
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(2px);
-  }
-}
-
+/* No motion: show the whole trace steadily rather than a frozen fragment. */
 @media (prefers-reduced-motion: reduce) {
-  .signalSweep .trace,
-  .signalSweep .runner {
+  .sweep {
     animation: none;
+    stroke-dasharray: none;
     opacity: 0.65;
-    transform: none;
   }
 }
 
