@@ -183,4 +183,41 @@ describe('Today', () => {
 
     expect(selectedTab()).toHaveTextContent('Angel');
   });
+
+  it('puts you first in the strip, with everyone else in their usual order', () => {
+    setup('m3');
+
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
+      'Bradley',
+      'Dillon',
+      'Angel',
+    ]);
+  });
+
+  it('leaves the usual order alone for a visitor, who is nobody to hoist', () => {
+    setup(null);
+
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
+      'Dillon',
+      'Angel',
+      'Bradley',
+    ]);
+  });
+
+  /* The strip is reordered, not the member list behind it — the compare strip is
+     a fixed lineup and should not shuffle per viewer. */
+  it('does not reorder the compare strip', () => {
+    setup('m3');
+
+    const strip = screen.getByRole('region', { name: 'Everyone today' });
+    expect(strip.textContent).toMatch(/Dillon[\s\S]*Angel[\s\S]*Bradley/);
+  });
+
+  it('reorders as soon as the identity changes, without a remount', () => {
+    const { rerender } = render(<Today {...props('m1')} />);
+
+    rerender(<Today {...props('m2')} />);
+
+    expect(screen.getAllByRole('tab')[0]).toHaveTextContent('Angel');
+  });
 });

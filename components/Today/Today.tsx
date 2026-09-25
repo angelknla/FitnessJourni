@@ -80,6 +80,17 @@ export const Today = ({
   // A deleted or renamed member shouldn't leave the panel pointing at nothing.
   const active = members.find((member) => member.id === activeId) ?? members[0];
 
+  /*
+   * You lead the strip, everyone else keeps their usual order behind you. Only the
+   * tabs are reordered, not `members` itself: the compare strip reads as a fixed
+   * lineup, and AddMemberForm derives the next sort_order from this list.
+   *
+   * MemberTabs works out arrow-key neighbours from the list it is given, so
+   * reordering here keeps keyboard order matching what is on screen.
+   */
+  const you = viewerId ? members.find((member) => member.id === viewerId) : undefined;
+  const tabOrder = you ? [you, ...members.filter((member) => member.id !== you.id)] : members;
+
   if (!active) {
     return (
       <section className={styles.empty}>
@@ -111,7 +122,7 @@ export const Today = ({
       </header>
 
       <MemberTabs
-        members={members}
+        members={tabOrder}
         activeId={active.id}
         onSelect={(id) => {
           setActiveId(id);
