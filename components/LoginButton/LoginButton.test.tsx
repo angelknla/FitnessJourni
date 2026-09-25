@@ -62,3 +62,39 @@ describe('LoginButton', () => {
     expect(screen.getByRole('button', { name: 'Log in' })).toBeInTheDocument();
   });
 });
+
+describe('LoginButton passcode reveal', () => {
+  it('starts masked and toggles to visible and back', async () => {
+    const user = userEvent.setup();
+    render(<LoginButton />);
+
+    await user.click(screen.getByRole('button', { name: 'Log in' }));
+
+    const field = screen.getByLabelText('Passcode');
+    expect(field).toHaveAttribute('type', 'password');
+
+    const reveal = screen.getByRole('button', { name: 'Show passcode' });
+    expect(reveal).toHaveAttribute('aria-pressed', 'false');
+
+    await user.click(reveal);
+    expect(screen.getByLabelText('Passcode')).toHaveAttribute('type', 'text');
+    expect(screen.getByRole('button', { name: 'Hide passcode' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Hide passcode' }));
+    expect(screen.getByLabelText('Passcode')).toHaveAttribute('type', 'password');
+  });
+
+  it('keeps what was typed when toggling visibility', async () => {
+    const user = userEvent.setup();
+    render(<LoginButton />);
+
+    await user.click(screen.getByRole('button', { name: 'Log in' }));
+    await user.type(screen.getByLabelText('Passcode'), 'secret-phrase');
+    await user.click(screen.getByRole('button', { name: 'Show passcode' }));
+
+    expect(screen.getByLabelText('Passcode')).toHaveValue('secret-phrase');
+  });
+});

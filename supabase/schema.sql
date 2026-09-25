@@ -45,6 +45,10 @@ update public.members set accent = 'aqua'    where accent = 'teal';
 alter table public.members add constraint members_accent_check
   check (accent in ('blue', 'orange', 'aqua', 'yellow', 'magenta', 'green', 'violet', 'red'));
 
+-- The playbook's standard is 4 lifting sessions a week. Per-member so it can differ.
+alter table public.members
+  add column if not exists target_workouts_per_week integer not null default 4;
+
 -- ----------------------------------------------------------------------------
 -- daily_logs
 -- One row per member per day. The unique constraint is what makes the quick-entry
@@ -83,6 +87,32 @@ create table if not exists public.sessions (
 create index if not exists sessions_when_idx on public.sessions (session_date, session_time);
 
 -- ----------------------------------------------------------------------------
+-- workouts — one row per session done, so the tallies are just a count.
+--
+-- Deliberately NOT unique on (member_id, workout_date): a lift and a cardio
+-- session on the same day are two workouts, and the playbook schedules both.
+-- ----------------------------------------------------------------------------
+create table if not exists public.workouts (
+  id           uuid primary key default gen_random_uuid(),
+  member_id    uuid not null references public.members (id) on delete cascade,
+  workout_date date not null,
+  -- A session can hit several areas, so this is a list, not a single value.
+  -- One row is still one workout, which keeps the tallies a plain count.
+  focuses      text[] not null
+                 check (
+                   array_length(focuses, 1) between 1 and 7
+                   and focuses <@ array['upper', 'legs', 'push', 'pull', 'full_body', 'cardio', 'other']::text[]
+                 ),
+  note         text,
+  created_at   timestamptz not null default now()
+);
+
+create index if not exists workouts_member_date_idx
+  on public.workouts (member_id, workout_date desc);
+
+create index if not exists workouts_date_idx on public.workouts (workout_date desc);
+
+-- ----------------------------------------------------------------------------
 -- Row Level Security
 --
 -- The anon key is used ONLY from the Next.js server (deliberately not exposed as
@@ -93,14 +123,17 @@ create index if not exists sessions_when_idx on public.sessions (session_date, s
 alter table public.members    enable row level security;
 alter table public.daily_logs enable row level security;
 alter table public.sessions   enable row level security;
+alter table public.workouts   enable row level security;
 
 drop policy if exists members_rw    on public.members;
 drop policy if exists daily_logs_rw on public.daily_logs;
 drop policy if exists sessions_rw   on public.sessions;
+drop policy if exists workouts_rw   on public.workouts;
 
 create policy members_rw    on public.members    for all to anon, authenticated using (true) with check (true);
 create policy daily_logs_rw on public.daily_logs for all to anon, authenticated using (true) with check (true);
 create policy sessions_rw   on public.sessions   for all to anon, authenticated using (true) with check (true);
+create policy workouts_rw   on public.workouts   for all to anon, authenticated using (true) with check (true);
 
 -- ----------------------------------------------------------------------------
 -- Seed the three of you. Re-running will not create duplicates.

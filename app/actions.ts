@@ -1,10 +1,10 @@
 'use server';
 
-import { accentNames, activityTypes, defaultTargets } from '@data/fitnessData';
+import { accentNames, activityTypes, defaultTargets, workoutFocuses } from '@data/fitnessData';
 import { revalidatePath } from 'next/cache';
 import { isUnlocked } from '@/lib/session';
 import { getSupabase } from '@/lib/supabase/server';
-import type { AccentName, ActivityType } from '@/types/fitness';
+import type { AccentName, ActivityType, WorkoutFocus } from '@/types/fitness';
 
 export interface ActionState {
   ok: boolean;
@@ -260,5 +260,87 @@ export const deleteSession = async (
   }
 
   revalidatePath('/sessions');
+  return ok;
+};
+
+export const logWorkout = async (_prev: ActionState, formData: FormData): Promise<ActionState> => {
+  if (!(await isUnlocked())) {
+    return fail(LOCKED);
+  }
+
+  const supabase = getSupabase();
+  if (!supabase) {
+    return fail(NOT_CONFIGURED);
+  }
+
+  const memberId = toText(formData.get('memberId'));
+  const date = toText(formData.get('date'));
+  const note = toText(formData.get('note'));
+
+  // Several checkboxes share the name "focus", so read them all and keep only
+  // recognised values — de-duplicated, since the array has a length ceiling.
+  const focuses = [
+    ...new Set(
+      formData
+        .getAll('focus')
+        .map((value) => String(value))
+        .filter((value): value is WorkoutFocus => workoutFocuses.includes(value as WorkoutFocus))
+    ),
+  ];
+
+  if (!memberId) {
+    return fail('Pick who trained.');
+  }
+  if (!ISO_DATE.test(date)) {
+    return fail('That date looks wrong.');
+  }
+  if (focuses.length === 0) {
+    return fail('Pick at least one thing you trained.');
+  }
+
+  const { error } = await supabase.from('workouts').insert({
+    member_id: memberId,
+    workout_date: date,
+    focuses,
+    note: note ? note.slice(0, 200) : null,
+  });
+
+  if (error) {
+    console.error('[logWorkout]', error.message);
+    return fail('Could not log that workout.');
+  }
+
+  revalidatePath('/');
+  revalidatePath('/workouts');
+  return ok;
+};
+
+export const deleteWorkout = async (
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> => {
+  if (!(await isUnlocked())) {
+    return fail(LOCKED);
+  }
+
+  const supabase = getSupabase();
+  if (!supabase) {
+    return fail(NOT_CONFIGURED);
+  }
+
+  const id = toText(formData.get('id'));
+  if (!id) {
+    return fail('Nothing to remove.');
+  }
+
+  const { error } = await supabase.from('workouts').delete().eq('id', id);
+
+  if (error) {
+    console.error('[deleteWorkout]', error.message);
+    return fail('Could not remove that workout.');
+  }
+
+  revalidatePath('/');
+  revalidatePath('/workouts');
   return ok;
 };

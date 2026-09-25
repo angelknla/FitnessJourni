@@ -1,0 +1,98 @@
+.outer {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.wrapper {
+  min-width: 0;
+  overflow-x: auto;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.caption {
+  margin: 0;
+  font-size: 0.76rem;
+  line-height: 1.5;
+  color: var(--c-ink-muted);
+}
+
+.table th,
+.table td {
+  padding: 0.95rem 0.9rem;
+  text-align: right;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.table thead th {
+  padding-top: 0.8rem;
+  padding-bottom: 0.7rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-ink-muted);
+  white-space: nowrap;
+}
+
+.table tbody tr:last-child th,
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.nameHead,
+.name {
+  text-align: left !important;
+  padding-right: 1.2rem;
+}
+
+.name {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--c-ink);
+  white-space: nowrap;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--member-accent);
+  flex-shrink: 0;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  color: var(--c-ink-soft);
+}
+
+.week {
+  font-weight: 600;
+  color: var(--c-ink);
+}
+
+.week[data-hit="true"] {
+  color: var(--c-good);
+}
+
+.of {
+  font-weight: 400;
+  color: var(--c-ink-muted);
+}
+
+/* CSS Modules requires every selector to carry a local class. */
+.table abbr {
+  text-decoration: none;
+}

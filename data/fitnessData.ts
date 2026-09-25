@@ -1,4 +1,4 @@
-import type { AccentName, ActivityType, MemberTargets } from '@/types/fitness';
+import type { AccentName, ActivityType, MemberTargets, WorkoutFocus } from '@/types/fitness';
 
 /** Straight from Dillon's 12-week playbook. Per-member and editable from there. */
 export const defaultTargets: MemberTargets = {
@@ -9,6 +9,7 @@ export const defaultTargets: MemberTargets = {
   steps: 10000,
   stepsMin: 8000,
   waterMl: 2500,
+  workoutsPerWeek: 4,
 };
 
 export const activityTypes: ActivityType[] = ['run', 'workout', 'swim', 'walk', 'cycle', 'other'];
@@ -69,3 +70,24 @@ export const bookingWindowDays = 14;
 
 /** Handy presets so nobody has to fight a time input on a phone. */
 export const quickTimes = ['06:30', '07:00', '08:00', '12:30', '17:30', '18:30', '19:30'];
+
+export const workoutFocuses: WorkoutFocus[] = [
+  'upper',
+  'legs',
+  'push',
+  'pull',
+  'full_body',
+  'cardio',
+  'other',
+];
+
+/** The first four are the playbook's split: Saturday, Sunday, Tuesday, Thursday. */
+export const workoutFocusLabels: Record<WorkoutFocus, string> = {
+  upper: 'Upper',
+  legs: 'Legs',
+  push: 'Push',
+  pull: 'Pull',
+  full_body: 'Full body',
+  cardio: 'Cardio',
+  other: 'Other',
+};

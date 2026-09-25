@@ -1,10 +1,11 @@
 import { Landing } from '@components/Landing/Landing';
 import { SetupNotice } from '@components/SetupNotice/SetupNotice';
 import { Today } from '@components/Today/Today';
-import { toISODate } from '@utils/date';
+import { earlier, startOfMonth, startOfWeek, toISODate } from '@utils/date';
 import type { Metadata } from 'next';
 import { getLogsForDate } from '@/lib/data/logs';
 import { getMembers } from '@/lib/data/members';
+import { getWorkoutsSince, tallyWorkouts } from '@/lib/data/workouts';
 import { isUnlocked } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
 
@@ -37,9 +38,22 @@ const Homepage = async () => {
     month: 'long',
   }).format(now);
 
-  const [members, logs] = await Promise.all([getMembers(), getLogsForDate(date)]);
+  const [members, logs, workouts] = await Promise.all([
+    getMembers(),
+    getLogsForDate(date),
+    getWorkoutsSince(earlier(startOfWeek(date), startOfMonth(date))),
+  ]);
 
-  return <Today members={members} logs={logs} date={date} dateLabel={dateLabel} />;
+  return (
+    <Today
+      members={members}
+      logs={logs}
+      workouts={workouts}
+      tallies={tallyWorkouts(workouts, date)}
+      date={date}
+      dateLabel={dateLabel}
+    />
+  );
 };
 
 export default Homepage;

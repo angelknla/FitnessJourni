@@ -57,3 +57,24 @@ export const getLogsForDate = async (date: string): Promise<Record<string, Daily
 
   return byMember;
 };
+
+/** Every member's logs from `fromDate` onwards, for the comparison view. */
+export const getLogsSince = async (fromDate: string): Promise<DailyLog[]> => {
+  const supabase = getSupabase();
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from('daily_logs')
+    .select('*')
+    .gte('log_date', fromDate)
+    .order('log_date', { ascending: false });
+
+  if (error) {
+    console.error('[logs] range read failed:', error.message);
+    return [];
+  }
+
+  return (data as DailyLogRow[]).map(mapLog);
+};

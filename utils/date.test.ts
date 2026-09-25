@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { buildDays, clamp, fromISODate, minutesOfTime, toISODate, toShortTime } from './date';
+import {
+  buildDays,
+  clamp,
+  earlier,
+  fromISODate,
+  minutesOfTime,
+  startOfMonth,
+  startOfWeek,
+  toISODate,
+  toShortTime,
+} from './date';
 
 describe('toISODate', () => {
   it('zero-pads month and day', () => {
@@ -54,5 +64,38 @@ describe('clamp', () => {
     expect(clamp(5, 0, 10)).toBe(5);
     expect(clamp(-1, 0, 10)).toBe(0);
     expect(clamp(11, 0, 10)).toBe(10);
+  });
+});
+
+describe('startOfWeek', () => {
+  it('returns the Sunday of that week, matching the playbook', () => {
+    // Fri 25 Sep 2026 -> Sun 20 Sep 2026.
+    expect(startOfWeek('2026-09-25')).toBe('2026-09-20');
+  });
+
+  it('returns the same day when it is already a Sunday', () => {
+    expect(startOfWeek('2026-09-20')).toBe('2026-09-20');
+  });
+
+  it('crosses into the previous month when the week straddles one', () => {
+    // Thu 1 Oct 2026 -> Sun 27 Sep 2026.
+    expect(startOfWeek('2026-10-01')).toBe('2026-09-27');
+  });
+
+  it('matches the playbook: week 1 starts Sun 06 Sep 2026', () => {
+    expect(startOfWeek('2026-09-12')).toBe('2026-09-06');
+  });
+});
+
+describe('startOfMonth', () => {
+  it('returns the first of the month', () => {
+    expect(startOfMonth('2026-09-25')).toBe('2026-09-01');
+  });
+});
+
+describe('earlier', () => {
+  it('returns whichever ISO date comes first', () => {
+    expect(earlier('2026-09-27', '2026-10-01')).toBe('2026-09-27');
+    expect(earlier('2026-10-01', '2026-09-27')).toBe('2026-09-27');
   });
 });

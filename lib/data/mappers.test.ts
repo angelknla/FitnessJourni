@@ -15,6 +15,7 @@ const memberRow: MemberRow = {
   target_steps: 10000,
   target_steps_min: 8000,
   target_water_ml: 2500,
+  target_workouts_per_week: 4,
 };
 
 describe('mapMember', () => {
@@ -32,6 +33,7 @@ describe('mapMember', () => {
         steps: 10000,
         stepsMin: 8000,
         waterMl: 2500,
+        workoutsPerWeek: 4,
       },
     });
   });
@@ -122,5 +124,34 @@ describe('resolveAccent via mapMember', () => {
     expect(mapMember({ ...memberRow, accent: 'lime', sort_order: 0 }).accent).toBe('blue');
     expect(mapMember({ ...memberRow, accent: 'sky', sort_order: 1 }).accent).toBe('orange');
     expect(mapMember({ ...memberRow, accent: 'amber', sort_order: 2 }).accent).toBe('aqua');
+  });
+});
+
+describe('target fallbacks', () => {
+  it('falls back to the playbook defaults for a column not yet migrated', () => {
+    const partial = { ...memberRow, target_workouts_per_week: null } as MemberRow;
+
+    expect(mapMember(partial).targets.workoutsPerWeek).toBe(4);
+  });
+
+  it('never yields a zero target, which would make a meter read "of 0"', () => {
+    const blank = {
+      id: 'm1',
+      name: 'Dillon',
+      accent: 'blue',
+      sort_order: 0,
+      target_calories: null,
+      target_protein: null,
+      target_carbs: null,
+      target_fat: null,
+      target_steps: null,
+      target_steps_min: null,
+      target_water_ml: null,
+      target_workouts_per_week: null,
+    } as MemberRow;
+
+    for (const value of Object.values(mapMember(blank).targets)) {
+      expect(value).toBeGreaterThan(0);
+    }
   });
 });

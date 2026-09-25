@@ -23,3 +23,18 @@ export const buildDays = (startISO: string, count: number) => {
     return { iso: toISODate(date), date, offset };
   });
 };
+
+/**
+ * Start of the week containing `iso`, as a Sunday — matching the playbook's
+ * execution pages, whose weeks run Sun-Sat (Week 1 is 06-12 Sep 2026).
+ */
+export const startOfWeek = (iso: string) => {
+  const date = fromISODate(iso);
+  date.setDate(date.getDate() - date.getDay());
+  return toISODate(date);
+};
+
+export const startOfMonth = (iso: string) => `${iso.slice(0, 7)}-01`;
+
+/** The earlier of two ISO dates — safe because YYYY-MM-DD sorts lexically. */
+export const earlier = (a: string, b: string) => (a < b ? a : b);

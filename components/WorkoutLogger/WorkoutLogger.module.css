@@ -1,0 +1,220 @@
+.wrapper {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+
+.badge {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border-radius: var(--r-pill);
+  color: var(--c-ink-soft);
+  background: var(--c-surface-soft);
+  border: 1px solid var(--c-border);
+}
+
+.badge[data-done="true"] {
+  color: var(--c-good);
+  border-color: color-mix(in oklab, var(--c-good) 45%, var(--c-border-strong));
+  background: color-mix(in oklab, var(--c-good) 14%, var(--c-surface));
+}
+
+.weekCount {
+  font-size: 0.86rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-ink-soft);
+}
+
+.loggedList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.logged {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.65rem 0.55rem 0.65rem 0.85rem;
+  background: var(--c-surface-soft);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+}
+
+.loggedBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.loggedLabel {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.loggedNote {
+  min-width: 0;
+  font-size: 0.8rem;
+  color: var(--c-ink-muted);
+  overflow-wrap: anywhere;
+}
+
+.logged form {
+  margin-left: auto;
+}
+
+.remove {
+  width: 1.6rem;
+  height: 1.6rem;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  line-height: 0;
+  color: var(--c-ink-soft);
+  background: transparent;
+  border-color: var(--c-border);
+}
+
+.remove:hover:not(:disabled) {
+  color: var(--c-critical);
+  border-color: var(--c-critical);
+  background: transparent;
+}
+
+.remove svg {
+  display: block;
+}
+
+.form {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.legend {
+  padding: 0;
+  margin-bottom: 0.7rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: var(--c-ink-soft);
+}
+
+.hint {
+  font-size: 0.76rem;
+  font-weight: 400;
+  color: var(--c-ink-muted);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chip {
+  position: relative;
+  cursor: pointer;
+}
+
+.control {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  margin: 0;
+  pointer-events: none;
+}
+
+.chipInner {
+  display: block;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: var(--c-ink-soft);
+  background: var(--c-surface-soft);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-pill);
+  transition:
+    background-color 0.2s var(--ease-flow),
+    border-color 0.2s var(--ease-flow),
+    color 0.2s var(--ease-flow);
+}
+
+.chip:hover .chipInner {
+  color: var(--c-ink);
+}
+
+.control:checked + .chipInner {
+  color: #fff;
+  background: var(--member-accent);
+  border-color: transparent;
+}
+
+.control:focus-visible + .chipInner {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.noteField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.noteLabel {
+  font-size: 0.82rem;
+  color: var(--c-ink-soft);
+}
+
+.picked {
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-ink-muted);
+}
+
+.submit {
+  background: var(--c-accent);
+  border-color: transparent;
+  color: #fff;
+}
+
+.submit:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--c-accent) 85%, #fff);
+  border-color: transparent;
+}
+
+.error {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--c-critical);
+}

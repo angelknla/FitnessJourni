@@ -52,7 +52,15 @@
   gap: 0.4rem;
 }
 
+/*
+ * position: relative is load-bearing, not cosmetic. The hidden radio inside is
+ * absolutely positioned; without a positioned ancestor its containing block is
+ * the document, so an overflow:auto scroller cannot clip it and every offscreen
+ * card stretches the page instead of scrolling. That caused ~584px of horizontal
+ * overflow on the sessions route.
+ */
 .chip {
+  position: relative;
   cursor: pointer;
 }
 
@@ -116,6 +124,7 @@
 }
 
 .dateCard {
+  position: relative;
   cursor: pointer;
   scroll-snap-align: start;
   flex: 0 0 auto;

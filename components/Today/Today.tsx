@@ -8,17 +8,22 @@ import { MacroBars } from '@components/MacroBars/MacroBars';
 import { MemberTabs } from '@components/MemberTabs/MemberTabs';
 import { ProgressRing } from '@components/ProgressRing/ProgressRing';
 import { QuickEntry } from '@components/QuickEntry/QuickEntry';
+import { WorkoutLogger } from '@components/WorkoutLogger/WorkoutLogger';
 import { accentHex } from '@data/fitnessData';
+import Link from 'next/link';
 import { type CSSProperties, useState } from 'react';
 import { emptyLog } from '@/lib/data/logs';
+import { workoutsForToday } from '@/lib/data/workouts';
 import { formatCount, formatMl } from '@/lib/progress';
-import type { DailyLog, Member } from '@/types/fitness';
+import type { DailyLog, Member, Workout, WorkoutTally } from '@/types/fitness';
 
 import styles from './Today.module.css';
 
 interface TodayProps {
   members: Member[];
   logs: Record<string, DailyLog>;
+  workouts: Workout[];
+  tallies: Record<string, WorkoutTally>;
   date: string;
   dateLabel: string;
 }
@@ -26,7 +31,7 @@ interface TodayProps {
 const PANEL_ID = 'member-panel';
 const TARGETS_ID = 'macro-targets';
 
-export const Today = ({ members, logs, date, dateLabel }: TodayProps) => {
+export const Today = ({ members, logs, workouts, tallies, date, dateLabel }: TodayProps) => {
   const [activeId, setActiveId] = useState(members[0]?.id ?? '');
   const [addOpen, setAddOpen] = useState(false);
   const [editingTargets, setEditingTargets] = useState(false);
@@ -48,6 +53,8 @@ export const Today = ({ members, logs, date, dateLabel }: TodayProps) => {
 
   const log = logs[active.id] ?? emptyLog(active.id, date);
   const { targets } = active;
+  const todaysWorkouts = workoutsForToday(workouts, active.id, date);
+  const tally = tallies[active.id] ?? { today: 0, week: 0, month: 0 };
 
   return (
     <div className={styles.today}>
@@ -142,6 +149,21 @@ export const Today = ({ members, logs, date, dateLabel }: TodayProps) => {
         </div>
 
         <QuickEntry member={active} log={log} date={date} />
+
+        <div className={styles.workouts}>
+          <div className={styles.workoutsHead}>
+            <h2 className={styles.sectionHeading}>Workouts</h2>
+            <Link href="/workouts" className={styles.planLink}>
+              See the split
+            </Link>
+          </div>
+          <WorkoutLogger
+            member={active}
+            date={date}
+            logged={todaysWorkouts}
+            weekCount={tally.week}
+          />
+        </div>
       </section>
 
       <CompareStrip members={members} logs={logs} activeMemberId={active.id} />

@@ -1,7 +1,8 @@
 'use client';
 
+import { EyeIcon, EyeOffIcon } from '@components/Icons/Icons';
 import { useRouter } from 'next/navigation';
-import { useActionState, useEffect, useRef } from 'react';
+import { useActionState, useEffect, useRef, useState } from 'react';
 import { type UnlockState, unlock } from '@/app/auth-actions';
 
 import styles from './LoginButton.module.css';
@@ -17,6 +18,7 @@ export const LoginButton = ({ variant = 'header' }: LoginButtonProps) => {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const router = useRouter();
   const [state, formAction, isPending] = useActionState(unlock, initial);
+  const [revealed, setRevealed] = useState(false);
 
   // A native <dialog> gives focus trapping, Esc-to-close and a backdrop for free.
   useEffect(() => {
@@ -45,8 +47,24 @@ export const LoginButton = ({ variant = 'header' }: LoginButtonProps) => {
 
           <label className={styles.field}>
             <span className={styles.label}>Passcode</span>
-            {/* eslint-disable-next-line */}
-            <input type="password" name="passcode" autoComplete="current-password" required />
+            <span className={styles.inputWrap}>
+              <input
+                className={styles.input}
+                type={revealed ? 'text' : 'password'}
+                name="passcode"
+                autoComplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                className={styles.reveal}
+                onClick={() => setRevealed((shown) => !shown)}
+                aria-label={revealed ? 'Hide passcode' : 'Show passcode'}
+                aria-pressed={revealed}
+              >
+                {revealed ? <EyeOffIcon size={15} /> : <EyeIcon size={15} />}
+              </button>
+            </span>
           </label>
 
           {state.error && (

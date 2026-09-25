@@ -18,6 +18,7 @@ const targets = {
   steps: 10000,
   stepsMin: 8000,
   waterMl: 2500,
+  workoutsPerWeek: 4,
 };
 
 const members: Member[] = [

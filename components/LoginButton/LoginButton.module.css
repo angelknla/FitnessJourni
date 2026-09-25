@@ -64,6 +64,42 @@
   color: var(--c-ink-soft);
 }
 
+.inputWrap {
+  position: relative;
+  display: block;
+}
+
+/* Room for the reveal button so a long passcode never runs under it. */
+.input {
+  padding-right: 2.6rem;
+}
+
+.reveal {
+  position: absolute;
+  top: 50%;
+  right: 0.3rem;
+  transform: translateY(-50%);
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  line-height: 0;
+  color: var(--c-ink-muted);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.reveal:hover:not(:disabled) {
+  color: var(--c-ink);
+  background: transparent;
+}
+
+.reveal svg {
+  display: block;
+}
+
 .error {
   margin: 0;
   font-size: 0.84rem;

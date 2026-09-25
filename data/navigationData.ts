@@ -5,5 +5,7 @@ export interface NavItem {
 
 export const navigationData: NavItem[] = [
   { label: 'Today', href: '/' },
+  { label: 'Workouts', href: '/workouts' },
+  { label: 'Logs', href: '/logs' },
   { label: 'Sessions', href: '/sessions' },
 ];
