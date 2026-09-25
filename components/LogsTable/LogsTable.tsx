@@ -1,3 +1,4 @@
+import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
 import { accentHex } from '@data/fitnessData';
 import type { CSSProperties } from 'react';
 import { emptySummary, type LogSummary, type RankedMetric } from '@/lib/aggregate';
@@ -99,7 +100,7 @@ export const LogsTable = ({
             >
               <header className={styles.profileHead}>
                 <h2 className={styles.name}>
-                  <span className={styles.dot} aria-hidden="true" />
+                  <MemberAvatar member={member} />
                   {member.name}
                 </h2>
                 <span className={styles.days} data-leader={daysLeader}>

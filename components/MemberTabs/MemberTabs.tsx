@@ -1,6 +1,7 @@
 'use client';
 
 import { CrossIcon, PlusIcon } from '@components/Icons/Icons';
+import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
 import { accentHex } from '@data/fitnessData';
 import { type CSSProperties, type KeyboardEvent, useRef } from 'react';
 import type { Member } from '@/types/fitness';
@@ -81,7 +82,7 @@ export const MemberTabs = ({
               onKeyDown={handleKeyDown}
               style={{ '--member-accent': accentHex[member.accent] } as CSSProperties}
             >
-              <span className={styles.dot} aria-hidden="true" />
+              <MemberAvatar member={member} />
               {member.name}
             </button>
           );
@@ -97,7 +98,6 @@ export const MemberTabs = ({
       >
         {addOpen ? <CrossIcon /> : <PlusIcon />}
       </button>
-
     </div>
   );
 };

@@ -954,6 +954,92 @@ export const postMessage = async (_prev: ActionState, formData: FormData): Promi
   return { ok: true, message: 'Shared with the group.', bookedAt: Date.now() };
 };
 
+const ownedMessage = async (
+  id: string
+): Promise<
+  { memberId: string; supabase: NonNullable<ReturnType<typeof getSupabase>> } | ActionState
+> => {
+  if (!(await isUnlocked())) {
+    return fail(LOCKED);
+  }
+
+  const supabase = getSupabase();
+  if (!supabase) {
+    return fail(NOT_CONFIGURED);
+  }
+  if (!id) {
+    return fail('That message is already gone.');
+  }
+
+  const { data: message } = await supabase
+    .from('messages')
+    .select('member_id')
+    .eq('id', id)
+    .maybeSingle();
+  if (!message?.member_id) {
+    return fail('That message is already gone.');
+  }
+  if (await refuseUnlessOwn(message.member_id as string)) {
+    return fail('You can only change your own messages.');
+  }
+
+  return { memberId: message.member_id as string, supabase };
+};
+
+export const editMessage = async (_prev: ActionState, formData: FormData): Promise<ActionState> => {
+  const id = toText(formData.get('id'));
+  const content = toText(formData.get('content'));
+  if (!content) {
+    return fail('Write something to share.');
+  }
+  if (content.length > 500) {
+    return fail('Keep your post under 500 characters.');
+  }
+
+  const owned = await ownedMessage(id);
+  if ('ok' in owned) {
+    return owned;
+  }
+
+  const { error } = await owned.supabase
+    .from('messages')
+    .update({ content })
+    .eq('id', id)
+    .eq('member_id', owned.memberId);
+  if (error) {
+    console.error('[editMessage]', error.message);
+    return fail('Could not update that message.');
+  }
+
+  revalidatePath('/messages');
+  return { ok: true, message: 'Message updated.', bookedAt: Date.now() };
+};
+
+export const deleteMessage = async (
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> => {
+  const id = toText(formData.get('id'));
+  const owned = await ownedMessage(id);
+  if ('ok' in owned) {
+    return owned;
+  }
+
+  const { error } = await owned.supabase
+    .from('messages')
+    .delete()
+    .eq('id', id)
+    .eq('member_id', owned.memberId);
+  if (error) {
+    console.error('[deleteMessage]', error.message);
+    return fail('Could not remove that message.');
+  }
+
+  revalidatePath('/messages');
+  revalidatePath('/', 'layout');
+  return ok;
+};
+
 export const markMessagesRead = async (): Promise<void> => {
   if (!(await isUnlocked())) {
     return;

@@ -1,3 +1,4 @@
+import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
 import { accentHex } from '@data/fitnessData';
 import type { CSSProperties } from 'react';
 import { fillPercent, formatCount, formatMl } from '@/lib/progress';
@@ -64,9 +65,8 @@ export const CompareStrip = ({ members, logs, activeMemberId }: CompareStripProp
               data-active={member.id === activeMemberId}
               style={{ '--member-accent': accentHex[member.accent] } as CSSProperties}
             >
-              {/* The colour never travels alone — the name is always beside it. */}
               <p className={styles.name}>
-                <span className={styles.dot} aria-hidden="true" />
+                <MemberAvatar member={member} />
                 {member.name}
               </p>
 

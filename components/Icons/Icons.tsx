@@ -135,6 +135,21 @@ export const PencilIcon = ({ size = 15 }: IconProps) => (
   </svg>
 );
 
+export const MoreIcon = ({ size = 16 }: IconProps) => (
+  <svg
+    viewBox="0 0 16 16"
+    width={size}
+    height={size}
+    fill="currentColor"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <circle cx="3" cy="8" r="1.15" />
+    <circle cx="8" cy="8" r="1.15" />
+    <circle cx="13" cy="8" r="1.15" />
+  </svg>
+);
+
 export const ArrowLeftIcon = ({ size = 15 }: IconProps) => (
   <svg
     viewBox="0 0 16 16"

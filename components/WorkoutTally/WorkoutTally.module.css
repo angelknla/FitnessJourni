@@ -39,14 +39,6 @@
   font-weight: 600;
 }
 
-.dot {
-  width: 0.65rem;
-  height: 0.65rem;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: var(--member-accent);
-}
-
 .today {
   flex-shrink: 0;
   padding: 0.3rem 0.55rem;

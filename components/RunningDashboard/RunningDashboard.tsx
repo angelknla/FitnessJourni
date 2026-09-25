@@ -1,6 +1,7 @@
 'use client';
 
 import { CrossIcon } from '@components/Icons/Icons';
+import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
 import { accentHex } from '@data/fitnessData';
 import { fromISODate, startOfMonth, startOfWeek } from '@utils/date';
 import { type CSSProperties, useActionState, useState } from 'react';
@@ -163,7 +164,10 @@ const RunForm = ({
                                 defaultChecked={member.id === viewerId}
                                 disabled={member.id === viewerId}
                             />
-                            <span>{member.name}</span>
+                            <span className={styles.personLabel}>
+                                <MemberAvatar member={member} size="1rem" />
+                                <span className={styles.personName}>{member.name}</span>
+                            </span>
                         </label>
                     ))}
                 </div>
@@ -229,7 +233,7 @@ const RunCard = ({
                             key={member.id}
                             style={{ '--person-accent': accentHex[member.accent] } as CSSProperties}
                         >
-                            <span className={styles.dot} aria-hidden="true" />
+                            <MemberAvatar member={member} size="1.1rem" />
                             {member.name}
                         </span>
                     ))}
@@ -319,7 +323,7 @@ export const RunningDashboard = ({
                                 style={{ '--person-accent': accentHex[member.accent] } as CSSProperties}
                             >
                                 <div className={styles.tallyName}>
-                                    <span className={styles.dot} aria-hidden="true" />
+                                    <MemberAvatar member={member} />
                                     <strong>{member.name}</strong>
                                 </div>
                                 <div className={styles.rails}>

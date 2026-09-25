@@ -1,3 +1,4 @@
+import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
 import { accentHex } from '@data/fitnessData';
 import type { CSSProperties } from 'react';
 import type { Member, WorkoutTally as Tally } from '@/types/fitness';
@@ -36,7 +37,7 @@ export const WorkoutTally = ({ members, tallies, weekLabel, monthLabel }: Workou
           >
             <header className={styles.cardHead}>
               <h3 className={styles.name}>
-                <span className={styles.dot} aria-hidden="true" />
+                <MemberAvatar member={member} />
                 {member.name}
               </h3>
               <span className={styles.today} data-done={tally.today > 0}>

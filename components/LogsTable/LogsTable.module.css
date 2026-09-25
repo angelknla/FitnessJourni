@@ -41,14 +41,6 @@
   color: var(--c-ink);
 }
 
-.dot {
-  width: 0.65rem;
-  height: 0.65rem;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: var(--member-accent);
-}
-
 .days {
   flex-shrink: 0;
   display: inline-flex;

@@ -5,6 +5,8 @@ import type { Member, MemberTargets } from '@/types/fitness';
 
 vi.mock('@/app/actions', () => ({
     postMessage: vi.fn(async () => ({ ok: true })),
+    editMessage: vi.fn(async () => ({ ok: true })),
+    deleteMessage: vi.fn(async () => ({ ok: true })),
     markMessagesRead: vi.fn(async () => undefined),
 }));
 vi.mock('next/navigation', () => ({
@@ -32,7 +34,8 @@ const member: Member = {
 };
 
 describe('MessageBoard', () => {
-    it('shows the composer and attributed posts for a member', () => {
+    it('shows owner options and opens the inline message editor', async () => {
+        const user = userEvent.setup();
         render(
             <MessageBoard
                 members={[member]}
@@ -55,8 +58,40 @@ describe('MessageBoard', () => {
         expect(screen.getByRole('list', { name: 'Conversation' })).toHaveTextContent(
             'Keep showing up.'
         );
+        expect(
+            screen.getByRole('list', { name: 'Conversation' }).compareDocumentPosition(
+                screen.getByLabelText('Share something with the group')
+            ) & Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+        expect(
+            screen.getByRole('list', { name: 'Conversation' }).parentElement?.className
+        ).toContain('conversation');
         expect(screen.getByText('You')).toBeInTheDocument();
         expect(screen.getByText('Friday, 25 September 2026')).toBeInTheDocument();
+        await user.click(screen.getByRole('button', { name: 'Message options' }));
+        expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
+        await user.click(screen.getByRole('button', { name: 'Edit' }));
+        expect(screen.getByLabelText('Edit message')).toHaveValue('Keep showing up.');
+        expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
+    });
+
+    it('does not show message options for another member’s post', () => {
+        render(
+            <MessageBoard
+                members={[member]}
+                viewerId="someone-else"
+                messages={[
+                    {
+                        id: 'post-1',
+                        memberId: 'm1',
+                        content: 'Keep showing up.',
+                        createdAt: '2026-09-25T08:30:00.000Z',
+                    },
+                ]}
+            />
+        );
+
+        expect(screen.queryByRole('button', { name: 'Message options' })).not.toBeInTheDocument();
     });
 
     it('filters the conversation by month', async () => {
