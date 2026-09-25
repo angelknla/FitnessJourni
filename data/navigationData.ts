@@ -9,4 +9,5 @@ export const navigationData: NavItem[] = [
   { label: 'Running', href: '/running' },
   { label: 'Logs', href: '/logs' },
   { label: 'Sessions', href: '/sessions' },
+  { label: 'Chat', href: '/messages' },
 ];

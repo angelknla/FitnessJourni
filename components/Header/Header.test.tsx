@@ -54,10 +54,19 @@ describe('Header', () => {
   it('renders every primary route without a burger control', () => {
     render(<Header />);
 
-    for (const route of ['Home', 'Workouts', 'Running', 'Logs', 'Sessions']) {
+    for (const route of ['Home', 'Workouts', 'Running', 'Logs', 'Sessions', 'Chat']) {
       expect(screen.getByRole('link', { name: route })).toBeInTheDocument();
     }
     expect(screen.queryByRole('button', { name: 'Open menu' })).not.toBeInTheDocument();
+  });
+
+  it('shows a subtle marker when messages are unread', () => {
+    const { container, rerender } = render(<Header hasUnreadMessages />);
+
+    expect(container.querySelector('[class*="unreadDot"]')).toBeInTheDocument();
+
+    rerender(<Header hasUnreadMessages={false} />);
+    expect(container.querySelector('[class*="unreadDot"]')).not.toBeInTheDocument();
   });
 
   it('marks the current route', () => {

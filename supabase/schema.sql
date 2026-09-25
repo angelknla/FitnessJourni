@@ -182,6 +182,24 @@ create index if not exists runs_date_idx on public.runs (run_date desc);
 create index if not exists run_attendees_member_idx on public.run_attendees (member_id);
 
 -- ----------------------------------------------------------------------------
+-- messages — short posts shared with the group. Each member keeps one read
+-- cursor, which is enough to decide whether the navigation needs a new-post dot.
+-- ----------------------------------------------------------------------------
+create table if not exists public.messages (
+  id         uuid primary key default gen_random_uuid(),
+  member_id  uuid not null references public.members (id) on delete cascade,
+  content    text not null check (char_length(content) between 1 and 500),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists messages_created_at_idx on public.messages (created_at desc);
+
+create table if not exists public.message_reads (
+  member_id   uuid primary key references public.members (id) on delete cascade,
+  last_read_at timestamptz not null default now()
+);
+
+-- ----------------------------------------------------------------------------
 -- Row Level Security
 --
 -- The anon key is used ONLY from the Next.js server (deliberately not exposed as
@@ -197,6 +215,8 @@ alter table public.workouts   enable row level security;
 alter table public.runs       enable row level security;
 alter table public.run_attendees enable row level security;
 alter table public.weight_measurements enable row level security;
+alter table public.messages enable row level security;
+alter table public.message_reads enable row level security;
 
 drop policy if exists members_rw    on public.members;
 drop policy if exists daily_logs_rw on public.daily_logs;
@@ -206,6 +226,8 @@ drop policy if exists workouts_rw   on public.workouts;
 drop policy if exists runs_rw       on public.runs;
 drop policy if exists run_attendees_rw on public.run_attendees;
 drop policy if exists weight_measurements_rw on public.weight_measurements;
+drop policy if exists messages_rw on public.messages;
+drop policy if exists message_reads_rw on public.message_reads;
 
 create policy members_rw    on public.members    for all to anon, authenticated using (true) with check (true);
 create policy daily_logs_rw on public.daily_logs for all to anon, authenticated using (true) with check (true);
@@ -215,6 +237,8 @@ create policy workouts_rw   on public.workouts   for all to anon, authenticated 
 create policy runs_rw       on public.runs       for all to anon, authenticated using (true) with check (true);
 create policy run_attendees_rw on public.run_attendees for all to anon, authenticated using (true) with check (true);
 create policy weight_measurements_rw on public.weight_measurements for all to anon, authenticated using (true) with check (true);
+create policy messages_rw on public.messages for all to anon, authenticated using (true) with check (true);
+create policy message_reads_rw on public.message_reads for all to anon, authenticated using (true) with check (true);
 
 -- ----------------------------------------------------------------------------
 -- Seed the three of you. Re-running will not create duplicates.

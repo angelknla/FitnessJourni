@@ -798,3 +798,89 @@ export const deleteRun = async (_prev: ActionState, formData: FormData): Promise
   revalidatePath('/running');
   return ok;
 };
+
+export const postMessage = async (_prev: ActionState, formData: FormData): Promise<ActionState> => {
+  if (!(await isUnlocked())) {
+    return fail(LOCKED);
+  }
+
+  const supabase = getSupabase();
+  if (!supabase) {
+    return fail(NOT_CONFIGURED);
+  }
+
+  const viewer = await readViewer();
+  const content = toText(formData.get('content'));
+
+  if (!viewer.memberId) {
+    return fail('Choose who you are before posting.');
+  }
+  if (!content) {
+    return fail('Write something to share.');
+  }
+  if (content.length > 500) {
+    return fail('Keep your post under 500 characters.');
+  }
+
+  const { data, error } = await supabase
+    .from('messages')
+    .insert({ member_id: viewer.memberId, content })
+    .select('created_at')
+    .single();
+
+  if (error || !data) {
+    console.error('[postMessage]', error?.message ?? 'Message insert returned no row.');
+    return fail('Could not share that post.');
+  }
+
+  const { error: readError } = await supabase
+    .from('message_reads')
+    .upsert(
+      { member_id: viewer.memberId, last_read_at: data.created_at },
+      { onConflict: 'member_id' }
+    );
+
+  if (readError) {
+    console.error('[postMessage read cursor]', readError.message);
+  }
+
+  revalidatePath('/messages');
+  revalidatePath('/', 'layout');
+  return { ok: true, message: 'Shared with the group.', bookedAt: Date.now() };
+};
+
+export const markMessagesRead = async (): Promise<void> => {
+  if (!(await isUnlocked())) {
+    return;
+  }
+
+  const [viewer, supabase] = await Promise.all([readViewer(), Promise.resolve(getSupabase())]);
+  if (!viewer.memberId || !supabase) {
+    return;
+  }
+
+  const { data: latest } = await supabase
+    .from('messages')
+    .select('created_at')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!latest?.created_at) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from('message_reads')
+    .upsert(
+      { member_id: viewer.memberId, last_read_at: latest.created_at },
+      { onConflict: 'member_id' }
+    );
+
+  if (error) {
+    console.error('[markMessagesRead]', error.message);
+    return;
+  }
+
+  revalidatePath('/', 'layout');
+};

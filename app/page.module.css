@@ -36,6 +36,6 @@
 
 @media (max-width: 960px) {
   .appWrapper {
-    padding-bottom: calc(5.4rem + env(safe-area-inset-bottom));
+    padding-bottom: calc(4.35rem + env(safe-area-inset-bottom));
   }
 }

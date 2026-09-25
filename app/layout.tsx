@@ -5,6 +5,7 @@ import { toISODate } from '@utils/date';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { getMembers } from '@/lib/data/members';
+import { getHasUnreadMessages } from '@/lib/data/messages';
 import { getUpcomingSessions, nextSession } from '@/lib/data/sessions';
 import { viewerFirst } from '@/lib/ownership';
 import { isUnlocked, readViewer, type Viewer } from '@/lib/session';
@@ -74,7 +75,13 @@ const RootLayout = async ({ children }: LayoutProps) => {
    */
   const members: Member[] = locked || !configured ? [] : await getMembers();
   const viewer: Viewer = locked ? LOCKED_VIEWER : await readViewer();
-  const banner = locked || !configured ? null : await nextSessionBanner(members);
+  const [banner, hasUnreadMessages] =
+    locked || !configured
+      ? [null, false]
+      : await Promise.all([
+        nextSessionBanner(members),
+        viewer.memberId ? getHasUnreadMessages(viewer.memberId) : false,
+      ]);
 
   return (
     <html lang="en" data-scroll-behavior="smooth">
@@ -84,6 +91,7 @@ const RootLayout = async ({ children }: LayoutProps) => {
             locked={locked}
             members={viewerFirst(members, viewer.memberId)}
             viewer={viewer}
+            hasUnreadMessages={hasUnreadMessages}
           />
 
           {banner && (

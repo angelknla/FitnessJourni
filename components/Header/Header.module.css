@@ -59,6 +59,7 @@
 }
 
 .link {
+  position: relative;
   display: inline-flex;
   align-items: center;
   font-size: 1.05rem;
@@ -70,6 +71,17 @@
   &:hover {
     color: var(--c-accent);
   }
+}
+
+.unreadDot {
+  position: absolute;
+  top: -0.08rem;
+  right: -0.38rem;
+  width: 0.38rem;
+  height: 0.38rem;
+  background: #ef5b5b;
+  border: 1px solid var(--c-bg);
+  border-radius: 50%;
 }
 
 .link svg {
@@ -98,7 +110,7 @@
     width: auto;
     height: auto;
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     flex-direction: initial;
     align-items: stretch;
     gap: 0.15rem;
@@ -137,6 +149,11 @@
   .nav .link[aria-current="page"] {
     color: var(--c-accent);
     background: color-mix(in oklab, var(--c-accent) 12%, transparent);
+  }
+
+  .nav .unreadDot {
+    top: 0.2rem;
+    right: calc(50% - 0.85rem);
   }
 }
 

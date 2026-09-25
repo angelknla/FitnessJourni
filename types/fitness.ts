@@ -114,3 +114,10 @@ export interface RunTally {
   week: number;
   month: number;
 }
+
+export interface MessagePost {
+  id: string;
+  memberId: string;
+  content: string;
+  createdAt: string;
+}

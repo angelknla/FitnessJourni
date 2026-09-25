@@ -6,6 +6,7 @@ import {
   DumbbellIcon,
   HomeIcon,
   LogsIcon,
+  MessageIcon,
   RunningIcon,
 } from '@components/Icons/Icons';
 import { IdentityDialog } from '@components/IdentityDialog/IdentityDialog';
@@ -26,11 +27,17 @@ interface HeaderProps {
   /** Empty while locked — the layout must not query members before the gate. */
   members?: Member[];
   viewer?: Viewer;
+  hasUnreadMessages?: boolean;
 }
 
 const UNCHOSEN: Viewer = { memberId: null, chosen: false };
 
-export const Header = ({ locked = false, members = [], viewer = UNCHOSEN }: HeaderProps) => {
+export const Header = ({
+  locked = false,
+  members = [],
+  viewer = UNCHOSEN,
+  hasUnreadMessages = false,
+}: HeaderProps) => {
   const [scrolled, setScrolled] = useState(false);
   const [identityOpen, setIdentityOpen] = useState(false);
   const pathname = usePathname();
@@ -66,6 +73,7 @@ export const Header = ({ locked = false, members = [], viewer = UNCHOSEN }: Head
     '/running': RunningIcon,
     '/logs': LogsIcon,
     '/sessions': CalendarIcon,
+    '/messages': MessageIcon,
   };
 
   return (
@@ -101,6 +109,9 @@ export const Header = ({ locked = false, members = [], viewer = UNCHOSEN }: Head
                     >
                       <Icon />
                       <span>{item.label}</span>
+                      {item.href === '/messages' && hasUnreadMessages && (
+                        <span className={styles.unreadDot} aria-hidden="true" />
+                      )}
                     </Link>
                   );
                 })}

@@ -60,6 +60,13 @@ export const CalendarIcon = ({ size }: IconProps) => (
   </NavIcon>
 );
 
+export const MessageIcon = ({ size }: IconProps) => (
+  <NavIcon size={size}>
+    <path d="M4 4.5h16v11H9l-5 4z" />
+    <path d="M8 8.5h8M8 11.5h5" />
+  </NavIcon>
+);
+
 export const PlusIcon = ({ size = 16 }: IconProps) => (
   <svg
     viewBox="0 0 16 16"
