@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { DailyLog, Member, MemberTargets } from '@/types/fitness';
@@ -68,8 +68,7 @@ const setup = (viewerId: string | null, canRemove = false) =>
 const selectedTab = () =>
   screen.getAllByRole('tab').find((tab) => tab.getAttribute('aria-selected') === 'true');
 
-/** Quick Entry is the tell for an editable tab; the note replaces it otherwise. */
-const quickEntry = () => screen.queryByRole('group', { name: /Log .*'s day/ });
+const quickEntry = () => screen.queryByRole('button', { name: /Log .*'s day/ });
 
 describe('Today', () => {
   it('opens on the signed-in person, not on whoever sorts first', () => {
@@ -91,16 +90,62 @@ describe('Today', () => {
     expect(screen.getByRole('button', { name: "Edit Dillon's macro targets" })).toBeInTheDocument();
   });
 
-  it('turns another person’s tab read-only, while still showing their numbers', async () => {
+  it('keeps daily inputs collapsed until its title is opened', async () => {
+    const user = userEvent.setup();
+    setup('m1');
+
+    const toggle = screen.getByRole('button', { name: "Log Dillon's day" });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('spinbutton', { name: 'Steps' })).not.toBeInTheDocument();
+
+    await user.click(toggle);
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('spinbutton', { name: 'Steps' })).toBeInTheDocument();
+  });
+
+  it('only enables Save while daily inputs differ from their loaded values', async () => {
+    const user = userEvent.setup();
+    setup('m1');
+    await user.click(screen.getByRole('button', { name: "Log Dillon's day" }));
+
+    const steps = screen.getByRole('spinbutton', { name: 'Steps' });
+    const save = screen.getByRole('button', { name: 'Save' });
+    expect(save).toBeDisabled();
+
+    await user.clear(steps);
+    await user.type(steps, '9500');
+    expect(save).toBeEnabled();
+
+    await user.clear(steps);
+    await user.type(steps, '9000');
+    expect(save).toBeDisabled();
+  });
+
+  it('turns another person’s tab read-only without showing a redundant notice', async () => {
     const user = userEvent.setup();
     setup('m1');
 
     await user.click(screen.getByRole('tab', { name: 'Angel' }));
 
     expect(quickEntry()).not.toBeInTheDocument();
-    expect(screen.getByText(/read-only here/)).toBeInTheDocument();
+    expect(screen.queryByText(/signed in as someone else/)).not.toBeInTheDocument();
     // The point of the app is comparing, so their read-only figures must survive.
     expect(screen.getByText(/Protein: 150 of 156 grams/)).toBeInTheDocument();
+  });
+
+  it('moves between member tabs when the macros section is swiped', () => {
+    setup('m1');
+    const macros = screen.getByRole('heading', { name: 'Macros' }).parentElement?.parentElement;
+
+    expect(macros).not.toBeNull();
+    fireEvent.touchStart(macros!, { touches: [{ clientX: 180, clientY: 100 }] });
+    fireEvent.touchEnd(macros!, { changedTouches: [{ clientX: 80, clientY: 105 }] });
+    expect(selectedTab()).toHaveTextContent('Angel');
+
+    fireEvent.touchStart(macros!, { touches: [{ clientX: 80, clientY: 100 }] });
+    fireEvent.touchEnd(macros!, { changedTouches: [{ clientX: 180, clientY: 105 }] });
+    expect(selectedTab()).toHaveTextContent('Dillon');
   });
 
   it('hides the targets pencil on someone else’s tab', async () => {
@@ -204,10 +249,15 @@ describe('Today', () => {
     ]);
   });
 
-  /* The strip is reordered, not the member list behind it — the compare strip is
-     a fixed lineup and should not shuffle per viewer. */
-  it('does not reorder the compare strip', () => {
+  it('puts the signed-in person first in Everyone today', () => {
     setup('m3');
+
+    const strip = screen.getByRole('region', { name: 'Everyone today' });
+    expect(strip.textContent).toMatch(/Bradley[\s\S]*Dillon[\s\S]*Angel/);
+  });
+
+  it('keeps the usual Everyone today order for a visitor', () => {
+    setup(null);
 
     const strip = screen.getByRole('region', { name: 'Everyone today' });
     expect(strip.textContent).toMatch(/Dillon[\s\S]*Angel[\s\S]*Bradley/);

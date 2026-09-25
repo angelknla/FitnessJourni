@@ -8,8 +8,8 @@
 
 .svg {
   display: block;
-  width: 6.5rem;
-  height: 2.1rem;
+  width: 7.25rem;
+  height: 2.35rem;
   overflow: visible;
 }
 
@@ -55,7 +55,7 @@
 
 @media (max-width: 400px) {
   .svg {
-    width: 4.6rem;
-    height: 1.7rem;
+    width: 5.2rem;
+    height: 1.9rem;
   }
 }

@@ -8,7 +8,8 @@ import Link from 'next/link';
 import { leaders, type Period, summarise } from '@/lib/aggregate';
 import { getLogsSince } from '@/lib/data/logs';
 import { getMembers } from '@/lib/data/members';
-import { isUnlocked } from '@/lib/session';
+import { viewerFirst } from '@/lib/ownership';
+import { isUnlocked, readViewer } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
 
 import styles from './page.module.css';
@@ -51,7 +52,11 @@ const LogsPage = async ({ searchParams }: LogsPageProps) => {
   const from =
     period === 'today' ? today : period === 'week' ? startOfWeek(today) : startOfMonth(today);
 
-  const [members, logs] = await Promise.all([getMembers(), getLogsSince(from)]);
+  const [members, logs, viewer] = await Promise.all([
+    getMembers(),
+    getLogsSince(from),
+    readViewer(),
+  ]);
 
   const summaries = summarise(logs, from, today);
 
@@ -66,7 +71,7 @@ const LogsPage = async ({ searchParams }: LogsPageProps) => {
     <div className={styles.page}>
       <Link href="/" className={styles.back}>
         <ArrowLeftIcon />
-        Today
+        Home
       </Link>
 
       <header className={styles.head}>
@@ -89,7 +94,7 @@ const LogsPage = async ({ searchParams }: LogsPageProps) => {
       </nav>
 
       <LogsTable
-        members={members}
+        members={viewerFirst(members, viewer.memberId)}
         summaries={summaries}
         leaders={leaders(summaries)}
         showAverages={period !== 'today'}

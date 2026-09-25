@@ -16,58 +16,64 @@ const empty: Tally = { today: 0, week: 0, month: 0 };
 
 export const WorkoutTally = ({ members, tallies, weekLabel, monthLabel }: WorkoutTallyProps) => (
   <div className={styles.outer}>
-    <div className={styles.wrapper}>
-      <table className={styles.table}>
-        <caption className="sr-only">
-          Workout counts per person. Week runs Sunday to Saturday: {weekLabel}.
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col" className={styles.nameHead}>
-              Who
-            </th>
-            <th scope="col">Today</th>
-            <th scope="col">
-              <abbr
-                title={`This week (${weekLabel}) against the recommended count — going over is fine`}
-              >
-                Week
-              </abbr>
-            </th>
-            <th scope="col">
-              <abbr title={`This month — ${monthLabel}`}>Month</abbr>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {members.map((member) => {
-            const tally = tallies[member.id] ?? empty;
-            const target = member.targets.workoutsPerWeek;
-            const hitTarget = tally.week >= target;
+    <ul className={styles.cards} aria-label="Workout counts per person">
+      {members.map((member) => {
+        const tally = tallies[member.id] ?? empty;
+        const target = member.targets.workoutsPerWeek;
+        const hitTarget = tally.week >= target;
+        const progress = Math.min(100, (tally.week / target) * 100);
 
-            return (
-              <tr
-                key={member.id}
-                style={{ '--member-accent': accentHex[member.accent] } as CSSProperties}
+        return (
+          <li
+            className={styles.card}
+            key={member.id}
+            style={
+              {
+                '--member-accent': accentHex[member.accent],
+                '--week-progress': progress,
+              } as CSSProperties
+            }
+          >
+            <header className={styles.cardHead}>
+              <h3 className={styles.name}>
+                <span className={styles.dot} aria-hidden="true" />
+                {member.name}
+              </h3>
+              <span className={styles.today} data-done={tally.today > 0}>
+                <strong>{tally.today}</strong> today
+              </span>
+            </header>
+
+            <div className={styles.cardBody}>
+              <div
+                className={styles.ring}
+                data-hit={hitTarget}
+                role="img"
+                aria-label={`${tally.week} of ${target} recommended workouts this week`}
               >
-                <th scope="row" className={styles.name}>
-                  <span className={styles.dot} aria-hidden="true" />
-                  {member.name}
-                </th>
-                <td className={styles.num}>{tally.today}</td>
-                <td className={styles.num}>
-                  <span className={styles.week} data-hit={hitTarget}>
-                    {tally.week}
-                    <span className={styles.of}>/{target}</span>
-                  </span>
-                </td>
-                <td className={styles.num}>{tally.month}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+                <span>
+                  <strong>{tally.week}</strong>
+                  <small>of {target}</small>
+                </span>
+              </div>
+
+              <div className={styles.periods}>
+                <div>
+                  <span>This week</span>
+                  <strong>{hitTarget ? 'Target met' : `${target - tally.week} to target`}</strong>
+                  <small>{weekLabel}</small>
+                </div>
+                <div>
+                  <span>This month</span>
+                  <strong>{tally.month} workouts</strong>
+                  <small>{monthLabel}</small>
+                </div>
+              </div>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
 
     <p className={styles.caption}>
       Week runs Sunday to Saturday, matching the playbook. This week: {weekLabel}. The second number

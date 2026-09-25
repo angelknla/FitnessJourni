@@ -237,51 +237,53 @@
 
 .identity {
   flex-shrink: 0;
-  font-size: 0.84rem;
-  font-weight: 500;
-  padding: 0.35rem 0.8rem;
-  border-radius: var(--r-pill);
-  max-width: 9rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--identity-accent, var(--c-accent));
+  text-decoration: none;
+  background: color-mix(
+    in oklab,
+    var(--identity-accent, var(--c-accent)) 14%,
+    var(--c-surface-raised)
+  );
+  border: 1px solid color-mix(in oklab, var(--identity-accent, var(--c-accent)) 62%, transparent);
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--identity-accent, var(--c-accent)) 12%, transparent),
+    0 3px 10px color-mix(in oklab, var(--identity-accent, var(--c-accent)) 14%, transparent);
+  transition:
+    transform 0.2s var(--ease-flow),
+    background-color 0.2s var(--ease-flow),
+    border-color 0.2s var(--ease-flow);
+}
+
+.identity:hover {
+  transform: translateY(-1px);
+  background: color-mix(
+    in oklab,
+    var(--identity-accent, var(--c-accent)) 22%,
+    var(--c-surface-raised)
+  );
+  border-color: var(--identity-accent, var(--c-accent));
 }
 
 .identity[data-visitor="true"] {
-  color: var(--c-ink-muted);
-}
-
-/* A menu item rather than a control: it sits among the links, so it takes their
-   weight and colour and drops the button chrome. */
-.logout {
-  font-size: 1.05rem;
-  font-weight: 500;
-  padding: 0;
-  border: 0;
-  background: transparent;
+  color: var(--c-ink-soft);
+  background: var(--c-surface-raised);
+  border: 1px dashed var(--c-border-strong);
   box-shadow: none;
-  color: var(--c-ink-muted);
-  cursor: pointer;
-  transition: color 0.2s ease;
-}
-
-.logout:hover:not(:disabled) {
-  color: var(--c-accent);
-  background: transparent;
 }
 
 @media (max-width: 960px) {
-  /* Matches .nav .link inside the overlay. */
-  .logout {
-    font-size: 1.75rem;
-  }
-
-  /* Shares the row with the wordmark and the burger from here down, so the chip
-     gives up size first. */
   .identity {
-    font-size: 0.78rem;
-    padding: 0.3rem 0.65rem;
-    max-width: 7.5rem;
+    width: 1.9rem;
+    height: 1.9rem;
+    font-size: 1rem;
   }
 
   /* Both edges tighten from here down: the wordmark starts closer to the left
@@ -298,18 +300,12 @@
   }
 
   .identity {
-    font-size: 0.74rem;
-    padding: 0.28rem 0.55rem;
-    max-width: 6rem;
+    font-size: 1.05rem;
   }
 
   /* Must sit after the 960 rule above, not in the earlier 480 block: both match
      at this width, and the last one wins. */
   .inner {
     padding-inline: 0.85rem;
-  }
-
-  .logout {
-    font-size: 1.5rem;
   }
 }

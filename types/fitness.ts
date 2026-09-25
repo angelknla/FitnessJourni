@@ -39,6 +39,19 @@ export interface Member {
   targets: MemberTargets;
 }
 
+export interface MemberProfile {
+  memberId: string;
+  age: number | null;
+  heightCm: number | null;
+  targetWeightKg: number | null;
+  targetBmi: number | null;
+}
+
+export interface WeightMeasurement {
+  month: string;
+  weightKg: number;
+}
+
 /** One member's numbers for one day. `date` is always YYYY-MM-DD. */
 export interface DailyLog {
   memberId: string;
@@ -51,6 +64,13 @@ export interface DailyLog {
   fatG: number;
 }
 
+export type RsvpStatus = 'going' | 'not_going';
+
+export interface SessionRsvp {
+  memberId: string;
+  status: RsvpStatus;
+}
+
 /** A training slot the group agreed on. `time` is always HH:MM. */
 export interface TrainingSession {
   id: string;
@@ -59,6 +79,7 @@ export interface TrainingSession {
   activity: ActivityType;
   note: string | null;
   createdBy: string | null;
+  rsvps: SessionRsvp[];
 }
 
 /** One session done. Several on the same day is legitimate, so there is no
@@ -75,6 +96,21 @@ export interface Workout {
 /** Counts for one member, derived rather than stored. */
 export interface WorkoutTally {
   today: number;
+  week: number;
+  month: number;
+}
+
+export interface GroupRun {
+  id: string;
+  date: string;
+  durationMinutes: number;
+  distanceKm: number;
+  paceSecondsPerKm: number | null;
+  createdBy: string | null;
+  attendeeIds: string[];
+}
+
+export interface RunTally {
   week: number;
   month: number;
 }

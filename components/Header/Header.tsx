@@ -3,11 +3,10 @@
 import { Heartbeat } from '@components/Heartbeat/Heartbeat';
 import { IdentityDialog } from '@components/IdentityDialog/IdentityDialog';
 import { LoginButton } from '@components/LoginButton/LoginButton';
+import { accentHex } from '@data/fitnessData';
 import { navigationData } from '@data/navigationData';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState, useTransition } from 'react';
-import { lock } from '@/app/auth-actions';
+import { type CSSProperties, useCallback, useEffect, useState } from 'react';
 import type { Viewer } from '@/lib/session';
 import type { Member } from '@/types/fitness';
 
@@ -27,8 +26,6 @@ export const Header = ({ locked = false, members = [], viewer = UNCHOSEN }: Head
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [identityOpen, setIdentityOpen] = useState(false);
-  const [signingOut, startSignOut] = useTransition();
-  const router = useRouter();
 
   const closeMenu = () => setOpen(false);
   const closeIdentity = useCallback(() => setIdentityOpen(false), []);
@@ -55,12 +52,7 @@ export const Header = ({ locked = false, members = [], viewer = UNCHOSEN }: Head
 
   const you = members.find((member) => member.id === viewer.memberId);
   const identityLabel = viewer.chosen ? (you?.name ?? 'Visitor') : 'Who are you?';
-
-  const signOut = () =>
-    startSignOut(async () => {
-      await lock();
-      router.refresh();
-    });
+  const identityInitial = you?.name.charAt(0).toUpperCase() ?? (viewer.chosen ? 'V' : '?');
 
   return (
     <header className={scrolled ? `${styles.container} ${styles.scrolled}` : styles.container}>
@@ -75,24 +67,9 @@ export const Header = ({ locked = false, members = [], viewer = UNCHOSEN }: Head
         ) : (
           <>
             {/* One right-aligned group, so .inner's space-between keeps the menu
-                hard right as it was. The chip sits before the nav, which puts it
-                left of the links on desktop and beside the burger on mobile,
-                where the nav itself is a fixed overlay and out of the row. */}
+                hard right. The profile follows the desktop links and stays beside
+                the burger on mobile, where the nav is a fixed overlay. */}
             <div className={styles.side}>
-              {/* Nothing to pick from before Supabase is connected, and a chip
-                  that opens an empty list is just a dead end. */}
-              {members.length > 0 && (
-                <button
-                  type="button"
-                  className={styles.identity}
-                  onClick={() => setIdentityOpen(true)}
-                  data-visitor={viewer.chosen && !you}
-                  aria-label={`Signed in as ${identityLabel} — change person`}
-                >
-                  {identityLabel}
-                </button>
-              )}
-
               <nav
                 id="main-navigation"
                 className={open ? `${styles.nav} ${styles.active}` : styles.nav}
@@ -105,17 +82,21 @@ export const Header = ({ locked = false, members = [], viewer = UNCHOSEN }: Head
                   </Link>
                 ))}
 
-                {/* Part of the menu on both sizes: inline after the links on
-                    desktop, inside the overlay on mobile. */}
-                <button
-                  type="button"
-                  className={styles.logout}
-                  onClick={signOut}
-                  disabled={signingOut}
-                >
-                  {signingOut ? 'Logging out…' : 'Log out'}
-                </button>
               </nav>
+
+              {members.length > 0 && (
+                <Link
+                  href="/profile"
+                  className={styles.identity}
+                  data-visitor={viewer.chosen && !you}
+                  style={
+                    you ? ({ '--identity-accent': accentHex[you.accent] } as CSSProperties) : undefined
+                  }
+                  aria-label={`Open ${identityLabel} profile`}
+                >
+                  {identityInitial}
+                </Link>
+              )}
 
               <button
                 type="button"

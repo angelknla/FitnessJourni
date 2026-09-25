@@ -1,0 +1,36 @@
+.page {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+
+.back {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: -0.9rem;
+  padding: 0.4rem 0.8rem 0.4rem 0.6rem;
+  font-size: 0.86rem;
+  font-weight: 500;
+  text-decoration: none;
+  color: var(--c-ink-soft);
+  background: var(--c-surface-soft);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-pill);
+}
+
+.head p {
+  margin: 0 0 0.15rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--c-ink-muted);
+}
+
+.head h1 {
+  margin: 0;
+  font-size: 1.55rem;
+  font-weight: 600;
+}

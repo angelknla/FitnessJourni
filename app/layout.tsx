@@ -6,6 +6,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { getMembers } from '@/lib/data/members';
 import { getUpcomingSessions, nextSession } from '@/lib/data/sessions';
+import { viewerFirst } from '@/lib/ownership';
 import { isUnlocked, readViewer, type Viewer } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
 import type { Member } from '@/types/fitness';
@@ -79,7 +80,11 @@ const RootLayout = async ({ children }: LayoutProps) => {
     <html lang="en" data-scroll-behavior="smooth">
       <body className={inter.className}>
         <div className={styles.appWrapper}>
-          <Header locked={locked} members={members} viewer={viewer} />
+          <Header
+            locked={locked}
+            members={viewerFirst(members, viewer.memberId)}
+            viewer={viewer}
+          />
 
           {banner && (
             <SessionBanner

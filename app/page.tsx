@@ -6,7 +6,7 @@ import type { Metadata } from 'next';
 import { getLogsForDate } from '@/lib/data/logs';
 import { getMembers } from '@/lib/data/members';
 import { getWorkoutsSince, tallyWorkouts } from '@/lib/data/workouts';
-import { canRemoveMembers } from '@/lib/ownership';
+import { canRemoveMembers, viewerFirst } from '@/lib/ownership';
 import { isUnlocked, readViewer } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
 
@@ -48,7 +48,7 @@ const Homepage = async () => {
 
   return (
     <Today
-      members={members}
+      members={viewerFirst(members, viewer.memberId)}
       logs={logs}
       workouts={workouts}
       tallies={tallyWorkouts(workouts, date)}

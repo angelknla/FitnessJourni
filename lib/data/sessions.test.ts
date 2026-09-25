@@ -9,6 +9,7 @@ const session = (id: string, date: string, time: string): TrainingSession => ({
   activity: 'run',
   note: null,
   createdBy: null,
+  rsvps: [],
 });
 
 describe('mapSession', () => {
@@ -23,6 +24,20 @@ describe('mapSession', () => {
     };
 
     expect(mapSession(row).time).toBe('07:30');
+  });
+
+  it('maps RSVP member IDs and statuses', () => {
+    const row: SessionRow = {
+      id: 's1',
+      session_date: '2026-09-26',
+      session_time: '07:30:00',
+      activity: 'run',
+      note: null,
+      created_by: null,
+      session_rsvps: [{ member_id: 'm1', status: 'going' }],
+    };
+
+    expect(mapSession(row).rsvps).toEqual([{ memberId: 'm1', status: 'going' }]);
   });
 });
 

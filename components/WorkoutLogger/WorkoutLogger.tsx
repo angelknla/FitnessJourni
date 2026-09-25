@@ -1,6 +1,6 @@
 'use client';
 
-import { CrossIcon } from '@components/Icons/Icons';
+import { CrossIcon, PlusIcon } from '@components/Icons/Icons';
 import { workoutFocuses, workoutFocusLabels } from '@data/fitnessData';
 import { useActionState, useState } from 'react';
 import { type ActionState, deleteWorkout, logWorkout } from '@/app/actions';
@@ -58,9 +58,12 @@ const LoggedWorkout = ({ workout, canEdit }: { workout: Workout; canEdit: boolea
 export const WorkoutLogger = ({ member, date, logged, weekCount, canEdit }: WorkoutLoggerProps) => {
   const [state, formAction, isPending] = useActionState(logWorkout, initial);
   const [picked, setPicked] = useState<WorkoutFocus[]>([]);
+  const [formOpen, setFormOpen] = useState(false);
 
   const target = member.targets.workoutsPerWeek;
   const trainedToday = logged.length > 0;
+  const formTitle = trainedToday ? 'Log another session' : `What did ${member.name} train?`;
+  const formId = `workout-log-${member.id}`;
 
   const toggle = (focus: WorkoutFocus) =>
     setPicked((current) =>
@@ -99,58 +102,74 @@ export const WorkoutLogger = ({ member, date, logged, weekCount, canEdit }: Work
         </p>
       )}
 
-      {/* Remounts after a save so the checkboxes clear. */}
       {canEdit && (
-        <form className={styles.form} action={formAction} key={logged.length}>
-          <input type="hidden" name="memberId" value={member.id} />
-          <input type="hidden" name="date" value={date} />
+        <div className={styles.disclosure}>
+          <button
+            type="button"
+            className={styles.toggle}
+            aria-expanded={formOpen}
+            aria-controls={formId}
+            onClick={() => setFormOpen((current) => !current)}
+          >
+            <span>{formTitle}</span>
+            {formOpen ? <CrossIcon /> : <PlusIcon />}
+          </button>
 
-          <fieldset className={styles.fieldset}>
-            <legend className={styles.legend}>
-              {trainedToday ? 'Log another session' : `What did ${member.name} train?`}
-              <span className={styles.hint}>Pick as many as apply</span>
-            </legend>
+          {formOpen && (
+            <form className={styles.form} action={formAction} id={formId} key={logged.length}>
+              <input type="hidden" name="memberId" value={member.id} />
+              <input type="hidden" name="date" value={date} />
 
-            <div className={styles.chips}>
-              {workoutFocuses.map((option) => (
-                <label className={styles.chip} key={option}>
-                  <input
-                    className={styles.control}
-                    type="checkbox"
-                    name="focus"
-                    value={option}
-                    checked={picked.includes(option)}
-                    onChange={() => toggle(option)}
-                  />
-                  <span className={styles.chipInner}>{workoutFocusLabels[option]}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
+              <fieldset className={styles.fieldset}>
+                <legend className={styles.hint}>Pick as many as apply</legend>
 
-          <label className={styles.noteField}>
-            <span className={styles.noteLabel}>Note (optional)</span>
-            <input type="text" name="note" maxLength={200} placeholder="Felt strong on bench" />
-          </label>
+                <div className={styles.chips}>
+                  {workoutFocuses.map((option) => (
+                    <label className={styles.chip} key={option}>
+                      <input
+                        className={styles.control}
+                        type="checkbox"
+                        name="focus"
+                        value={option}
+                        checked={picked.includes(option)}
+                        onChange={() => toggle(option)}
+                      />
+                      <span className={styles.chipInner}>{workoutFocusLabels[option]}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
 
-          <div className={styles.actions}>
-            <button
-              type="submit"
-              className={styles.submit}
-              disabled={isPending || picked.length === 0}
-            >
-              {isPending ? 'Logging…' : 'Log workout'}
-            </button>
+              <label className={styles.noteField}>
+                <span className={styles.noteLabel}>Note (optional)</span>
+                <input
+                  type="text"
+                  name="note"
+                  maxLength={200}
+                  placeholder="Felt strong on bench"
+                />
+              </label>
 
-            {picked.length > 0 && <span className={styles.picked}>{picked.length} selected</span>}
+              <div className={styles.actions}>
+                <button
+                  type="submit"
+                  className={styles.submit}
+                  disabled={isPending || picked.length === 0}
+                >
+                  {isPending ? 'Logging…' : 'Log workout'}
+                </button>
 
-            {state.error && (
-              <p className={styles.error} role="alert">
-                {state.error}
-              </p>
-            )}
-          </div>
-        </form>
+                {picked.length > 0 && <span className={styles.picked}>{picked.length} selected</span>}
+
+                {state.error && (
+                  <p className={styles.error} role="alert">
+                    {state.error}
+                  </p>
+                )}
+              </div>
+            </form>
+          )}
+        </div>
       )}
     </div>
   );

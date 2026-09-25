@@ -98,6 +98,7 @@ describe('mapSession', () => {
       activity: 'run',
       note: 'Park gate',
       createdBy: 'm1',
+      rsvps: [],
     });
   });
 });

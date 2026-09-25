@@ -9,7 +9,6 @@ vi.mock('@/app/auth-actions', () => ({
 }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
-import { lock } from '@/app/auth-actions';
 import type { Member, MemberTargets } from '@/types/fitness';
 import { Header } from './Header';
 
@@ -93,16 +92,19 @@ describe('Header', () => {
     expect(screen.queryByRole('button', { name: 'Open menu' })).not.toBeInTheDocument();
   });
 
-  it('names who you are signed in as', () => {
+  it('links to the signed-in person’s profile using their initial', () => {
     render(<Header members={members} viewer={{ memberId: 'm2', chosen: true }} />);
 
-    expect(screen.getByRole('button', { name: /Signed in as Angel/ })).toHaveTextContent('Angel');
+    const profile = screen.getByRole('link', { name: 'Open Angel profile' });
+    expect(profile).toHaveAttribute('href', '/profile');
+    expect(profile).toHaveTextContent('A');
+    expect(profile).toHaveStyle({ '--identity-accent': '#d95926' });
   });
 
-  it('says Visitor when someone chose to just look', () => {
+  it('uses a visitor initial for someone looking around', () => {
     render(<Header members={members} viewer={{ memberId: null, chosen: true }} />);
 
-    expect(screen.getByRole('button', { name: /Signed in as Visitor/ })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Open Visitor profile' })).toHaveTextContent('V');
   });
 
   /* The second half of logging in: the passcode says you may be here, this asks
@@ -125,17 +127,8 @@ describe('Header', () => {
     expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument();
   });
 
-  it('logs out, dropping the gate and the identity together', async () => {
-    const user = userEvent.setup();
+  it('keeps logout out of navigation because it lives at the bottom of Profile', () => {
     render(<Header members={members} viewer={{ memberId: 'm1', chosen: true }} />);
-
-    await user.click(screen.getByRole('button', { name: 'Log out' }));
-
-    expect(lock).toHaveBeenCalled();
-  });
-
-  it('keeps log out out of reach while locked', () => {
-    render(<Header locked members={[]} />);
 
     expect(screen.queryByRole('button', { name: 'Log out' })).not.toBeInTheDocument();
   });

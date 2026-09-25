@@ -11,6 +11,7 @@ const session: TrainingSession = {
   activity: 'run',
   note: 'Meet at the park gate',
   createdBy: 'm1',
+  rsvps: [],
 };
 
 beforeEach(() => {

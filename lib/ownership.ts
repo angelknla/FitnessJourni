@@ -13,6 +13,18 @@ import type { Viewer } from '@/lib/session';
 export const canEditMember = (viewer: Viewer, memberId: string): boolean =>
   viewer.memberId !== null && viewer.memberId === memberId;
 
+export const viewerFirst = <T extends { id: string }>(
+  items: readonly T[],
+  viewerId: string | null
+): T[] => {
+  if (!viewerId) {
+    return [...items];
+  }
+
+  const viewer = items.find((item) => item.id === viewerId);
+  return viewer ? [viewer, ...items.filter((item) => item.id !== viewerId)] : [...items];
+};
+
 /**
  * Who may remove people entirely. One named member rather than a role column:
  * there is no account system here to hang a role off, and the group is three

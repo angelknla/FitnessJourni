@@ -58,6 +58,27 @@
   border-color: var(--c-border-strong);
 }
 
+.newUser {
+  width: 100%;
+  font: inherit;
+  color: var(--c-ink);
+  text-align: left;
+  background: transparent;
+}
+
+.addMark {
+  flex-shrink: 0;
+  width: 0.85rem;
+  height: 0.85rem;
+  display: grid;
+  place-items: center;
+  font-size: 0.8rem;
+  line-height: 1;
+  color: var(--c-ink-soft);
+  border: 1px dashed var(--c-ink-muted);
+  border-radius: 50%;
+}
+
 .control {
   position: absolute;
   width: 1px;

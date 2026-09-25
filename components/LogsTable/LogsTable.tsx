@@ -78,60 +78,73 @@ export const LogsTable = ({
   caption,
 }: LogsTableProps) => {
   const shown = columns.filter((column) => showAverages || !column.averageOnly);
+  const maxSteps = Math.max(
+    1,
+    ...members.map((member) => (summaries[member.id] ?? emptySummary).totalSteps)
+  );
 
   return (
     <div className={styles.outer}>
-      <div className={styles.wrapper}>
-        <table className={styles.table}>
-          {/* Kept for screen readers; the visible copy sits outside the scroller
-              so it cannot be clipped by the horizontal overflow. */}
-          <caption className="sr-only">{caption}</caption>
-          <thead>
-            <tr>
-              <th scope="col" className={styles.nameHead}>
-                Who
-              </th>
-              {shown.map((column) => (
-                <th scope="col" key={column.key}>
-                  <abbr title={column.title}>{column.label}</abbr>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {members.map((member) => {
-              const summary = summaries[member.id] ?? emptySummary;
+      <ul className={styles.profiles} aria-label="Log summaries">
+        {members.map((member) => {
+          const summary = summaries[member.id] ?? emptySummary;
+          const daysLeader = leaders.daysLogged.includes(member.id);
+          const stepsLeader = leaders.totalSteps.includes(member.id);
 
-              return (
-                <tr
-                  key={member.id}
-                  style={{ '--member-accent': accentHex[member.accent] } as CSSProperties}
-                >
-                  <th scope="row" className={styles.name}>
-                    <span className={styles.dot} aria-hidden="true" />
-                    {member.name}
-                  </th>
+          return (
+            <li
+              className={styles.profile}
+              key={member.id}
+              style={{ '--member-accent': accentHex[member.accent] } as CSSProperties}
+            >
+              <header className={styles.profileHead}>
+                <h2 className={styles.name}>
+                  <span className={styles.dot} aria-hidden="true" />
+                  {member.name}
+                </h2>
+                <span className={styles.days} data-leader={daysLeader}>
+                  <strong>{summary.daysLogged}</strong>{' '}
+                  <abbr title="Days with something logged">days</abbr>
+                  {daysLeader && <span className={styles.crown}>★</span>}
+                </span>
+              </header>
 
-                  {shown.map((column) => {
+              <div className={styles.stepsFeature}>
+                <span>
+                  <abbr title="Total steps over the period">Total steps</abbr>
+                  {stepsLeader && <span className={styles.crown}>★</span>}
+                </span>
+                <strong>{formatCount(summary.totalSteps)}</strong>
+                <span className={styles.stepsTrack} aria-hidden="true">
+                  <span style={{ width: `${(summary.totalSteps / maxSteps) * 100}%` }} />
+                </span>
+              </div>
+
+              <dl className={styles.metrics}>
+                {shown
+                  .filter((column) => column.key !== 'daysLogged' && column.key !== 'totalSteps')
+                  .map((column) => {
                     const isLeader =
                       column.ranked &&
                       (leaders[column.key as RankedMetric] ?? []).includes(member.id);
 
                     return (
-                      <td className={styles.num} key={column.key}>
-                        <span className={styles.value} data-leader={isLeader}>
+                      <div className={styles.metric} key={column.key}>
+                        <dt>
+                          <abbr title={column.title}>{column.label}</abbr>
+                        </dt>
+                        <dd data-leader={isLeader}>
                           {column.format(summary)}
-                          {isLeader && <span className={styles.crown}> ★</span>}
-                        </span>
-                      </td>
+                          {isLeader && <span className={styles.crown}>★</span>}
+                        </dd>
+                      </div>
                     );
                   })}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+              </dl>
+            </li>
+          );
+        })}
+      </ul>
 
       <p className={styles.caption}>{caption}</p>
     </div>

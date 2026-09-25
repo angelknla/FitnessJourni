@@ -8,7 +8,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getMembers } from '@/lib/data/members';
 import { getWorkoutsSince, tallyWorkouts } from '@/lib/data/workouts';
-import { isUnlocked } from '@/lib/session';
+import { viewerFirst } from '@/lib/ownership';
+import { isUnlocked, readViewer } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
 
 import styles from './page.module.css';
@@ -45,9 +46,10 @@ const WorkoutsPage = async () => {
 
   // A Sunday-start week can begin in the previous month, so fetch from whichever
   // boundary is earlier or the week's counts would be short.
-  const [members, workouts] = await Promise.all([
+  const [members, workouts, viewer] = await Promise.all([
     getMembers(),
     getWorkoutsSince(earlier(weekStart, monthStart)),
+    readViewer(),
   ]);
 
   const tallies = tallyWorkouts(workouts, today);
@@ -59,7 +61,7 @@ const WorkoutsPage = async () => {
     <div className={styles.page}>
       <Link href="/" className={styles.back}>
         <ArrowLeftIcon />
-        Today
+        Home
       </Link>
 
       <header className={styles.head}>
@@ -70,7 +72,7 @@ const WorkoutsPage = async () => {
       <section className={styles.section}>
         <h2 className={styles.sectionHeading}>This week and month</h2>
         <WorkoutTally
-          members={members}
+          members={viewerFirst(members, viewer.memberId)}
           tallies={tallies}
           weekLabel={`${dayMonth.format(fromISODate(weekStart))} – ${dayMonthFull.format(weekEnd)}`}
           monthLabel={monthOnly.format(now)}

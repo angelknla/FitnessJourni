@@ -46,6 +46,10 @@ const setup = (logged: Workout[] = [], weekCount = 0, canEdit = true) =>
     />
   );
 
+const openForm = async (user: ReturnType<typeof userEvent.setup>, name: RegExp) => {
+  await user.click(screen.getByRole('button', { name }));
+};
+
 describe('WorkoutLogger', () => {
   it('says nothing is logged when the day is empty', () => {
     setup();
@@ -81,6 +85,7 @@ describe('WorkoutLogger', () => {
   it('lets several areas be picked for one session', async () => {
     const user = userEvent.setup();
     setup();
+    await openForm(user, /What did Dillon train/);
 
     await user.click(screen.getByRole('checkbox', { name: 'Push' }));
     await user.click(screen.getByRole('checkbox', { name: 'Cardio' }));
@@ -93,6 +98,7 @@ describe('WorkoutLogger', () => {
   it('cannot submit until something is picked', async () => {
     const user = userEvent.setup();
     setup();
+    await openForm(user, /What did Dillon train/);
 
     const submit = screen.getByRole('button', { name: 'Log workout' });
     expect(submit).toBeDisabled();
@@ -117,6 +123,10 @@ describe('WorkoutLogger', () => {
   it('invites another session once one is logged', () => {
     setup([workout('w1', ['push'])]);
 
-    expect(screen.getByText('Log another session')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Log another session' })).toHaveAttribute(
+      'aria-expanded',
+      'false'
+    );
+    expect(screen.queryByRole('checkbox', { name: 'Push' })).not.toBeInTheDocument();
   });
 });

@@ -1,0 +1,460 @@
+.dashboard,
+.section {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.dashboard {
+  gap: 1.5rem;
+}
+
+.highlights {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) repeat(2, minmax(0, 1fr));
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  background: var(--c-surface);
+}
+
+.primaryHighlight,
+.miniHighlight {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 1.15rem;
+}
+
+.primaryHighlight {
+  color: #07120d;
+  background: var(--c-good);
+}
+
+.primaryHighlight span,
+.primaryHighlight small,
+.miniHighlight span {
+  font-size: 0.76rem;
+}
+
+.primaryHighlight strong {
+  margin: 0.15rem 0;
+  font-size: 1.9rem;
+  line-height: 1;
+}
+
+.miniHighlight {
+  gap: 0.2rem;
+  border-left: 1px solid var(--c-border);
+}
+
+.miniHighlight strong {
+  font-size: 1.45rem;
+  color: var(--c-ink);
+}
+
+.miniHighlight span {
+  line-height: 1.35;
+  color: var(--c-ink-muted);
+}
+
+.sectionHead {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.sectionHead h2,
+.kicker {
+  margin: 0;
+}
+
+.sectionHead h2 {
+  margin-top: 0.12rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.kicker,
+.legend {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  color: var(--c-ink-muted);
+}
+
+.tallies,
+.runList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.tally {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, 0.8fr) minmax(7rem, 2fr) auto;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.8rem 0.9rem;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+}
+
+.tallyName,
+.attendee {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.tallyName strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--person-accent);
+}
+
+.rails {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.rail {
+  height: 0.32rem;
+  overflow: hidden;
+  border-radius: var(--r-pill);
+  background: var(--meter-track);
+}
+
+.rail > span {
+  display: block;
+  min-width: 0.18rem;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--person-accent);
+}
+
+.rail + .rail > span {
+  opacity: 0.45;
+}
+
+.tallyNumbers {
+  min-width: 3.5rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-ink-muted);
+}
+
+.tallyNumbers strong {
+  color: var(--c-ink);
+}
+
+.form {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: minmax(9rem, 1fr) minmax(10rem, 1.25fr) minmax(8rem, 0.8fr);
+  gap: 0.75rem;
+}
+
+.field,
+.timeField,
+.attendees {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.field,
+.timeField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.field > span:first-child,
+.timeField legend,
+.attendees legend {
+  padding: 0;
+  font-size: 0.78rem;
+  color: var(--c-ink-soft);
+}
+
+.timeField > label,
+.inputUnit {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.timeField {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.timeField legend {
+  grid-column: 1 / -1;
+  margin-bottom: 0.35rem;
+}
+
+.timeField input,
+.inputUnit input {
+  min-width: 0;
+  width: 100%;
+}
+
+.timeField label span,
+.inputUnit > span {
+  font-size: 0.78rem;
+  color: var(--c-ink-muted);
+}
+
+.pacePreview {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0.85rem;
+  background: var(--c-surface-soft);
+  border-left: 3px solid var(--c-good);
+}
+
+.pacePreview span {
+  font-size: 0.78rem;
+  color: var(--c-ink-muted);
+}
+
+.pacePreview strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.attendees {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.attendees legend {
+  margin-bottom: 0.875rem;
+}
+
+.people {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 0.45rem;
+  max-height: 4rem;
+  padding-right: 0.35rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.person {
+  position: relative;
+  cursor: pointer;
+}
+
+.person input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.person span {
+  display: block;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.8rem;
+  color: var(--c-ink-soft);
+  background: var(--c-surface-soft);
+  border: 2px solid var(--c-border);
+  border-radius: var(--r-pill);
+}
+
+.person input:checked + span {
+  color: var(--c-ink);
+  border-color: var(--person-accent);
+}
+
+.person input:focus-visible + span {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
+.formActions {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.submit {
+  padding: 0.5rem 1.1rem;
+  color: #07120d;
+  background: var(--c-good);
+  border-color: transparent;
+}
+
+.runList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.runCard {
+  position: relative;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.8fr) minmax(9rem, 1.2fr);
+  gap: 0.9rem 1.1rem;
+  padding: 1rem;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+}
+
+.runLead {
+  display: flex;
+  flex-direction: column;
+}
+
+.runLead strong {
+  margin-top: 0.3rem;
+  font-size: 1.7rem;
+  line-height: 1;
+  color: var(--c-ink);
+}
+
+.runLead > span:last-child,
+.runDate,
+.ranWith > span:first-child {
+  font-size: 0.72rem;
+  color: var(--c-ink-muted);
+}
+
+.runMetrics {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.runMetrics div {
+  min-width: 0;
+  padding-left: 0.65rem;
+  border-left: 1px solid var(--c-border-strong);
+}
+
+.runMetrics dt {
+  font-size: 0.7rem;
+  color: var(--c-ink-muted);
+}
+
+.runMetrics dd {
+  margin: 0.18rem 0 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-ink);
+}
+
+.ranWith {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.attendeeNames {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+}
+
+.attendee {
+  font-size: 0.76rem;
+  color: var(--c-ink-soft);
+}
+
+.removeForm {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+}
+
+.remove {
+  width: 1.75rem;
+  height: 1.75rem;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: var(--c-ink-muted);
+  background: transparent;
+  border-color: var(--c-border);
+}
+
+.error,
+.empty {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--c-critical);
+}
+
+.empty {
+  color: var(--c-ink-muted);
+}
+
+@media (max-width: 700px) {
+  .highlights {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .primaryHighlight {
+    grid-column: 1 / -1;
+  }
+
+  .miniHighlight:first-of-type {
+    border-left: 0;
+  }
+
+  .formGrid,
+  .runList {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 430px) {
+  .tally {
+    grid-template-columns: minmax(5.5rem, 0.9fr) minmax(5rem, 1.4fr) auto;
+    gap: 0.55rem;
+    padding-inline: 0.75rem;
+  }
+
+  .tallyName,
+  .tallyNumbers {
+    font-size: 0.82rem;
+  }
+}

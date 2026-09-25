@@ -7,6 +7,14 @@ vi.mock('@/app/auth-actions', () => ({
   signInAs: vi.fn(async () => ({})),
   lock: vi.fn(async () => undefined),
 }));
+vi.mock('@/app/actions', () => ({
+  addMember: vi.fn(async (_state, formData: FormData) => ({
+    ok: true,
+    newMemberId: 'm4',
+    newMemberName: String(formData.get('name')),
+    newMemberAccent: String(formData.get('accent')),
+  })),
+}));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
 import { IdentityDialog, type IdentityOption } from './IdentityDialog';
@@ -43,6 +51,21 @@ describe('IdentityDialog', () => {
     for (const name of ['Dillon', 'Angel', 'Bradley', 'Visitor']) {
       expect(radio(name)).toBeInTheDocument();
     }
+    expect(screen.getByRole('button', { name: /New user/ })).toBeInTheDocument();
+  });
+
+  it('creates a new user in the modal and offers to sign in as them', async () => {
+    const user = userEvent.setup();
+    setup();
+
+    await user.click(screen.getByRole('button', { name: /New user/ }));
+    await user.type(screen.getByLabelText('Name'), 'Casey');
+    await user.click(screen.getByRole('button', { name: 'Add person' }));
+
+    expect(await screen.findByRole('heading', { name: 'Casey is in' })).toBeInTheDocument();
+    expect(radio('Casey')).toBeChecked();
+    expect(screen.getByRole('button', { name: 'Log in as Casey' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Stay visitor' })).toBeInTheDocument();
   });
 
   it('stays shut until told to open', () => {

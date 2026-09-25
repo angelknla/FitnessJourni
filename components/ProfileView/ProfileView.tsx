@@ -1,0 +1,297 @@
+'use client';
+
+import { IdentityDialog } from '@components/IdentityDialog/IdentityDialog';
+import { accentHex } from '@data/fitnessData';
+import { useRouter } from 'next/navigation';
+import { type CSSProperties, useActionState, useState, useTransition } from 'react';
+import {
+    type ActionState,
+    saveProfileDetails,
+    saveWeightMeasurement,
+} from '@/app/actions';
+import { lock } from '@/app/auth-actions';
+import { calculateBmi } from '@/lib/data/profile';
+import type { Member, MemberProfile, WeightMeasurement } from '@/types/fitness';
+
+import styles from './ProfileView.module.css';
+
+interface ProfileViewProps {
+    members: Member[];
+    member: Member | null;
+    profile: MemberProfile | null;
+    measurements: WeightMeasurement[];
+    currentMonth: string;
+}
+
+const initial: ActionState = { ok: false };
+const monthLabel = new Intl.DateTimeFormat('en-GB', { month: 'short', year: 'numeric' });
+
+export const ProfileView = ({
+    members,
+    member,
+    profile,
+    measurements,
+    currentMonth,
+}: ProfileViewProps) => {
+    const router = useRouter();
+    const [identityOpen, setIdentityOpen] = useState(false);
+    const [signingOut, startSignOut] = useTransition();
+    const [profileState, profileAction, profilePending] = useActionState(
+        saveProfileDetails,
+        initial
+    );
+    const [weightState, weightAction, weightPending] = useActionState(
+        saveWeightMeasurement,
+        initial
+    );
+
+    const currentWeight = measurements.at(-1)?.weightKg ?? null;
+    const currentBmi = calculateBmi(currentWeight, profile?.heightCm ?? null);
+    const chartValues = [
+        ...measurements.map((measurement) => measurement.weightKg),
+        profile?.targetWeightKg,
+    ].filter((value): value is number => value !== null && value !== undefined);
+    const chartMin = chartValues.length > 0 ? Math.min(...chartValues) - 3 : 0;
+    const chartMax = chartValues.length > 0 ? Math.max(...chartValues) + 3 : 1;
+    const chartPosition = (weight: number) =>
+        Math.max(0, Math.min(100, ((weight - chartMin) / (chartMax - chartMin)) * 100));
+
+    const signOut = () =>
+        startSignOut(async () => {
+            await lock();
+            router.push('/');
+            router.refresh();
+        });
+
+    if (!member || !profile) {
+        return (
+            <div className={styles.visitor}>
+                <div className={styles.avatar}>?</div>
+                <h2>Choose your profile</h2>
+                <p>Pick yourself to view and update your measurements.</p>
+                <button type="button" onClick={() => setIdentityOpen(true)}>
+                    Who are you?
+                </button>
+                <IdentityDialog
+                    members={members}
+                    viewerId={null}
+                    open={identityOpen}
+                    onClose={() => setIdentityOpen(false)}
+                />
+                <button type="button" className={styles.logout} onClick={signOut} disabled={signingOut}>
+                    {signingOut ? 'Logging out…' : 'Log out'}
+                </button>
+            </div>
+        );
+    }
+
+    const accent = accentHex[member.accent];
+    const weightDifference =
+        currentWeight !== null && profile.targetWeightKg !== null
+            ? Math.abs(currentWeight - profile.targetWeightKg)
+            : null;
+
+    return (
+        <div className={styles.profile} style={{ '--profile-accent': accent } as CSSProperties}>
+            <section className={styles.identity} aria-labelledby="profile-name">
+                <div className={styles.avatar}>{member.name.charAt(0).toUpperCase()}</div>
+                <div>
+                    <p>Your profile</p>
+                    <h2 id="profile-name">{member.name}</h2>
+                </div>
+            </section>
+
+            <section className={styles.stats} aria-label="Current measurements">
+                <div>
+                    <span>Weight</span>
+                    <strong>{currentWeight === null ? '—' : `${currentWeight.toFixed(1)} kg`}</strong>
+                    <small>
+                        {weightDifference === null ? 'Set a goal below' : `${weightDifference.toFixed(1)} kg to goal`}
+                    </small>
+                </div>
+                <div>
+                    <span>BMI</span>
+                    <strong>{currentBmi?.toFixed(1) ?? '—'}</strong>
+                    <small>{profile.targetBmi ? `Goal ${profile.targetBmi.toFixed(1)}` : 'Set a goal below'}</small>
+                </div>
+                <div>
+                    <span>Height</span>
+                    <strong>{profile.heightCm ? `${profile.heightCm} cm` : '—'}</strong>
+                    <small>{profile.age ? `Age ${profile.age}` : 'Add your details'}</small>
+                </div>
+            </section>
+
+            <section className={styles.section} aria-labelledby="weight-history-heading">
+                <div className={styles.sectionHead}>
+                    <div>
+                        <p>Progress</p>
+                        <h2 id="weight-history-heading">Monthly weight</h2>
+                    </div>
+                    {profile.targetWeightKg && <span>Goal {profile.targetWeightKg.toFixed(1)} kg</span>}
+                </div>
+
+                {measurements.length > 0 ? (
+                    <ol className={styles.history}>
+                        {measurements.slice(-12).map((measurement) => (
+                            <li key={measurement.month}>
+                                <time dateTime={measurement.month}>
+                                    {monthLabel.format(new Date(`${measurement.month}T12:00:00`))}
+                                </time>
+                                <div className={styles.track}>
+                                    <span
+                                        className={styles.weightMark}
+                                        style={{ left: `${chartPosition(measurement.weightKg)}%` }}
+                                    />
+                                    {profile.targetWeightKg && (
+                                        <span
+                                            className={styles.goalMark}
+                                            style={{ left: `${chartPosition(profile.targetWeightKg)}%` }}
+                                        />
+                                    )}
+                                </div>
+                                <strong>{measurement.weightKg.toFixed(1)} kg</strong>
+                            </li>
+                        ))}
+                    </ol>
+                ) : (
+                    <p className={styles.empty}>Add this month’s weight to begin tracking.</p>
+                )}
+
+                <form className={styles.inlineForm} action={weightAction}>
+                    <input type="hidden" name="memberId" value={member.id} />
+                    <label htmlFor="profile-month">
+                        <span>Month</span>
+                        <input id="profile-month" type="month" name="month" defaultValue={currentMonth} required />
+                    </label>
+                    <label htmlFor="profile-weight">
+                        <span>Weight</span>
+                        <span className={styles.inputUnit}>
+                            <input
+                                id="profile-weight"
+                                type="number"
+                                name="weightKg"
+                                min={25}
+                                max={500}
+                                step={0.1}
+                                defaultValue={measurements.find((item) => item.month.startsWith(currentMonth))?.weightKg}
+                                required
+                            />
+                            <span>kg</span>
+                        </span>
+                    </label>
+                    <button type="submit" disabled={weightPending}>
+                        {weightPending ? 'Saving…' : 'Save month'}
+                    </button>
+                    {(weightState.error || weightState.message) && (
+                        <p className={weightState.error ? styles.error : styles.success} role="status">
+                            {weightState.error ?? weightState.message}
+                        </p>
+                    )}
+                </form>
+            </section>
+
+            <section className={styles.section} aria-labelledby="details-heading">
+                <div className={styles.sectionHead}>
+                    <div>
+                        <p>Measurements & goals</p>
+                        <h2 id="details-heading">Your targets</h2>
+                    </div>
+                </div>
+
+                <form className={styles.detailsForm} action={profileAction}>
+                    <input type="hidden" name="memberId" value={member.id} />
+                    <label htmlFor="profile-age">
+                        <span>Age</span>
+                        <input
+                            id="profile-age"
+                            type="number"
+                            name="age"
+                            min={13}
+                            max={120}
+                            defaultValue={profile.age ?? ''}
+                        />
+                    </label>
+                    <label htmlFor="profile-height">
+                        <span>Height</span>
+                        <span className={styles.inputUnit}>
+                            <input
+                                id="profile-height"
+                                type="number"
+                                name="heightCm"
+                                min={100}
+                                max={250}
+                                step={0.1}
+                                defaultValue={profile.heightCm ?? ''}
+                            />
+                            <span>cm</span>
+                        </span>
+                    </label>
+                    <label htmlFor="profile-weight-goal">
+                        <span>Weight goal</span>
+                        <span className={styles.inputUnit}>
+                            <input
+                                id="profile-weight-goal"
+                                type="number"
+                                name="targetWeightKg"
+                                min={25}
+                                max={500}
+                                step={0.1}
+                                defaultValue={profile.targetWeightKg ?? ''}
+                            />
+                            <span>kg</span>
+                        </span>
+                    </label>
+                    <label htmlFor="profile-bmi-goal">
+                        <span>BMI goal</span>
+                        <input
+                            id="profile-bmi-goal"
+                            type="number"
+                            name="targetBmi"
+                            min={10}
+                            max={60}
+                            step={0.1}
+                            defaultValue={profile.targetBmi ?? ''}
+                        />
+                    </label>
+                    <div className={styles.formActions}>
+                        <button type="submit" disabled={profilePending}>
+                            {profilePending ? 'Saving…' : 'Save profile'}
+                        </button>
+                        {(profileState.error || profileState.message) && (
+                            <p className={profileState.error ? styles.error : styles.success} role="status">
+                                {profileState.error ?? profileState.message}
+                            </p>
+                        )}
+                    </div>
+                </form>
+            </section>
+
+            <section className={styles.account} aria-labelledby="account-heading">
+                <h2 id="account-heading">Account</h2>
+                <div className={styles.accountActions}>
+                    <button
+                        type="button"
+                        className={styles.switchUser}
+                        onClick={() => setIdentityOpen(true)}
+                    >
+                        Who are you?
+                    </button>
+                    <button
+                        type="button"
+                        className={styles.logout}
+                        onClick={signOut}
+                        disabled={signingOut}
+                    >
+                        {signingOut ? 'Logging out…' : 'Log out'}
+                    </button>
+                </div>
+                <IdentityDialog
+                    members={members}
+                    viewerId={member.id}
+                    open={identityOpen}
+                    onClose={() => setIdentityOpen(false)}
+                />
+            </section>
+        </div>
+    );
+};

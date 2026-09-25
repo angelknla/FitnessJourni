@@ -49,6 +49,37 @@ alter table public.members add constraint members_accent_check
 alter table public.members
   add column if not exists target_workouts_per_week integer not null default 4;
 
+alter table public.members
+  add column if not exists age integer,
+  add column if not exists height_cm numeric(5, 2),
+  add column if not exists target_weight_kg numeric(5, 2),
+  add column if not exists target_bmi numeric(4, 1);
+
+alter table public.members drop constraint if exists members_age_check;
+alter table public.members add constraint members_age_check
+  check (age is null or age between 13 and 120);
+alter table public.members drop constraint if exists members_height_cm_check;
+alter table public.members add constraint members_height_cm_check
+  check (height_cm is null or height_cm between 100 and 250);
+alter table public.members drop constraint if exists members_target_weight_kg_check;
+alter table public.members add constraint members_target_weight_kg_check
+  check (target_weight_kg is null or target_weight_kg between 25 and 500);
+alter table public.members drop constraint if exists members_target_bmi_check;
+alter table public.members add constraint members_target_bmi_check
+  check (target_bmi is null or target_bmi between 10 and 60);
+
+create table if not exists public.weight_measurements (
+  member_id   uuid not null references public.members (id) on delete cascade,
+  month_start date not null,
+  weight_kg   numeric(5, 2) not null check (weight_kg between 25 and 500),
+  updated_at  timestamptz not null default now(),
+  primary key (member_id, month_start),
+  check (month_start = date_trunc('month', month_start)::date)
+);
+
+create index if not exists weight_measurements_month_idx
+  on public.weight_measurements (member_id, month_start desc);
+
 -- ----------------------------------------------------------------------------
 -- daily_logs
 -- One row per member per day. The unique constraint is what makes the quick-entry
@@ -86,6 +117,14 @@ create table if not exists public.sessions (
 
 create index if not exists sessions_when_idx on public.sessions (session_date, session_time);
 
+create table if not exists public.session_rsvps (
+  session_id uuid not null references public.sessions (id) on delete cascade,
+  member_id  uuid not null references public.members (id) on delete cascade,
+  status     text not null check (status in ('going', 'not_going')),
+  updated_at timestamptz not null default now(),
+  primary key (session_id, member_id)
+);
+
 -- ----------------------------------------------------------------------------
 -- workouts — one row per session done, so the tallies are just a count.
 --
@@ -113,6 +152,36 @@ create index if not exists workouts_member_date_idx
 create index if not exists workouts_date_idx on public.workouts (workout_date desc);
 
 -- ----------------------------------------------------------------------------
+-- runs — one group run with a normalized list of members who attended.
+-- Pace is derived from duration and distance so the three figures cannot drift.
+-- ----------------------------------------------------------------------------
+create table if not exists public.runs (
+  id               uuid primary key default gen_random_uuid(),
+  run_date         date not null,
+  duration_minutes integer not null check (duration_minutes > 0 and duration_minutes <= 1440),
+  distance_km      numeric(6, 2) not null check (distance_km > 0 and distance_km <= 1000),
+  pace_seconds_per_km integer check (pace_seconds_per_km > 0 and pace_seconds_per_km <= 7200),
+  created_by       uuid references public.members (id) on delete set null,
+  created_at       timestamptz not null default now()
+);
+
+alter table public.runs
+  add column if not exists pace_seconds_per_km integer;
+
+alter table public.runs drop constraint if exists runs_pace_seconds_per_km_check;
+alter table public.runs add constraint runs_pace_seconds_per_km_check
+  check (pace_seconds_per_km is null or pace_seconds_per_km between 1 and 7200);
+
+create table if not exists public.run_attendees (
+  run_id    uuid not null references public.runs (id) on delete cascade,
+  member_id uuid not null references public.members (id) on delete cascade,
+  primary key (run_id, member_id)
+);
+
+create index if not exists runs_date_idx on public.runs (run_date desc);
+create index if not exists run_attendees_member_idx on public.run_attendees (member_id);
+
+-- ----------------------------------------------------------------------------
 -- Row Level Security
 --
 -- The anon key is used ONLY from the Next.js server (deliberately not exposed as
@@ -123,17 +192,29 @@ create index if not exists workouts_date_idx on public.workouts (workout_date de
 alter table public.members    enable row level security;
 alter table public.daily_logs enable row level security;
 alter table public.sessions   enable row level security;
+alter table public.session_rsvps enable row level security;
 alter table public.workouts   enable row level security;
+alter table public.runs       enable row level security;
+alter table public.run_attendees enable row level security;
+alter table public.weight_measurements enable row level security;
 
 drop policy if exists members_rw    on public.members;
 drop policy if exists daily_logs_rw on public.daily_logs;
 drop policy if exists sessions_rw   on public.sessions;
+drop policy if exists session_rsvps_rw on public.session_rsvps;
 drop policy if exists workouts_rw   on public.workouts;
+drop policy if exists runs_rw       on public.runs;
+drop policy if exists run_attendees_rw on public.run_attendees;
+drop policy if exists weight_measurements_rw on public.weight_measurements;
 
 create policy members_rw    on public.members    for all to anon, authenticated using (true) with check (true);
 create policy daily_logs_rw on public.daily_logs for all to anon, authenticated using (true) with check (true);
 create policy sessions_rw   on public.sessions   for all to anon, authenticated using (true) with check (true);
+create policy session_rsvps_rw on public.session_rsvps for all to anon, authenticated using (true) with check (true);
 create policy workouts_rw   on public.workouts   for all to anon, authenticated using (true) with check (true);
+create policy runs_rw       on public.runs       for all to anon, authenticated using (true) with check (true);
+create policy run_attendees_rw on public.run_attendees for all to anon, authenticated using (true) with check (true);
+create policy weight_measurements_rw on public.weight_measurements for all to anon, authenticated using (true) with check (true);
 
 -- ----------------------------------------------------------------------------
 -- Seed the three of you. Re-running will not create duplicates.

@@ -1,6 +1,6 @@
 import { minutesOfTime, toShortTime } from '@utils/date';
 import { getSupabase } from '@/lib/supabase/server';
-import type { ActivityType, TrainingSession } from '@/types/fitness';
+import type { ActivityType, RsvpStatus, TrainingSession } from '@/types/fitness';
 
 export interface SessionRow {
   id: string;
@@ -9,6 +9,7 @@ export interface SessionRow {
   activity: string;
   note: string | null;
   created_by: string | null;
+  session_rsvps?: { member_id: string; status: string }[];
 }
 
 export const mapSession = (row: SessionRow): TrainingSession => ({
@@ -19,6 +20,10 @@ export const mapSession = (row: SessionRow): TrainingSession => ({
   activity: row.activity as ActivityType,
   note: row.note,
   createdBy: row.created_by,
+  rsvps: (row.session_rsvps ?? []).map((rsvp) => ({
+    memberId: rsvp.member_id,
+    status: rsvp.status as RsvpStatus,
+  })),
 });
 
 /** Sessions from `fromDate` onwards, soonest first. */
@@ -30,7 +35,7 @@ export const getUpcomingSessions = async (fromDate: string): Promise<TrainingSes
 
   const { data, error } = await supabase
     .from('sessions')
-    .select('*')
+    .select('*, session_rsvps(member_id, status)')
     .gte('session_date', fromDate)
     .order('session_date', { ascending: true })
     .order('session_time', { ascending: true });

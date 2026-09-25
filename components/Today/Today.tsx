@@ -12,7 +12,7 @@ import { RemoveMemberDialog } from '@components/RemoveMemberDialog/RemoveMemberD
 import { WorkoutLogger } from '@components/WorkoutLogger/WorkoutLogger';
 import { accentHex } from '@data/fitnessData';
 import Link from 'next/link';
-import { type CSSProperties, useState } from 'react';
+import { type CSSProperties, type TouchEvent, useRef, useState } from 'react';
 import { emptyLog } from '@/lib/data/logs';
 import { workoutsForToday } from '@/lib/data/workouts';
 import { formatCount, formatMl } from '@/lib/progress';
@@ -76,6 +76,7 @@ export const Today = ({
   const [addOpen, setAddOpen] = useState(false);
   const [editingTargets, setEditingTargets] = useState(false);
   const [removeOpen, setRemoveOpen] = useState(false);
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
 
   // A deleted or renamed member shouldn't leave the panel pointing at nothing.
   const active = members.find((member) => member.id === activeId) ?? members[0];
@@ -90,6 +91,45 @@ export const Today = ({
    */
   const you = viewerId ? members.find((member) => member.id === viewerId) : undefined;
   const tabOrder = you ? [you, ...members.filter((member) => member.id !== you.id)] : members;
+
+  const selectMember = (id: string) => {
+    setActiveId(id);
+    setEditingTargets(false);
+    setRemoveOpen(false);
+  };
+
+  const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    if (event.target instanceof Element && event.target.closest('button, input, select, textarea')) {
+      touchStart.current = null;
+      return;
+    }
+
+    const touch = event.touches[0];
+    touchStart.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
+  };
+
+  const handleTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
+    const start = touchStart.current;
+    const touch = event.changedTouches[0];
+    touchStart.current = null;
+
+    if (!start || !touch || tabOrder.length < 2) {
+      return;
+    }
+
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    if (Math.abs(deltaX) < 50 || Math.abs(deltaX) <= Math.abs(deltaY)) {
+      return;
+    }
+
+    const index = tabOrder.findIndex((member) => member.id === active.id);
+    const offset = deltaX < 0 ? 1 : -1;
+    const next = tabOrder[(index + offset + tabOrder.length) % tabOrder.length];
+    if (next) {
+      selectMember(next.id);
+    }
+  };
 
   if (!active) {
     return (
@@ -124,11 +164,7 @@ export const Today = ({
       <MemberTabs
         members={tabOrder}
         activeId={active.id}
-        onSelect={(id) => {
-          setActiveId(id);
-          setEditingTargets(false);
-          setRemoveOpen(false);
-        }}
+        onSelect={selectMember}
         onAdd={() => setAddOpen((open) => !open)}
         addOpen={addOpen}
         panelId={PANEL_ID}
@@ -190,7 +226,14 @@ export const Today = ({
             {formatCount(targets.steps)} goal.
           </p>
 
-          <div className={styles.macros}>
+          <div
+            className={styles.macros}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={() => {
+              touchStart.current = null;
+            }}
+          >
             <div className={styles.macrosHead}>
               <h2 className={styles.sectionHeading}>Macros</h2>
               {canEdit && (
@@ -230,13 +273,11 @@ export const Today = ({
 
           {canEdit ? (
             <QuickEntry member={active} log={log} date={date} />
-          ) : (
+          ) : !viewerId ? (
             <p className={styles.readOnly}>
-              {viewerId
-                ? `You're signed in as someone else, so ${active.name}'s numbers are read-only here.`
-                : `You're looking around as a visitor. Pick yourself in the header to log a day.`}
+              You&apos;re looking around as a visitor. Pick yourself in the header to log a day.
             </p>
-          )}
+          ) : null}
         </section>
 
         <section className={styles.panel}>
@@ -256,7 +297,7 @@ export const Today = ({
         </section>
       </div>
 
-      <CompareStrip members={members} logs={logs} activeMemberId={active.id} />
+      <CompareStrip members={tabOrder} logs={logs} activeMemberId={active.id} />
     </div>
   );
 };

@@ -79,6 +79,10 @@
   gap: 0.7rem;
 }
 
+.macros {
+  touch-action: pan-y;
+}
+
 .macrosHead {
   display: flex;
   align-items: center;

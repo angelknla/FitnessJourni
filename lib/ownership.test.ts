@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ADMIN_MEMBER_NAME, canEditMember, canRemoveMembers } from './ownership';
+import { ADMIN_MEMBER_NAME, canEditMember, canRemoveMembers, viewerFirst } from './ownership';
 import type { Viewer } from './session';
 
 const signedIn: Viewer = { memberId: 'm1', chosen: true };
@@ -59,5 +59,19 @@ describe('canRemoveMembers', () => {
     const scruffy = [{ id: 'm2', name: `  ${ADMIN_MEMBER_NAME.toUpperCase()} ` }];
 
     expect(canRemoveMembers({ memberId: 'm2', chosen: true }, scruffy)).toBe(true);
+  });
+});
+
+describe('viewerFirst', () => {
+  const members = [{ id: 'm1' }, { id: 'm2' }, { id: 'm3' }];
+
+  it('moves the viewer first without mutating the original list', () => {
+    expect(viewerFirst(members, 'm2').map((member) => member.id)).toEqual(['m2', 'm1', 'm3']);
+    expect(members.map((member) => member.id)).toEqual(['m1', 'm2', 'm3']);
+  });
+
+  it('keeps stored order for visitors and missing members', () => {
+    expect(viewerFirst(members, null)).toEqual(members);
+    expect(viewerFirst(members, 'gone')).toEqual(members);
   });
 });

@@ -64,6 +64,36 @@
   overflow-wrap: anywhere;
 }
 
+.responses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.75rem;
+  margin-top: 0.25rem;
+  font-size: 0.74rem;
+  color: var(--c-ink-soft);
+}
+
+.rsvp {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+}
+
+.rsvp button {
+  min-height: 1.8rem;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.72rem;
+  color: var(--c-ink-muted);
+  background: transparent;
+  border-color: var(--c-border);
+}
+
+.rsvp button[data-active="true"] {
+  color: var(--c-surface);
+  background: var(--c-ink);
+  border-color: var(--c-ink);
+}
+
 .error {
   font-size: 0.74rem;
   color: var(--c-critical);

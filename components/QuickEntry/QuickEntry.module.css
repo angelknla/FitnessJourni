@@ -1,3 +1,4 @@
+.wrapper,
 .form {
   min-width: 0;
   display: flex;
@@ -5,20 +6,29 @@
   gap: 1rem;
 }
 
-.fieldset {
-  margin: 0;
+.toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
   padding: 0;
-  border: 0;
-}
-
-.legend {
-  padding: 0;
-  margin-bottom: 0.8rem;
   font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--c-ink-muted);
+  background: transparent;
+  border: 0;
+}
+
+.toggle:hover:not(:disabled) {
+  color: var(--c-ink);
+  background: transparent;
+}
+
+.toggle svg {
+  flex-shrink: 0;
 }
 
 .grid {

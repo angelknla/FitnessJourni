@@ -1,6 +1,7 @@
 'use client';
 
-import { useActionState } from 'react';
+import { CrossIcon, PlusIcon } from '@components/Icons/Icons';
+import { useActionState, useEffect, useState } from 'react';
 import { type ActionState, saveDailyLog } from '@/app/actions';
 import type { DailyLog, Member } from '@/types/fitness';
 
@@ -30,46 +31,79 @@ const fields = [
 
 export const QuickEntry = ({ member, log, date }: QuickEntryProps) => {
   const [state, formAction, isPending] = useActionState(saveDailyLog, initial);
+  const [open, setOpen] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const formId = `daily-log-${member.id}`;
+
+  useEffect(() => {
+    if (state.ok) {
+      setDirty(false);
+    }
+  }, [state]);
 
   return (
-    // Remounts on member change so the inputs reload with that person's numbers.
-    <form className={styles.form} action={formAction} key={`${member.id}-${date}`}>
-      <input type="hidden" name="memberId" value={member.id} />
-      <input type="hidden" name="date" value={date} />
+    <div className={styles.wrapper}>
+      <button
+        type="button"
+        className={styles.toggle}
+        aria-expanded={open}
+        aria-controls={formId}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <span>Log {member.name}'s day</span>
+        {open ? <CrossIcon /> : <PlusIcon />}
+      </button>
 
-      <fieldset className={styles.fieldset}>
-        <legend className={styles.legend}>Log {member.name}'s day</legend>
+      {open && (
+        <form
+          className={styles.form}
+          action={formAction}
+          id={formId}
+          key={`${member.id}-${date}`}
+          onChange={(event) => {
+            const elements = event.currentTarget.elements;
+            setDirty(
+              fields.some((field) => {
+                const input = elements.namedItem(field.name);
+                return input instanceof HTMLInputElement && input.value !== show(log[field.name]);
+              })
+            );
+          }}
+        >
+          <input type="hidden" name="memberId" value={member.id} />
+          <input type="hidden" name="date" value={date} />
 
-        <div className={styles.grid}>
-          {fields.map((field) => (
-            <label className={styles.field} key={field.name}>
-              <span className={styles.fieldLabel}>{field.label}</span>
-              <input
-                type="number"
-                name={field.name}
-                inputMode="numeric"
-                min={0}
-                max={field.max}
-                step={field.step}
-                placeholder="0"
-                defaultValue={show(log[field.name])}
-              />
-            </label>
-          ))}
-        </div>
-      </fieldset>
+          <div className={styles.grid}>
+            {fields.map((field) => (
+              <label className={styles.field} key={field.name}>
+                <span className={styles.fieldLabel}>{field.label}</span>
+                <input
+                  type="number"
+                  name={field.name}
+                  inputMode="numeric"
+                  min={0}
+                  max={field.max}
+                  step={field.step}
+                  placeholder="0"
+                  defaultValue={show(log[field.name])}
+                />
+              </label>
+            ))}
+          </div>
 
-      <div className={styles.actions}>
-        <button type="submit" className={styles.submit} disabled={isPending}>
-          {isPending ? 'Saving…' : 'Save'}
-        </button>
+          <div className={styles.actions}>
+            <button type="submit" className={styles.submit} disabled={isPending || !dirty}>
+              {isPending ? 'Saving…' : 'Save'}
+            </button>
 
-        {state.error && (
-          <p className={styles.error} role="alert">
-            {state.error}
-          </p>
-        )}
-      </div>
-    </form>
+            {state.error && (
+              <p className={styles.error} role="alert">
+                {state.error}
+              </p>
+            )}
+          </div>
+        </form>
+      )}
+    </div>
   );
 };

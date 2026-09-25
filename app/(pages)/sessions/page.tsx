@@ -8,6 +8,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getMembers } from '@/lib/data/members';
 import { getUpcomingSessions } from '@/lib/data/sessions';
+import { viewerFirst } from '@/lib/ownership';
 import { isUnlocked, readViewer } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
 
@@ -36,12 +37,13 @@ const SessionsPage = async () => {
     getUpcomingSessions(today),
     readViewer(),
   ]);
+  const orderedMembers = viewerFirst(members, viewer.memberId);
 
   return (
     <div className={styles.page}>
       <Link href="/" className={styles.back}>
         <ArrowLeftIcon />
-        Today
+        Home
       </Link>
 
       <header className={styles.head}>
@@ -49,11 +51,11 @@ const SessionsPage = async () => {
         <h1 className={styles.title}>What's coming up</h1>
       </header>
 
-      <SessionList sessions={sessions} members={members} />
+      <SessionList sessions={sessions} members={orderedMembers} viewerId={viewer.memberId} />
 
       <section className={styles.booking}>
         <h2 className={styles.sectionHeading}>Book one</h2>
-        <SessionForm members={members} viewerId={viewer.memberId} />
+        <SessionForm members={orderedMembers} viewerId={viewer.memberId} />
       </section>
     </div>
   );
