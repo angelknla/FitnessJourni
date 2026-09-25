@@ -6,6 +6,7 @@ import { getUpcomingSessions, mapSession, type SessionRow } from './sessions';
 const memberRow: MemberRow = {
   id: 'm1',
   name: 'Dillon',
+  surname: null,
   accent: 'blue',
   avatar_path: null,
   sort_order: 0,
@@ -23,6 +24,8 @@ describe('mapMember', () => {
   it('converts a row into camelCase with nested targets', () => {
     expect(mapMember(memberRow)).toEqual({
       id: 'm1',
+      firstName: 'Dillon',
+      surname: null,
       name: 'Dillon',
       accent: 'blue',
       avatarPath: null,
@@ -37,6 +40,14 @@ describe('mapMember', () => {
         waterMl: 2500,
         workoutsPerWeek: 4,
       },
+    });
+  });
+
+  it('combines first name and surname for display', () => {
+    expect(mapMember({ ...memberRow, surname: 'Smith' })).toMatchObject({
+      firstName: 'Dillon',
+      surname: 'Smith',
+      name: 'Dillon Smith',
     });
   });
 

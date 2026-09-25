@@ -6,7 +6,14 @@ import { RemoveMemberDialog } from '@components/RemoveMemberDialog/RemoveMemberD
 import { avatarOptions, avatarUploadTypes, isAvatarPath } from '@data/avatarData';
 import { accentHex } from '@data/fitnessData';
 import { useRouter } from 'next/navigation';
-import { type CSSProperties, useActionState, useEffect, useState, useTransition } from 'react';
+import {
+    type CSSProperties,
+    useActionState,
+    useEffect,
+    useRef,
+    useState,
+    useTransition,
+} from 'react';
 import {
     type ActionState,
     saveAvatar,
@@ -44,6 +51,10 @@ export const ProfileView = ({
     const [removeOpen, setRemoveOpen] = useState(false);
     const [avatarOpen, setAvatarOpen] = useState(false);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+    const [selectedAvatar, setSelectedAvatar] = useState(
+        member?.avatarPath && !isAvatarPath(member.avatarPath) ? 'upload' : (member?.avatarPath ?? '')
+    );
+    const avatarFileRef = useRef<HTMLInputElement>(null);
     const [signingOut, startSignOut] = useTransition();
     const [profileState, profileAction, profilePending] = useActionState(
         saveProfileDetails,
@@ -115,6 +126,13 @@ export const ProfileView = ({
     const uploadedAvatar = member.avatarPath && !isAvatarPath(member.avatarPath)
         ? member.avatarPath
         : null;
+    const chooseAvatar = (value: string) => {
+        setSelectedAvatar(value);
+        setAvatarPreview(null);
+        if (avatarFileRef.current) {
+            avatarFileRef.current.value = '';
+        }
+    };
     const weightDifference =
         currentWeight !== null && profile.targetWeightKg !== null
             ? Math.abs(currentWeight - profile.targetWeightKg)
@@ -172,7 +190,8 @@ export const ProfileView = ({
                                     type="radio"
                                     name="avatarPath"
                                     value=""
-                                    defaultChecked={!member.avatarPath}
+                                    checked={selectedAvatar === ''}
+                                    onChange={() => chooseAvatar('')}
                                 />
                                 <span className={styles.initialOption} aria-hidden="true">
                                     {member.name.charAt(0).toUpperCase()}
@@ -185,17 +204,44 @@ export const ProfileView = ({
                                         type="radio"
                                         name="avatarPath"
                                         value={option.path}
-                                        defaultChecked={member.avatarPath === option.path}
+                                        checked={selectedAvatar === option.path}
+                                        onChange={() => chooseAvatar(option.path)}
                                     />
                                     <img src={option.path} alt="" />
                                     <span>{option.label}</span>
                                 </label>
                             ))}
-                            <label
+                            <div
                                 className={styles.avatarOption}
-                                data-selected={avatarPreview || uploadedAvatar ? true : undefined}
+                                data-selected={selectedAvatar === 'upload' || undefined}
                             >
                                 <input
+                                    type="radio"
+                                    name="avatarPath"
+                                    value={uploadedAvatar ?? ''}
+                                    aria-label="Uploaded photo"
+                                    checked={selectedAvatar === 'upload'}
+                                    onChange={() => {
+                                        if (uploadedAvatar || avatarPreview) {
+                                            setSelectedAvatar('upload');
+                                        } else {
+                                            avatarFileRef.current?.click();
+                                        }
+                                    }}
+                                />
+                                <label htmlFor="avatar-upload" className={styles.uploadLabel}>
+                                    {avatarPreview || uploadedAvatar ? (
+                                        <img src={avatarPreview ?? uploadedAvatar ?? ''} alt="" />
+                                    ) : (
+                                        <span className={styles.uploadOption} aria-hidden="true">
+                                            <UploadIcon />
+                                        </span>
+                                    )}
+                                    <span>Upload photo</span>
+                                </label>
+                                <input
+                                    ref={avatarFileRef}
+                                    id="avatar-upload"
                                     className={styles.uploadInput}
                                     type="file"
                                     name="avatarFile"
@@ -203,20 +249,12 @@ export const ProfileView = ({
                                     onChange={(event) => {
                                         const file = event.currentTarget.files?.[0];
                                         setAvatarPreview(file ? URL.createObjectURL(file) : null);
+                                        if (file) {
+                                            setSelectedAvatar('upload');
+                                        }
                                     }}
                                 />
-                                {uploadedAvatar && (
-                                    <input type="hidden" name="avatarPath" value={uploadedAvatar} />
-                                )}
-                                {avatarPreview || uploadedAvatar ? (
-                                    <img src={avatarPreview ?? uploadedAvatar ?? ''} alt="" />
-                                ) : (
-                                    <span className={styles.uploadOption} aria-hidden="true">
-                                        <UploadIcon />
-                                    </span>
-                                )}
-                                <span>Upload photo</span>
-                            </label>
+                            </div>
                         </div>
                     </fieldset>
                     <div className={styles.avatarActions}>
@@ -331,6 +369,29 @@ export const ProfileView = ({
 
                 <form className={styles.detailsForm} action={profileAction}>
                     <input type="hidden" name="memberId" value={member.id} />
+                    <label htmlFor="profile-name-input">
+                        <span>First name</span>
+                        <input
+                            id="profile-name-input"
+                            type="text"
+                            name="name"
+                            maxLength={50}
+                            defaultValue={member.firstName ?? member.name}
+                            autoComplete="given-name"
+                            required
+                        />
+                    </label>
+                    <label htmlFor="profile-surname">
+                        <span>Surname</span>
+                        <input
+                            id="profile-surname"
+                            type="text"
+                            name="surname"
+                            maxLength={50}
+                            defaultValue={member.surname ?? ''}
+                            autoComplete="family-name"
+                        />
+                    </label>
                     <label htmlFor="profile-age">
                         <span>Age</span>
                         <input

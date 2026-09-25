@@ -104,6 +104,7 @@ export const IdentityDialog = ({
   useEffect(() => {
     if (state.ok) {
       closeDialog();
+      window.scrollTo({ top: 0, behavior: 'instant' });
       router.refresh();
     }
   }, [state.ok, closeDialog, router]);

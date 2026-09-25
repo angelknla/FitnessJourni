@@ -46,6 +46,8 @@ const profile: MemberProfile = {
 };
 
 beforeAll(() => {
+    URL.createObjectURL = vi.fn(() => 'blob:avatar-preview');
+    URL.revokeObjectURL = vi.fn();
     if (!HTMLDialogElement.prototype.showModal) {
         HTMLDialogElement.prototype.showModal = function showModal() {
             this.open = true;
@@ -86,6 +88,8 @@ describe('ProfileView', () => {
         );
 
         expect(screen.getByLabelText('Age')).toHaveValue(34);
+        expect(screen.getByLabelText('First name')).toHaveValue('Dillon');
+        expect(screen.getByLabelText('Surname')).toHaveValue('');
         expect(screen.getByLabelText(/^Height/)).toHaveValue(180);
         expect(screen.getByLabelText(/^Weight goal/)).toHaveValue(75);
         expect(screen.getByLabelText('BMI goal')).toHaveValue(23);
@@ -160,12 +164,17 @@ describe('ProfileView', () => {
         await user.click(screen.getByRole('button', { name: 'Choose profile picture' }));
 
         expect(screen.getByRole('radio', { name: 'Initial' })).toBeChecked();
-        expect(screen.getAllByRole('radio')).toHaveLength(7);
-        const upload = screen.getByLabelText('Upload photo');
+        expect(screen.getAllByRole('radio')).toHaveLength(8);
+        expect(screen.getByRole('radio', { name: 'Uploaded photo' })).not.toBeChecked();
+        const upload = screen.getByLabelText('Upload photo', { selector: 'input[type="file"]' });
         expect(upload).toHaveAttribute('type', 'file');
         expect(upload).toHaveAttribute('accept', 'image/jpeg,image/png,image/webp');
-        expect(upload.closest('div')?.lastElementChild).toBe(upload.closest('label'));
         expect(screen.getByRole('button', { name: 'Save picture' })).toBeInTheDocument();
+
+        const file = new File(['avatar'], 'avatar.png', { type: 'image/png' });
+        await user.upload(upload, file);
+        expect(screen.getByRole('radio', { name: 'Uploaded photo' })).toBeChecked();
+        expect(screen.getByRole('radio', { name: 'Initial' })).not.toBeChecked();
 
         await user.click(screen.getByRole('button', { name: 'Close profile picture chooser' }));
         expect(screen.queryByRole('group', { name: 'Profile picture' })).not.toBeInTheDocument();

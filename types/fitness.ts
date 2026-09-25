@@ -33,6 +33,8 @@ export interface MemberTargets {
 
 export interface Member {
   id: string;
+  firstName?: string;
+  surname?: string | null;
   name: string;
   accent: AccentName;
   avatarPath?: string | null;

@@ -5,6 +5,7 @@ import type { Member } from '@/types/fitness';
 export interface MemberRow {
   id: string;
   name: string;
+  surname?: string | null;
   accent: string;
   avatar_path: string | null;
   sort_order: number;
@@ -21,7 +22,9 @@ export interface MemberRow {
 /** Keeps Postgres column naming out of every component. */
 export const mapMember = (row: MemberRow): Member => ({
   id: row.id,
-  name: row.name,
+  firstName: row.name,
+  surname: row.surname?.trim() || null,
+  name: [row.name, row.surname?.trim()].filter(Boolean).join(' '),
   accent: resolveAccent(row.accent, row.sort_order),
   avatarPath: row.avatar_path ?? null,
   sortOrder: row.sort_order,

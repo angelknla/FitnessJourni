@@ -54,7 +54,15 @@ alter table public.members
   add column if not exists height_cm numeric(5, 2),
   add column if not exists target_weight_kg numeric(5, 2),
   add column if not exists target_bmi numeric(4, 1),
-  add column if not exists avatar_path text;
+  add column if not exists avatar_path text,
+  add column if not exists surname text;
+
+alter table public.members drop constraint if exists members_name_length_check;
+alter table public.members add constraint members_name_length_check
+  check (char_length(trim(name)) between 1 and 50);
+alter table public.members drop constraint if exists members_surname_length_check;
+alter table public.members add constraint members_surname_length_check
+  check (surname is null or char_length(trim(surname)) between 1 and 50);
 
 alter table public.members drop constraint if exists members_age_check;
 alter table public.members add constraint members_age_check

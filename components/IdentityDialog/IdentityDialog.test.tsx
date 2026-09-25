@@ -49,6 +49,18 @@ const openPicker = async (user: ReturnType<typeof userEvent.setup>) => {
 const option = (name: string) => screen.getByRole('option', { name: new RegExp(name) });
 
 describe('IdentityDialog', () => {
+  it('scrolls to the top after changing identity', async () => {
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    vi.mocked((await import('@/app/auth-actions')).signInAs).mockResolvedValueOnce({ ok: true });
+    const user = userEvent.setup();
+    setup();
+
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'instant' });
+    scrollTo.mockRestore();
+  });
+
   it('offers everyone plus a visitor option in a custom dropdown', async () => {
     const user = userEvent.setup();
     setup();

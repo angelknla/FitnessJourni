@@ -177,6 +177,8 @@ export const saveProfileDetails = async (
   }
 
   const memberId = toText(formData.get('memberId'));
+  const name = toText(formData.get('name'));
+  const surname = toText(formData.get('surname'));
   const age = toOptionalNumber(formData.get('age'));
   const heightCm = toOptionalNumber(formData.get('heightCm'));
   const targetWeightKg = toOptionalNumber(formData.get('targetWeightKg'));
@@ -185,6 +187,12 @@ export const saveProfileDetails = async (
 
   if (notYours) {
     return fail(notYours);
+  }
+  if (!name || name.length > 50) {
+    return fail('Enter a first name up to 50 characters.');
+  }
+  if (surname.length > 50) {
+    return fail('Keep the surname under 50 characters.');
   }
   if (age !== null && (!Number.isInteger(age) || age < 13 || age > 120)) {
     return fail('Enter an age from 13 to 120.');
@@ -205,6 +213,8 @@ export const saveProfileDetails = async (
   const { error } = await supabase
     .from('members')
     .update({
+      name,
+      surname: surname || null,
       age,
       height_cm: heightCm,
       target_weight_kg: targetWeightKg,
@@ -218,6 +228,7 @@ export const saveProfileDetails = async (
   }
 
   revalidatePath('/profile');
+  revalidatePath('/', 'layout');
   return { ok: true, message: 'Profile saved.' };
 };
 
