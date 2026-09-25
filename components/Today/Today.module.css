@@ -1,0 +1,94 @@
+.today {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--c-ink-muted);
+}
+
+.date {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--c-ink);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.3rem;
+  padding: 1.1rem;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-xl);
+}
+
+.panel:focus {
+  outline: none;
+}
+
+.rings {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.floorNote {
+  margin: -0.6rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--c-ink-muted);
+}
+
+.macros,
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.sectionHeading {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-ink-muted);
+}
+
+.empty {
+  gap: 0.8rem;
+}
+
+.emptyTitle {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.emptyBody {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--c-ink-soft);
+}
+
+@media (max-width: 380px) {
+  .rings {
+    gap: 0.3rem;
+  }
+}

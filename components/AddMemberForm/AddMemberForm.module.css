@@ -1,0 +1,80 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 1rem;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+}
+
+.fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.legend {
+  padding: 0;
+  margin-bottom: 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-ink-muted);
+}
+
+.row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.nameField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 1 1 9rem;
+}
+
+.colourField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 0 1 9rem;
+}
+
+.fieldLabel {
+  font-size: 0.76rem;
+  color: var(--c-ink-soft);
+}
+
+.preview {
+  width: 1.6rem;
+  height: 1.6rem;
+  margin-bottom: 0.35rem;
+  border-radius: 50%;
+  background: var(--member-accent);
+  flex-shrink: 0;
+}
+
+.hint {
+  margin: 0.7rem 0 0;
+  font-size: 0.76rem;
+  line-height: 1.5;
+  color: var(--c-ink-muted);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.error {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--c-critical);
+}

@@ -1,0 +1,58 @@
+/* ================================================================
+   MACRO BARS — one linear meter per macro. Same-ramp track, 4px
+   rounded data-end, square at the baseline it grows from.
+   ================================================================ */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 3.6rem 1fr auto;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.label {
+  font-size: 0.82rem;
+  color: var(--c-ink-soft);
+}
+
+.track {
+  position: relative;
+  display: block;
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: color-mix(in oklab, var(--member-accent) 22%, var(--c-surface));
+  overflow: hidden;
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  background: var(--member-accent);
+  /* Square where it meets the baseline, rounded at the data end. */
+  border-radius: 0 4px 4px 0;
+  transition: width 0.5s var(--ease-flow);
+}
+
+.value {
+  display: flex;
+  align-items: baseline;
+  gap: 0.1rem;
+  /* A column of numbers that must line up, so tabular figures are right here. */
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8rem;
+  color: var(--c-ink-muted);
+}
+
+.valueNumber {
+  font-weight: 600;
+  color: var(--c-ink);
+}
+
+.valueTarget {
+  color: var(--c-ink-muted);
+}

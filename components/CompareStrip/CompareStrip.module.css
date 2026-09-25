@@ -1,0 +1,113 @@
+/* ================================================================
+   COMPARE STRIP — the "see what the others do" payoff.
+   Member hue is categorical (identity) and always sits next to the
+   name, so colour is never the only channel.
+   ================================================================ */
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.heading {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-ink-muted);
+}
+
+.strip {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(13.5rem, 1fr);
+  gap: 0.7rem;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding-bottom: 0.4rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--c-border-strong) transparent;
+}
+
+.card {
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 0.9rem;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  transition: border-color 0.2s var(--ease-flow);
+}
+
+.card[data-active="true"] {
+  border-color: color-mix(in oklab, var(--member-accent) 55%, var(--c-border-strong));
+}
+
+.name {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  /* Text wears text tokens; the dot beside it carries the identity. */
+  color: var(--c-ink);
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--member-accent);
+  flex-shrink: 0;
+}
+
+.meters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.meter {
+  display: grid;
+  grid-template-columns: 3.4rem 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.meterLabel {
+  font-size: 0.72rem;
+  color: var(--c-ink-muted);
+}
+
+.meterTrack {
+  display: block;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: color-mix(in oklab, var(--member-accent) 22%, var(--c-surface));
+  overflow: hidden;
+}
+
+.meterFill {
+  display: block;
+  height: 100%;
+  background: var(--member-accent);
+  border-radius: 0 4px 4px 0;
+  transition: width 0.5s var(--ease-flow);
+}
+
+.meterValue {
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-ink-soft);
+}
+
+.empty {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--c-ink-muted);
+}

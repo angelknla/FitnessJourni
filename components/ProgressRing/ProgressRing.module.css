@@ -1,0 +1,86 @@
+/* ================================================================
+   PROGRESS RING — a meter: one value against its own limit.
+   Track is a lighter step of the fill's ramp, never a neutral grey,
+   so the state reads across the whole ring.
+   ================================================================ */
+.ring {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.svg {
+  width: 100%;
+  max-width: 7.5rem;
+  aspect-ratio: 1;
+  display: block;
+  overflow: visible;
+}
+
+.track {
+  stroke: color-mix(in oklab, var(--member-accent) 22%, var(--c-surface));
+}
+
+.fill {
+  stroke: var(--member-accent);
+  transition: stroke-dasharray 0.5s var(--ease-flow);
+}
+
+/* Overshooting a budget is worth flagging; overshooting a goal is not. */
+.ring[data-state="over"] .fill {
+  stroke: var(--c-warning);
+}
+
+.ring[data-state="over"] .track {
+  stroke: color-mix(in oklab, var(--c-warning) 22%, var(--c-surface));
+}
+
+/* The playbook's lower threshold, sitting inside the ideal goal. */
+.floorTick {
+  stroke: var(--c-ink-muted);
+  stroke-width: 2;
+  opacity: 0.9;
+}
+
+/* Centred readout. Absolutely positioned over the ring, offset for the label. */
+.center {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: min(7.5rem, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.05rem;
+  pointer-events: none;
+}
+
+/* Proportional figures: tabular-nums makes a standalone value look loose. */
+.value {
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--c-ink);
+}
+
+.target {
+  font-size: 0.7rem;
+  color: var(--c-ink-muted);
+}
+
+.label {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--c-ink-soft);
+}
+
+@media (min-width: 480px) {
+  .value {
+    font-size: 1.3rem;
+  }
+}

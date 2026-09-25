@@ -1,0 +1,209 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  padding: 1.1rem;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-xl);
+}
+
+.fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.legend,
+.fieldLabel {
+  padding: 0;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-ink-muted);
+}
+
+.legend {
+  margin-bottom: 0.6rem;
+}
+
+.fieldLabel {
+  letter-spacing: 0.04em;
+  text-transform: none;
+  font-weight: 500;
+  color: var(--c-ink-soft);
+}
+
+/* Visually hidden but still focusable and still a real radio. */
+.control {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  margin: 0;
+  pointer-events: none;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.chip {
+  cursor: pointer;
+}
+
+.chipInner {
+  display: block;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--c-ink-soft);
+  background: var(--c-surface-soft);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-pill);
+  transition:
+    background-color 0.2s var(--ease-flow),
+    border-color 0.2s var(--ease-flow),
+    color 0.2s var(--ease-flow);
+}
+
+.chip:hover .chipInner {
+  color: var(--c-ink);
+}
+
+.control:checked + .chipInner {
+  color: #fff;
+  background: var(--c-accent);
+  border-color: transparent;
+}
+
+.control:focus-visible + .chipInner,
+.control:focus-visible + .dateCardInner {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
+/* ---- Date rail: 14 days, scroll-snapped, no calendar dependency ---- */
+.rail {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 0.4rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--c-border-strong) transparent;
+}
+
+.dateCard {
+  cursor: pointer;
+  scroll-snap-align: start;
+  flex: 0 0 auto;
+}
+
+.dateCardInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.05rem;
+  min-width: 4.1rem;
+  padding: 0.55rem 0.5rem;
+  background: var(--c-surface-soft);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  transition:
+    background-color 0.2s var(--ease-flow),
+    border-color 0.2s var(--ease-flow);
+}
+
+.control:checked + .dateCardInner {
+  background: color-mix(in oklab, var(--c-accent) 20%, var(--c-surface));
+  border-color: var(--c-accent);
+}
+
+.dateWeekday {
+  font-size: 0.66rem;
+  color: var(--c-ink-muted);
+}
+
+.dateNumber {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--c-ink);
+}
+
+.dateMonth {
+  font-size: 0.66rem;
+  color: var(--c-ink-muted);
+}
+
+.loading {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--c-ink-muted);
+}
+
+/* ---- Time, who, note ---- */
+.row {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.timeField,
+.whoField,
+.noteField,
+.quick {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.timeField {
+  flex: 1 1 8rem;
+}
+
+.whoField {
+  flex: 1 1 8rem;
+}
+
+.quickChip {
+  padding: 0.35rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-ink-soft);
+  background: var(--c-surface-soft);
+  border: 1px solid var(--c-border);
+}
+
+.quickChip[data-active="true"] {
+  color: var(--c-ink);
+  border-color: var(--c-accent);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.submit {
+  background: var(--c-accent);
+  border-color: transparent;
+  color: #fff;
+}
+
+.submit:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--c-accent) 85%, #fff);
+  border-color: transparent;
+}
+
+.error {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--c-critical);
+}

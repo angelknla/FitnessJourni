@@ -1,0 +1,8 @@
+[build]
+  command = "yarn build"
+  # Next.js Runtime plugin handles SSR/ISR/Server Actions; do not use "out" (that only
+  # exists for `output: 'export'` static builds, which this app doesn't use).
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "26.4.0"

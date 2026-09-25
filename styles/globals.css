@@ -1,0 +1,201 @@
+/* ================================================================
+   DESIGN TOKENS — dark-only, system-dark feel: near-black layered
+   surfaces, restrained lines, one UI accent used sparingly.
+   ================================================================ */
+:root {
+  color-scheme: dark;
+
+  /* Surfaces — --c-surface is the validated chart surface (#141416).
+     Changing it means re-running the palette validator. */
+  --c-bg: #0b0b0c;
+  --c-bg-alt: #101012;
+  --c-surface: #141416;
+  --c-surface-soft: #18181b;
+  --c-surface-raised: #1c1c20;
+  --c-surface-hover: #232328;
+
+  /* Ink */
+  --c-ink: #f4f4f5;
+  --c-ink-soft: #a5a5af;
+  --c-ink-muted: #71717a;
+
+  /* Lines */
+  --c-border: rgba(255, 255, 255, 0.07);
+  --c-border-strong: rgba(255, 255, 255, 0.15);
+
+  /* The one UI accent (slot 1). Used for focus, links and primary actions. */
+  --c-accent: #3987e5;
+  --c-accent-ink: #0b0b0c;
+
+  /* ---- Categorical member slots ----------------------------------
+     The eight dark steps validated as a set against --c-surface for
+     colourblind separation, chroma and contrast. Assigned in fixed
+     order, never generated or cycled. Do not hand-tweak. */
+  --accent-blue: #3987e5;
+  --accent-orange: #d95926;
+  --accent-aqua: #199e70;
+  --accent-yellow: #c98500;
+  --accent-magenta: #d55181;
+  --accent-green: #008300;
+  --accent-violet: #9085e9;
+  --accent-red: #e66767;
+
+  /* Fallback so a meter still renders if no member accent is scoped in. */
+  --member-accent: var(--c-accent);
+
+  /* ---- Status (fixed, never themed, never used for identity) ---- */
+  --c-good: #0ca30c;
+  --c-warning: #fab219;
+  --c-serious: #ec835a;
+  --c-critical: #d03b3b;
+
+  /* Radius */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --r-xl: 24px;
+  --r-pill: 999px;
+
+  /* Elevation — restrained; depth comes from surface steps, not big shadows. */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.45);
+
+  /* Type + motion */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --ease-flow: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  background: var(--c-bg);
+  color: var(--c-ink);
+  font-family: var(--font-sans);
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--c-accent);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+button {
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--c-ink);
+  background: var(--c-surface-raised);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--r-pill);
+  box-shadow: none;
+  box-sizing: border-box;
+  cursor: pointer;
+  padding: 0.55rem 1.2rem;
+  width: fit-content;
+  transition:
+    background-color 0.2s var(--ease-flow),
+    border-color 0.2s var(--ease-flow),
+    color 0.2s var(--ease-flow);
+}
+
+button:hover:not(:disabled) {
+  background: var(--c-surface-hover);
+  border-color: var(--c-border-strong);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+input,
+select,
+textarea {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  color: var(--c-ink);
+  background: var(--c-bg-alt);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
+  padding: 0.6rem 0.7rem;
+  width: 100%;
+  transition: border-color 0.2s var(--ease-flow);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--c-accent);
+  outline: none;
+}
+
+/* Numeric entry: no spinners, and never a zero the user has to clear first. */
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+ol,
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+a {
+  color: inherit;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
