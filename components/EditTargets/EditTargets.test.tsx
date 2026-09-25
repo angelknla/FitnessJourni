@@ -43,6 +43,19 @@ describe('EditTargets', () => {
     expect(screen.getByLabelText(/Calories/)).toHaveValue(2500);
   });
 
+  it('accepts a calorie figure that is not a round number', async () => {
+    const user = userEvent.setup();
+    const { container } = setup();
+
+    const calories = screen.getByLabelText(/Calories/);
+    await user.clear(calories);
+    await user.type(calories, '2543');
+
+    // A coarse step made the browser refuse anything between its multiples.
+    expect(calories).toBeValid();
+    expect(hidden(container, 'calories')).toHaveValue('2543');
+  });
+
   it('moves calories when a gram figure changes', async () => {
     const user = userEvent.setup();
     setup();
