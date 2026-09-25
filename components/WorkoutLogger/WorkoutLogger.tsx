@@ -16,6 +16,7 @@ interface WorkoutLoggerProps {
   weekCount: number;
   /** False on someone else's tab, or for a visitor: the list stays, the form goes. */
   canEdit: boolean;
+  isToday?: boolean;
 }
 
 const initial: ActionState = { ok: false };
@@ -55,7 +56,14 @@ const LoggedWorkout = ({ workout, canEdit }: { workout: Workout; canEdit: boolea
   );
 };
 
-export const WorkoutLogger = ({ member, date, logged, weekCount, canEdit }: WorkoutLoggerProps) => {
+export const WorkoutLogger = ({
+  member,
+  date,
+  logged,
+  weekCount,
+  canEdit,
+  isToday = true,
+}: WorkoutLoggerProps) => {
   const [state, formAction, isPending] = useActionState(logWorkout, initial);
   const [picked, setPicked] = useState<WorkoutFocus[]>([]);
   const [formOpen, setFormOpen] = useState(false);
@@ -74,7 +82,13 @@ export const WorkoutLogger = ({ member, date, logged, weekCount, canEdit }: Work
     <div className={styles.wrapper}>
       <div className={styles.status}>
         <span className={styles.badge} data-done={trainedToday}>
-          {trainedToday ? 'Trained today' : 'Not logged today'}
+          {trainedToday
+            ? isToday
+              ? 'Trained today'
+              : 'Trained on this day'
+            : isToday
+              ? 'Not logged today'
+              : 'Not logged on this day'}
         </span>
         {/* Past the target, "6 of 4" would read as broken. The playbook's 4 is a
             recommendation, not a cap, so the phrasing changes rather than the

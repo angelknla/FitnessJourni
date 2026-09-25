@@ -3,7 +3,7 @@
 import { AddMemberForm } from '@components/AddMemberForm/AddMemberForm';
 import { CompareStrip } from '@components/CompareStrip/CompareStrip';
 import { EditTargets } from '@components/EditTargets/EditTargets';
-import { PencilIcon } from '@components/Icons/Icons';
+import { CalendarIcon, PencilIcon } from '@components/Icons/Icons';
 import { MacroBars } from '@components/MacroBars/MacroBars';
 import { MemberTabs } from '@components/MemberTabs/MemberTabs';
 import { ProgressRing } from '@components/ProgressRing/ProgressRing';
@@ -11,6 +11,7 @@ import { QuickEntry } from '@components/QuickEntry/QuickEntry';
 import { WorkoutLogger } from '@components/WorkoutLogger/WorkoutLogger';
 import { accentHex } from '@data/fitnessData';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { type CSSProperties, type TouchEvent, useRef, useState } from 'react';
 import { emptyLog } from '@/lib/data/logs';
 import { workoutsForToday } from '@/lib/data/workouts';
@@ -25,6 +26,8 @@ interface HomeProps {
   workouts: Workout[];
   tallies: Record<string, WorkoutTally>;
   date: string;
+  today: string;
+  datePickerLabel: string;
   dateLabel: string;
   /** Who this browser is acting as; null for a visitor, who edits nothing. */
   viewerId: string | null;
@@ -39,9 +42,21 @@ export const Home = ({
   workouts,
   tallies,
   date,
+  today,
+  datePickerLabel,
   dateLabel,
   viewerId,
 }: HomeProps) => {
+  const router = useRouter();
+  const [selectedDate, setSelectedDate] = useState(date);
+  const [knownDate, setKnownDate] = useState(date);
+  const dateInput = useRef<HTMLInputElement>(null);
+
+  if (date !== knownDate) {
+    setKnownDate(date);
+    setSelectedDate(date);
+  }
+
   /*
    * Open on whoever is signed in, rather than on whoever sorts first — landing on
    * someone else's day was how the wrong numbers got edited. A visitor has nobody
@@ -72,6 +87,19 @@ export const Home = ({
   const [addOpen, setAddOpen] = useState(false);
   const [editingTargets, setEditingTargets] = useState(false);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
+
+  const openDatePicker = () => {
+    const input = dateInput.current;
+    if (!input) {
+      return;
+    }
+
+    try {
+      input.showPicker();
+    } catch {
+      input.click();
+    }
+  };
 
   // A deleted or renamed member shouldn't leave the panel pointing at nothing.
   const active = members.find((member) => member.id === activeId) ?? members[0];
@@ -142,6 +170,7 @@ export const Home = ({
    * because a hidden memberId can be edited by hand — see refuseUnlessOwn there.
    */
   const canEdit = active.id === viewerId;
+  const isToday = date === today;
 
   const log = logs[active.id] ?? emptyLog(active.id, date);
   const { targets } = active;
@@ -151,7 +180,35 @@ export const Home = ({
   return (
     <div className={styles.home}>
       <header className={styles.head}>
-        <p className={styles.eyebrow}>Today</p>
+        <div className={styles.dateControl}>
+          <button
+            type="button"
+            className={styles.datePicker}
+            aria-label={`Choose dashboard date, ${datePickerLabel}`}
+            onClick={openDatePicker}
+          >
+            <CalendarIcon size={14} />
+            <span>{datePickerLabel}</span>
+          </button>
+          <input
+            ref={dateInput}
+            className={styles.dateInput}
+            type="date"
+            value={selectedDate}
+            max={today}
+            aria-label="Dashboard date value"
+            tabIndex={-1}
+            onChange={(event) => {
+              const nextDate = event.target.value;
+              if (!nextDate) {
+                return;
+              }
+
+              setSelectedDate(nextDate);
+              router.push(nextDate === today ? '/' : `/?date=${nextDate}`);
+            }}
+          />
+        </div>
         <h1 className={styles.date}>{dateLabel}</h1>
       </header>
 
@@ -273,11 +330,17 @@ export const Home = ({
             logged={todaysWorkouts}
             weekCount={tally.week}
             canEdit={canEdit}
+            isToday={isToday}
           />
         </section>
       </div>
 
-      <CompareStrip members={tabOrder} logs={logs} activeMemberId={active.id} />
+      <CompareStrip
+        members={tabOrder}
+        logs={logs}
+        activeMemberId={active.id}
+        heading={isToday ? 'Everyone today' : 'Everyone on this day'}
+      />
     </div>
   );
 };

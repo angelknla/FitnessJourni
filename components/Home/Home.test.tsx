@@ -16,7 +16,8 @@ vi.mock('@/app/auth-actions', () => ({
   signInAs: vi.fn(async () => ({})),
   lock: vi.fn(async () => undefined),
 }));
-vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+const navigation = vi.hoisted(() => ({ push: vi.fn(), refresh: vi.fn() }));
+vi.mock('next/navigation', () => ({ useRouter: () => navigation }));
 
 import { Home } from './Home';
 
@@ -56,6 +57,8 @@ const props = (viewerId: string | null) => ({
   workouts: [],
   tallies: {},
   date,
+  today: date,
+  datePickerLabel: 'Today',
   dateLabel: 'Friday, 25 September',
   viewerId,
 });
@@ -68,6 +71,60 @@ const selectedTab = () =>
 const quickEntry = () => screen.queryByRole('button', { name: /Log .*'s day/ });
 
 describe('Home', () => {
+  it('defaults the date picker to today and prevents future dates', () => {
+    setup('m1');
+
+    expect(screen.getByText('Today')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Friday, 25 September' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Choose dashboard date, Today' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Dashboard date value')).toHaveAttribute('value', date);
+    expect(screen.getByLabelText('Dashboard date value')).toHaveAttribute('max', date);
+  });
+
+  it('opens the native picker from the whole visible date button', () => {
+    setup('m1');
+    const input = screen.getByLabelText('Dashboard date value') as HTMLInputElement;
+    const showPicker = vi.fn();
+    input.showPicker = showPicker;
+
+    fireEvent.click(screen.getByRole('button', { name: 'Choose dashboard date, Today' }));
+
+    expect(showPicker).toHaveBeenCalledOnce();
+  });
+
+  it('opens a past date through the URL', () => {
+    navigation.push.mockClear();
+    setup('m1');
+
+    fireEvent.change(screen.getByLabelText('Dashboard date value'), {
+      target: { value: '2026-09-20' },
+    });
+
+    expect(navigation.push).toHaveBeenCalledWith('/?date=2026-09-20');
+  });
+
+  it('labels historical dates and returns to the clean route for today', () => {
+    navigation.push.mockClear();
+    render(
+      <Home
+        {...props('m1')}
+        date="2026-09-24"
+        datePickerLabel="Yesterday"
+        dateLabel="Thursday, 24 September"
+      />
+    );
+
+    expect(screen.getByText('Yesterday')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Everyone on this day' })).toBeInTheDocument();
+    expect(screen.getByText('Not logged on this day')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Dashboard date value'), {
+      target: { value: date },
+    });
+
+    expect(navigation.push).toHaveBeenCalledWith('/');
+  });
+
   it('opens on the signed-in person, not on whoever sorts first', () => {
     setup('m3');
 

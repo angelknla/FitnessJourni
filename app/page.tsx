@@ -1,7 +1,7 @@
 import { Home } from '@components/Home/Home';
 import { Landing } from '@components/Landing/Landing';
 import { SetupNotice } from '@components/SetupNotice/SetupNotice';
-import { earlier, startOfMonth, startOfWeek, toISODate } from '@utils/date';
+import { earlier, fromISODate, startOfMonth, startOfWeek, toISODate } from '@utils/date';
 import type { Metadata } from 'next';
 import { getLogsForDate } from '@/lib/data/logs';
 import { getMembers } from '@/lib/data/members';
@@ -18,7 +18,11 @@ export const metadata: Metadata = {
 /** Always render fresh: the whole point is seeing what the others just logged. */
 export const dynamic = 'force-dynamic';
 
-const Homepage = async () => {
+interface HomepageProps {
+  searchParams: Promise<{ date?: string }>;
+}
+
+const Homepage = async ({ searchParams }: HomepageProps) => {
   // Before any fetch: a locked visitor must not cause member data to be loaded,
   // because it would be serialised into the RSC payload even if never displayed.
   if (!(await isUnlocked())) {
@@ -32,12 +36,32 @@ const Homepage = async () => {
   // Resolved on the server because the data fetch is keyed by it. Set TZ in the
   // host environment if the deployed date ever disagrees with yours.
   const now = new Date();
-  const date = toISODate(now);
+  const today = toISODate(now);
+  const { date: requestedDate } = await searchParams;
+  const date =
+    requestedDate &&
+      /^\d{4}-\d{2}-\d{2}$/.test(requestedDate) &&
+      toISODate(fromISODate(requestedDate)) === requestedDate &&
+      requestedDate <= today
+      ? requestedDate
+      : today;
   const dateLabel = new Intl.DateTimeFormat('en-GB', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
-  }).format(now);
+  }).format(fromISODate(date));
+  const yesterday = fromISODate(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const datePickerLabel =
+    date === today
+      ? 'Today'
+      : date === toISODate(yesterday)
+        ? 'Yesterday'
+        : new Intl.DateTimeFormat('en-GB', {
+          day: '2-digit',
+          month: '2-digit',
+          year: '2-digit',
+        }).format(fromISODate(date));
 
   const [members, logs, workouts, viewer] = await Promise.all([
     getMembers(),
@@ -53,6 +77,8 @@ const Homepage = async () => {
       workouts={workouts}
       tallies={tallyWorkouts(workouts, date)}
       date={date}
+      today={today}
+      datePickerLabel={datePickerLabel}
       dateLabel={dateLabel}
       viewerId={viewer.memberId}
     />

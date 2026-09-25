@@ -16,17 +16,53 @@
   gap: 0.15rem;
 }
 
-.eyebrow {
+.dateControl {
+  position: relative;
+  width: fit-content;
+  margin: 0 0 0.4rem;
+}
+
+.datePicker {
+  min-height: 1.75rem;
+  padding: 0.2rem 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   margin: 0;
   font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--c-ink-muted);
+  background: transparent;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  cursor: pointer;
+}
+
+.datePicker:hover,
+.datePicker:focus-within {
+  color: var(--c-ink);
+  border-color: var(--c-border-strong);
+  background: var(--c-surface-hover);
+}
+
+.datePicker svg {
+  flex-shrink: 0;
+}
+
+.dateInput {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .date {
-  margin: 0;
+  margin: 0 0 0 0.2rem;
   font-size: 1.4rem;
   font-weight: 600;
   letter-spacing: -0.02em;

@@ -11,6 +11,7 @@ interface CompareStripProps {
   logs: Record<string, DailyLog>;
   /** Highlighted without changing anyone's colour — hue follows the person. */
   activeMemberId?: string;
+  heading?: string;
 }
 
 interface MiniMeter {
@@ -43,7 +44,12 @@ const metersFor = (member: Member, log: DailyLog | undefined): MiniMeter[] => {
   ];
 };
 
-export const CompareStrip = ({ members, logs, activeMemberId }: CompareStripProps) => {
+export const CompareStrip = ({
+  members,
+  logs,
+  activeMemberId,
+  heading = 'Everyone today',
+}: CompareStripProps) => {
   if (members.length === 0) {
     return null;
   }
@@ -51,7 +57,7 @@ export const CompareStrip = ({ members, logs, activeMemberId }: CompareStripProp
   return (
     <section className={styles.wrapper} aria-labelledby="compare-heading">
       <h2 className={styles.heading} id="compare-heading">
-        Everyone today
+        {heading}
       </h2>
 
       <ul className={styles.strip}>
