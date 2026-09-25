@@ -7,6 +7,59 @@ interface IconProps {
   size?: number;
 }
 
+interface NavIconProps extends IconProps {
+  children: React.ReactNode;
+}
+
+const NavIcon = ({ size = 20, children }: NavIconProps) => (
+  <svg
+    viewBox="0 0 24 24"
+    width={size}
+    height={size}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+    focusable="false"
+  >
+    {children}
+  </svg>
+);
+
+export const HomeIcon = ({ size }: IconProps) => (
+  <NavIcon size={size}>
+    <path d="M3.5 10.5 12 3l8.5 7.5" />
+    <path d="M5.5 9.5v10h13v-10M9.5 19.5v-6h5v6" />
+  </NavIcon>
+);
+
+export const DumbbellIcon = ({ size }: IconProps) => (
+  <NavIcon size={size}>
+    <path d="M6.5 8v8M3.5 9.5v5M17.5 8v8M20.5 9.5v5M6.5 12h11" />
+  </NavIcon>
+);
+
+export const RunningIcon = ({ size }: IconProps) => (
+  <NavIcon size={size}>
+    <circle cx="15.5" cy="4.5" r="1.5" />
+    <path d="m13 8-3 4 3.5 2.5-2 5M13 8l3 3 3-1M10 12l-4 1" />
+  </NavIcon>
+);
+
+export const LogsIcon = ({ size }: IconProps) => (
+  <NavIcon size={size}>
+    <path d="M6 3.5h12v17H6zM9 8h6M9 12h6M9 16h4" />
+  </NavIcon>
+);
+
+export const CalendarIcon = ({ size }: IconProps) => (
+  <NavIcon size={size}>
+    <path d="M4 6.5h16v14H4zM8 3.5v6M16 3.5v6M4 10.5h16" />
+  </NavIcon>
+);
+
 export const PlusIcon = ({ size = 16 }: IconProps) => (
   <svg
     viewBox="0 0 16 16"

@@ -33,3 +33,9 @@
     padding: 6rem 1.5rem 3.5rem;
   }
 }
+
+@media (max-width: 960px) {
+  .appWrapper {
+    padding-bottom: calc(5.4rem + env(safe-area-inset-bottom));
+  }
+}

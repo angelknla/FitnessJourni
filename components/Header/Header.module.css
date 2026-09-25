@@ -59,6 +59,8 @@
 }
 
 .link {
+  display: inline-flex;
+  align-items: center;
   font-size: 1.05rem;
   color: var(--c-ink-soft);
   text-decoration: none;
@@ -70,164 +72,75 @@
   }
 }
 
-/* ---- Hamburger button — desktop: hidden, mobile: visible ---- */
-.menu {
+.link svg {
   display: none;
-  width: 2.5rem;
-  height: 2.5rem;
-  background: transparent;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  z-index: 120;
-  box-sizing: border-box;
-  box-shadow: none;
-  position: relative;
-  transition: transform 0.2s ease;
-
-  &:before,
-  &:after {
-    content: "";
-    position: absolute;
-    width: 1.75rem;
-    height: 0.2rem;
-    background: var(--c-ink);
-    border-radius: 2px;
-    left: 50%;
-    transform: translateX(-50%);
-    transition: 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  }
-
-  &:before {
-    top: 0.6rem;
-  }
-
-  &:after {
-    top: 1.15rem;
-    box-shadow: 0 0.55rem 0 0 var(--c-ink);
-    border-radius: 2px;
-  }
-
-  &.active:before {
-    top: 50%;
-    transform: translateX(-50%) translateY(-50%) rotate(45deg);
-  }
-
-  &.active:after {
-    top: 50%;
-    transform: translateX(-50%) translateY(-50%) rotate(135deg);
-    box-shadow: none;
-  }
-
-  &:hover:not(.active) {
-    transform: scale(1.1);
-  }
-}
-
-/* ================================================================
-   RESPONSIVE — collapse inline nav into a full-screen overlay
-   ================================================================ */
-@media (max-width: 960px) {
-  /* Scaled down as a whole — box, bar width, bar height and the three gaps —
-     so it stays a square with evenly spaced lines rather than a squashed one.
-     The bars land at 0.5 / 0.95 / 1.4rem, a 0.45rem pitch. */
-  .menu {
-    display: block;
-    width: 2.25rem;
-    height: 2.25rem;
-
-    &:before,
-    &:after {
-      width: 1.55rem;
-      height: 0.19rem;
-    }
-
-    &:before {
-      top: 0.54rem;
-    }
-
-    &:after {
-      top: 1.02rem;
-      box-shadow: 0 0.48rem 0 0 var(--c-ink);
-    }
-  }
-
-  /* A shade larger than the desktop wordmark: it has the row much more to itself
-     here, and the tighter edges below paid for the space. */
-  .logoText {
-    font-size: 1.2rem;
-  }
-
-  .nav {
-    display: flex;
-    visibility: hidden;
-    position: fixed;
-    padding-top: 10rem;
-    top: 0;
-    right: 0;
-    flex-direction: column;
-    width: 100%;
-    height: 100vh;
-    align-items: center;
-    gap: 2rem;
-    opacity: 0;
-    transform: translateY(-20px);
-    transition:
-      opacity 0.3s ease,
-      transform 0.3s ease,
-      visibility 0.3s;
-
-    & .link {
-      font-size: 1.75rem;
-    }
-
-    &.active {
-      visibility: visible;
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    &::before {
-      content: "";
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(11, 11, 12, 0.97);
-      backdrop-filter: blur(20px);
-      z-index: -1;
-      visibility: hidden;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-
-    &.active::before {
-      visibility: visible;
-      opacity: 1;
-    }
-  }
 }
 
 @media (max-width: 480px) {
   .inner {
     padding: 1rem 1.6rem;
   }
+}
+
+@media (max-width: 960px) {
+  .logoText {
+    font-size: 1.2rem;
+  }
 
   .nav {
-    gap: 1.2rem;
+    visibility: visible;
+    position: fixed;
+    z-index: 130;
+    top: auto;
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: calc(0.65rem + env(safe-area-inset-bottom));
+    width: auto;
+    height: auto;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    flex-direction: initial;
+    align-items: stretch;
+    gap: 0.15rem;
+    padding: 0.45rem;
+    opacity: 1;
+    transform: none;
+    background: rgba(20, 20, 22, 0.92);
+    border: 1px solid var(--c-border-strong);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-lg);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  .nav::before {
+    display: none;
   }
 
   .nav .link {
-    font-size: 1.5rem;
+    position: relative;
+    min-width: 0;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.2rem;
+    padding: 0.3rem 0.1rem;
+    font-size: 0.64rem;
+    line-height: 1;
+    color: var(--c-ink-muted);
+    border-radius: var(--r-sm);
+  }
+
+  .nav .link svg {
+    display: block;
+  }
+
+  .nav .link[aria-current="page"] {
+    color: var(--c-accent);
+    background: color-mix(in oklab, var(--c-accent) 12%, transparent);
   }
 }
 
-/* ---- Identity + log out ----
-   One right-aligned group holding the chip, the nav and the burger, so .inner's
-   space-between keeps the menu hard right with the logo hard left. The chip is
-   deliberately outside .nav: on mobile the nav becomes a full-screen overlay, and
-   who you are signed in as should stay visible without opening it. */
+/* ---- Identity ---- */
 .side {
   display: flex;
   align-items: center;
@@ -286,9 +199,6 @@
     font-size: 1rem;
   }
 
-  /* Both edges tighten from here down: the wordmark starts closer to the left
-     and the burger sits closer to the right, which is where the room for the
-     chip between them comes from. */
   .inner {
     padding-inline: 1.1rem;
   }
