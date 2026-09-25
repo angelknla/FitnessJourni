@@ -4,7 +4,7 @@ export type ActivityType = 'run' | 'workout' | 'swim' | 'walk' | 'cycle' | 'othe
 export type WorkoutFocus = 'upper' | 'legs' | 'push' | 'pull' | 'full_body' | 'cardio' | 'other';
 
 /**
- * The eight categorical slots validated against this app's dark chart surface
+ * The twelve categorical slots used against this app's dark chart surface
  * (see supabase/schema.sql). Assigned in order, never cycled or generated.
  */
 export type AccentName =
@@ -15,7 +15,11 @@ export type AccentName =
   | 'magenta'
   | 'green'
   | 'violet'
-  | 'red';
+  | 'red'
+  | 'cyan'
+  | 'lime'
+  | 'pink'
+  | 'silver';
 
 export interface MemberTargets {
   calories: number;

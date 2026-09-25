@@ -450,6 +450,10 @@
 }
 
 @media (max-width: 430px) {
+  .people {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .tally {
     grid-template-columns: minmax(5.5rem, 0.9fr) minmax(5rem, 1.4fr) auto;
     gap: 0.55rem;

@@ -352,6 +352,22 @@ export const addMember = async (_prev: ActionState, formData: FormData): Promise
 
   const requested = toText(formData.get('accent')) as AccentName;
   const accent: AccentName = accentNames.includes(requested) ? requested : 'violet';
+  const avatarPath = toText(formData.get('avatarPath'));
+  const avatarFileEntry = formData.get('avatarFile');
+  const avatarFile =
+    avatarFileEntry instanceof File && avatarFileEntry.size > 0 ? avatarFileEntry : null;
+  if (!avatarFile && !isAvatarPath(avatarPath)) {
+    return fail('Choose a valid profile picture.');
+  }
+  if (
+    avatarFile &&
+    !avatarUploadTypes.includes(avatarFile.type as (typeof avatarUploadTypes)[number])
+  ) {
+    return fail('Upload a JPEG, PNG or WebP image.');
+  }
+  if (avatarFile && avatarFile.size > AVATAR_UPLOAD_MAX_BYTES) {
+    return fail('Profile pictures must be 5 MB or smaller.');
+  }
 
   /*
    * Deliberately not ownership-checked, unlike the other writes: a visitor has to
@@ -364,6 +380,7 @@ export const addMember = async (_prev: ActionState, formData: FormData): Promise
     .insert({
       name,
       accent,
+      avatar_path: avatarPath || null,
       sort_order: toInt(formData.get('sortOrder'), 999),
       target_calories: defaultTargets.calories,
       target_protein: defaultTargets.protein,
@@ -379,6 +396,38 @@ export const addMember = async (_prev: ActionState, formData: FormData): Promise
   if (error) {
     console.error('[addMember]', error.message);
     return fail('Could not add them.');
+  }
+
+  if (avatarFile) {
+    const memberId = data.id as string;
+    const objectPath = avatarObjectPath(memberId);
+    const { error: uploadError } = await supabase.storage
+      .from(AVATAR_UPLOAD_BUCKET)
+      .upload(objectPath, avatarFile, {
+        cacheControl: '3600',
+        contentType: avatarFile.type,
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error('[addMember:upload]', uploadError.message);
+      await supabase.from('members').delete().eq('id', memberId);
+      return fail('Could not upload their profile picture.');
+    }
+
+    const publicUrl = supabase.storage.from(AVATAR_UPLOAD_BUCKET).getPublicUrl(objectPath)
+      .data.publicUrl;
+    const { error: avatarError } = await supabase
+      .from('members')
+      .update({ avatar_path: `${publicUrl}?v=${Date.now()}` })
+      .eq('id', memberId);
+
+    if (avatarError) {
+      console.error('[addMember:avatar]', avatarError.message);
+      await supabase.storage.from(AVATAR_UPLOAD_BUCKET).remove([objectPath]);
+      await supabase.from('members').delete().eq('id', memberId);
+      return fail('Could not save their profile picture.');
+    }
   }
 
   revalidatePath('/');

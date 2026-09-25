@@ -1,6 +1,6 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Member } from '@/types/fitness';
 
 vi.mock('@/app/actions', () => ({ addMember: vi.fn(async () => ({ ok: false })) }));
@@ -24,11 +24,16 @@ const members: Member[] = [
   { id: 'm3', name: 'Bradley', accent: 'aqua', sortOrder: 2, targets },
 ];
 
+beforeAll(() => {
+  URL.createObjectURL = vi.fn(() => 'blob:avatar-preview');
+  URL.revokeObjectURL = vi.fn();
+});
+
 describe('AddMemberForm', () => {
   it('offers a swatch per accent slot', () => {
     render(<AddMemberForm members={members} viewerId="m1" />);
 
-    expect(screen.getAllByRole('radio')).toHaveLength(8);
+    expect(within(screen.getByRole('group', { name: 'Colour' })).getAllByRole('radio')).toHaveLength(12);
   });
 
   it('preselects the next free colour rather than one already in use', () => {
@@ -68,5 +73,34 @@ describe('AddMemberForm', () => {
     const { container } = render(<AddMemberForm members={members} viewerId="m1" />);
 
     expect(container.querySelector('input[name="sortOrder"]')).toHaveValue('3');
+  });
+
+  it('offers initial and built-in profile pictures', async () => {
+    const user = userEvent.setup();
+    render(<AddMemberForm members={members} viewerId="m1" />);
+
+    const pictures = within(screen.getByRole('group', { name: 'Profile picture' }));
+    expect(pictures.getAllByRole('radio')).toHaveLength(8);
+    expect(pictures.getByRole('radio', { name: 'Initial' })).toBeChecked();
+
+    await user.click(pictures.getByRole('radio', { name: 'Tempo' }));
+    expect(pictures.getByRole('radio', { name: 'Tempo' })).toBeChecked();
+    expect(pictures.getByRole('radio', { name: 'Initial' })).not.toBeChecked();
+  });
+
+  it('allows a profile photo upload during creation', async () => {
+    const user = userEvent.setup();
+    render(<AddMemberForm members={members} viewerId="m1" />);
+
+    const upload = screen.getByLabelText('Upload photo');
+    await user.upload(upload, new File(['photo'], 'profile.png', { type: 'image/png' }));
+
+    expect((upload as HTMLInputElement).files).toHaveLength(1);
+    expect(screen.getByRole('radio', { name: 'Uploaded photo' })).toBeChecked();
+    expect(URL.createObjectURL).toHaveBeenCalledOnce();
+
+    await user.click(screen.getByRole('radio', { name: 'Tempo' }));
+    expect((upload as HTMLInputElement).files).toHaveLength(0);
+    expect(screen.getByRole('radio', { name: 'Tempo' })).toBeChecked();
   });
 });

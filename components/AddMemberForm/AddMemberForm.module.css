@@ -132,6 +132,92 @@
   text-transform: capitalize;
 }
 
+.avatarOptions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin-top: 0.5rem;
+}
+
+.avatarOption {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.4rem 0.2rem;
+  font-size: 0.66rem;
+  text-align: center;
+  color: var(--c-ink-muted);
+  background: var(--c-bg-alt);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+}
+
+.avatarOption:has(input:checked),
+.avatarOption[data-selected] {
+  color: var(--c-ink);
+  border-color: var(--c-accent);
+  background: color-mix(in oklab, var(--c-accent) 10%, var(--c-bg-alt));
+}
+
+.avatarOption input {
+  align-self: flex-start;
+  width: 0.8rem;
+  height: 0.8rem;
+  margin: 0;
+  accent-color: var(--c-accent);
+}
+
+.avatarOption .uploadInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  opacity: 0;
+}
+
+.uploadLabel {
+  display: contents;
+  cursor: pointer;
+}
+
+.avatarOption img,
+.initialAvatar,
+.uploadOption {
+  width: 2.25rem;
+  height: 2.25rem;
+  aspect-ratio: 1;
+  flex: 0 0 2.25rem;
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+.uploadOption {
+  display: grid;
+  place-items: center;
+  color: var(--c-ink-soft);
+  background: var(--c-surface-raised);
+  border: 1px dashed var(--c-border-strong);
+}
+
+.avatarOption img {
+  display: block;
+  object-fit: cover;
+}
+
+.initialAvatar {
+  display: grid;
+  place-items: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--avatar-accent);
+  background: color-mix(in oklab, var(--avatar-accent) 14%, var(--c-surface-raised));
+  border: 1px solid var(--avatar-accent);
+}
+
 .hint {
   margin: 0;
   font-size: 0.78rem;

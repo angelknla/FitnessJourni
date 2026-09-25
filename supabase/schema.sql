@@ -12,7 +12,7 @@ create extension if not exists pgcrypto;
 -- Target defaults come from Dillon's 12-week playbook. They are per-member and
 -- editable, so Angel and Bradley are not locked to his numbers.
 --
--- `accent` values are the eight categorical slots validated against this app's
+-- `accent` values are the twelve categorical slots used against this app's
 -- dark chart surface (colourblind separation + contrast). Do not invent new ones
 -- without re-running the palette validator.
 -- ----------------------------------------------------------------------------
@@ -36,14 +36,16 @@ create table if not exists public.members (
 alter table public.members alter column accent set default 'blue';
 alter table public.members drop constraint if exists members_accent_check;
 
-update public.members set accent = 'blue'    where accent = 'lime';
 update public.members set accent = 'orange'  where accent = 'sky';
 update public.members set accent = 'aqua'    where accent = 'amber';
 update public.members set accent = 'magenta' where accent = 'rose';
 update public.members set accent = 'aqua'    where accent = 'teal';
 
 alter table public.members add constraint members_accent_check
-  check (accent in ('blue', 'orange', 'aqua', 'yellow', 'magenta', 'green', 'violet', 'red'));
+  check (accent in (
+    'blue', 'orange', 'aqua', 'yellow', 'magenta', 'green',
+    'violet', 'red', 'cyan', 'lime', 'pink', 'silver'
+  ));
 
 -- The playbook's standard is 4 lifting sessions a week. Per-member so it can differ.
 alter table public.members

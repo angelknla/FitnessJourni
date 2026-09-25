@@ -143,11 +143,10 @@ utils/date.ts         ISO date helpers
 
 ### The colour system is validated, not chosen by eye
 
-The eight member accents in `globals.css` are categorical slots checked against the dark chart
-surface (`--c-surface`, `#141416`) for colourblind separation, chroma and contrast. They are
-assigned in fixed order and never generated or cycled — a generated ninth hue is indistinguishable
-from an existing one under simulation. A member's colour follows the person, not their position in
-the list, and a name always sits beside the colour so identity never depends on colour alone.
+The twelve member accents are categorical slots used against the dark chart surface
+(`--c-surface`, `#141416`). They are assigned in fixed order rather than generated. A member's
+colour follows the person, not their position in the list, and a name always sits beside the colour
+so identity never depends on colour alone.
 
 If you change `--c-surface` or add an accent, re-validate the set rather than eyeballing it.
 

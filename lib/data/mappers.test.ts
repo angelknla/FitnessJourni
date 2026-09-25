@@ -140,8 +140,7 @@ describe('resolveAccent via mapMember', () => {
   });
 
   it('falls back by position for an unknown accent, keeping members distinct', () => {
-    // 'lime' shipped in an earlier draft of the schema and is no longer valid.
-    expect(mapMember({ ...memberRow, accent: 'lime', sort_order: 0 }).accent).toBe('blue');
+    expect(mapMember({ ...memberRow, accent: 'chartreuse', sort_order: 0 }).accent).toBe('blue');
     expect(mapMember({ ...memberRow, accent: 'sky', sort_order: 1 }).accent).toBe('orange');
     expect(mapMember({ ...memberRow, accent: 'amber', sort_order: 2 }).accent).toBe('aqua');
   });

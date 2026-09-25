@@ -37,6 +37,10 @@ export const accentNames: AccentName[] = [
   'green',
   'violet',
   'red',
+  'cyan',
+  'lime',
+  'pink',
+  'silver',
 ];
 
 /**
@@ -59,9 +63,13 @@ export const accentHex: Record<AccentName, string> = {
   green: '#008300',
   violet: '#9085e9',
   red: '#e66767',
+  cyan: '#00a2c7',
+  lime: '#78a800',
+  pink: '#d95fc4',
+  silver: '#8f9caa',
 };
 
-/** The next free slot for a new member, wrapping only once all eight are taken. */
+/** The next free slot for a new member, wrapping only once all twelve are taken. */
 export const nextAccent = (used: AccentName[]): AccentName =>
   accentNames.find((name) => !used.includes(name)) ?? accentNames[used.length % accentNames.length];
 

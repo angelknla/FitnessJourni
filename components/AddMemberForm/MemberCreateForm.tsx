@@ -1,5 +1,7 @@
 'use client';
 
+import { UploadIcon } from '@components/Icons/Icons';
+import { avatarOptions, avatarUploadTypes } from '@data/avatarData';
 import { accentHex, accentNames, nextAccent } from '@data/fitnessData';
 import { type CSSProperties, useActionState, useEffect, useRef, useState } from 'react';
 import { type ActionState, addMember } from '@/app/actions';
@@ -32,7 +34,20 @@ export const MemberCreateForm = ({
     const [accent, setAccent] = useState<AccentName>(
         nextAccent(members.map((member) => member.accent))
     );
+    const [name, setName] = useState('');
+    const [avatarPath, setAvatarPath] = useState('');
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+    const avatarFileRef = useRef<HTMLInputElement>(null);
     const reportedId = useRef<string | null>(null);
+
+    useEffect(
+        () => () => {
+            if (avatarPreview) {
+                URL.revokeObjectURL(avatarPreview);
+            }
+        },
+        [avatarPreview]
+    );
 
     useEffect(() => {
         if (
@@ -51,6 +66,13 @@ export const MemberCreateForm = ({
     }, [state.newMemberAccent, state.newMemberId, state.newMemberName, onMemberAdded]);
 
     const used = members.map((member) => member.accent);
+    const chooseAvatar = (value: string) => {
+        setAvatarPath(value);
+        setAvatarPreview(null);
+        if (avatarFileRef.current) {
+            avatarFileRef.current.value = '';
+        }
+    };
 
     return (
         <form className={embedded ? `${styles.form} ${styles.embedded}` : styles.form} action={formAction}>
@@ -61,7 +83,15 @@ export const MemberCreateForm = ({
 
                 <label className={styles.nameField}>
                     <span className={styles.fieldLabel}>Name</span>
-                    <input type="text" name="name" maxLength={40} required autoComplete="off" />
+                    <input
+                        type="text"
+                        name="name"
+                        maxLength={40}
+                        required
+                        autoComplete="off"
+                        value={name}
+                        onChange={(event) => setName(event.target.value)}
+                    />
                 </label>
             </fieldset>
 
@@ -97,6 +127,77 @@ export const MemberCreateForm = ({
                 <p className={styles.chosen}>
                     Chosen: <strong className={styles.chosenName}>{accent}</strong>
                 </p>
+            </fieldset>
+
+            <fieldset className={styles.fieldset}>
+                <legend className={styles.fieldLabel}>Profile picture</legend>
+                <div className={styles.avatarOptions}>
+                    <label className={styles.avatarOption}>
+                        <input
+                            type="radio"
+                            name="avatarPath"
+                            value=""
+                            checked={avatarPath === ''}
+                            onChange={() => chooseAvatar('')}
+                        />
+                        <span
+                            className={styles.initialAvatar}
+                            style={{ '--avatar-accent': accentHex[accent] } as CSSProperties}
+                            aria-hidden="true"
+                        >
+                            {name.trim().charAt(0).toUpperCase() || '?'}
+                        </span>
+                        <span>Initial</span>
+                    </label>
+                    {avatarOptions.map((option) => (
+                        <label className={styles.avatarOption} key={option.path}>
+                            <input
+                                type="radio"
+                                name="avatarPath"
+                                value={option.path}
+                                checked={avatarPath === option.path}
+                                onChange={() => chooseAvatar(option.path)}
+                            />
+                            <img src={option.path} alt="" />
+                            <span>{option.label}</span>
+                        </label>
+                    ))}
+                    <div className={styles.avatarOption} data-selected={avatarPath === 'upload' || undefined}>
+                        <input
+                            type="radio"
+                            name="avatarPath"
+                            value=""
+                            aria-label="Uploaded photo"
+                            checked={avatarPath === 'upload'}
+                            onChange={() => avatarFileRef.current?.click()}
+                        />
+                        <label htmlFor="new-member-avatar" className={styles.uploadLabel}>
+                            {avatarPreview ? (
+                                <img src={avatarPreview} alt="" />
+                            ) : (
+                                <span className={styles.uploadOption} aria-hidden="true">
+                                    <UploadIcon />
+                                </span>
+                            )}
+                            <span>Upload photo</span>
+                        </label>
+                        <input
+                            ref={avatarFileRef}
+                            id="new-member-avatar"
+                            className={styles.uploadInput}
+                            type="file"
+                            name="avatarFile"
+                            accept={avatarUploadTypes.join(',')}
+                            onChange={(event) => {
+                                const file = event.currentTarget.files?.[0];
+                                setAvatarPreview(file ? URL.createObjectURL(file) : null);
+                                if (file) {
+                                    setAvatarPath('upload');
+                                }
+                            }}
+                        />
+                    </div>
+                </div>
             </fieldset>
 
             <p className={styles.hint}>
