@@ -945,6 +945,108 @@ export const logRun = async (_prev: ActionState, formData: FormData): Promise<Ac
   return ok;
 };
 
+export const editRun = async (_prev: ActionState, formData: FormData): Promise<ActionState> => {
+  if (!(await isUnlocked())) {
+    return fail(LOCKED);
+  }
+
+  const supabase = getSupabase();
+  if (!supabase) {
+    return fail(NOT_CONFIGURED);
+  }
+
+  const id = toText(formData.get('id'));
+  const date = toText(formData.get('date'));
+  const hours = toInt(formData.get('hours'), 24);
+  const minutes = toInt(formData.get('minutes'), 59);
+  const distanceKm = Number(formData.get('distanceKm'));
+  const paceMinutesText = toText(formData.get('paceMinutes'));
+  const paceSecondsText = toText(formData.get('paceSeconds'));
+  const hasManualPace = paceMinutesText !== '' || paceSecondsText !== '';
+  const paceMinutes = Number(paceMinutesText || 0);
+  const paceSeconds = Number(paceSecondsText || 0);
+  const manualPaceSeconds = paceMinutes * 60 + paceSeconds;
+  const durationMinutes = hours * 60 + minutes;
+
+  if (!id) {
+    return fail('That run is missing.');
+  }
+  if (!ISO_DATE.test(date)) {
+    return fail('Pick a valid run date.');
+  }
+  if (durationMinutes < 1 || durationMinutes > 1440) {
+    return fail('Enter how long the run took.');
+  }
+  if (!Number.isFinite(distanceKm) || distanceKm <= 0 || distanceKm > 1000) {
+    return fail('Enter the distance in kilometres.');
+  }
+  if (
+    hasManualPace &&
+    (!Number.isInteger(paceMinutes) ||
+      !Number.isInteger(paceSeconds) ||
+      paceMinutes < 0 ||
+      paceSeconds < 0 ||
+      paceSeconds > 59 ||
+      manualPaceSeconds < 1 ||
+      manualPaceSeconds > 7200)
+  ) {
+    return fail('Enter pace as minutes and seconds per kilometre.');
+  }
+
+  const { data: run } = await supabase.from('runs').select('created_by').eq('id', id).maybeSingle();
+  if (!run?.created_by) {
+    return fail('That run is already gone.');
+  }
+
+  const createdBy = run.created_by as string;
+  const notYours = await refuseUnlessOwn(createdBy);
+  if (notYours) {
+    return fail(notYours);
+  }
+
+  const members = await getMembers();
+  const memberIds = new Set(members.map((member) => member.id));
+  const attendeeIds = [
+    ...new Set([createdBy, ...formData.getAll('attendee').map((value) => String(value))]),
+  ].filter((memberId) => memberIds.has(memberId));
+
+  const { error: runError } = await supabase
+    .from('runs')
+    .update({
+      run_date: date,
+      duration_minutes: durationMinutes,
+      distance_km: Math.round(distanceKm * 100) / 100,
+      pace_seconds_per_km: hasManualPace ? manualPaceSeconds : null,
+    })
+    .eq('id', id);
+
+  if (runError) {
+    console.error('[editRun]', runError.message);
+    return fail('Could not update that run.');
+  }
+
+  const { error: clearError } = await supabase.from('run_attendees').delete().eq('run_id', id);
+  if (clearError) {
+    console.error('[editRun attendees:clear]', clearError.message);
+    return fail('Could not update who attended.');
+  }
+
+  const { error: attendeeError } = await supabase.from('run_attendees').insert(
+    attendeeIds.map((memberId) => ({
+      run_id: id,
+      member_id: memberId,
+    }))
+  );
+
+  if (attendeeError) {
+    console.error('[editRun attendees]', attendeeError.message);
+    return fail('Could not update who attended.');
+  }
+
+  revalidatePath('/running');
+  return { ok: true, bookedAt: Date.now() };
+};
+
 export const deleteRun = async (_prev: ActionState, formData: FormData): Promise<ActionState> => {
   if (!(await isUnlocked())) {
     return fail(LOCKED);

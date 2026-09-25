@@ -78,6 +78,24 @@
   font-weight: 600;
 }
 
+.runToggle {
+  width: 100%;
+  padding: 0;
+  text-align: left;
+  color: inherit;
+  background: transparent;
+  border: 0;
+}
+
+.runToggle:hover:not(:disabled) {
+  color: var(--c-ink);
+  background: transparent;
+}
+
+.runToggle svg {
+  flex: 0 0 auto;
+}
+
 .kicker,
 .legend {
   font-size: 0.7rem;
@@ -154,6 +172,7 @@
 }
 
 .form {
+  width: 100%;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -162,6 +181,18 @@
   background: var(--c-surface);
   border: 1px solid var(--c-border);
   border-radius: var(--r-lg);
+}
+
+.editPanel {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+.editForm {
+  padding: 1rem 0 0;
+  border: 0;
+  border-top: 1px solid var(--c-border);
+  border-radius: 0;
 }
 
 .formGrid {
@@ -402,13 +433,19 @@
   color: var(--c-ink-soft);
 }
 
-.removeForm {
+.cardActions {
   position: absolute;
   top: 0.65rem;
   right: 0.65rem;
+  display: flex;
+  gap: 0.35rem;
 }
 
-.remove {
+.cardActions form {
+  display: flex;
+}
+
+.cardAction {
   width: 1.75rem;
   height: 1.75rem;
   display: grid;
@@ -417,6 +454,16 @@
   color: var(--c-ink-muted);
   background: transparent;
   border-color: var(--c-border);
+}
+
+.cardAction:hover:not(:disabled) {
+  color: var(--c-ink);
+  background: var(--c-surface-soft);
+}
+
+.remove:hover:not(:disabled) {
+  color: var(--c-critical);
+  border-color: var(--c-critical);
 }
 
 .error,

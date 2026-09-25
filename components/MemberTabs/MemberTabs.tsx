@@ -3,7 +3,7 @@
 import { CrossIcon, PlusIcon } from '@components/Icons/Icons';
 import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
 import { accentHex } from '@data/fitnessData';
-import { type CSSProperties, type KeyboardEvent, useRef } from 'react';
+import { type CSSProperties, type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import type { Member } from '@/types/fitness';
 
 import styles from './MemberTabs.module.css';
@@ -27,6 +27,34 @@ export const MemberTabs = ({
   panelId,
 }: MemberTabsProps) => {
   const listRef = useRef<HTMLDivElement>(null);
+  const [scrollEdges, setScrollEdges] = useState({ left: false, right: false });
+  const memberCount = members.length;
+
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list || memberCount === 0) {
+      setScrollEdges({ left: false, right: false });
+      return;
+    }
+
+    const updateEdges = () => {
+      const remaining = list.scrollWidth - list.clientWidth - list.scrollLeft;
+      setScrollEdges({ left: list.scrollLeft > 1, right: remaining > 1 });
+    };
+
+    updateEdges();
+    list.addEventListener('scroll', updateEdges, { passive: true });
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(updateEdges);
+    observer?.observe(list);
+    for (const tab of list.children) {
+      observer?.observe(tab);
+    }
+
+    return () => {
+      list.removeEventListener('scroll', updateEdges);
+      observer?.disconnect();
+    };
+  }, [memberCount]);
 
   /**
    * Roving tabindex: one stop for the whole tablist, arrows move between tabs.
@@ -63,30 +91,36 @@ export const MemberTabs = ({
 
   return (
     <div className={styles.wrapper}>
-      <div className={styles.tabs} ref={listRef} role="tablist" aria-label="People">
-        {members.map((member) => {
-          const selected = member.id === activeId;
+      <div
+        className={styles.tabViewport}
+        data-scroll-left={scrollEdges.left || undefined}
+        data-scroll-right={scrollEdges.right || undefined}
+      >
+        <div className={styles.tabs} ref={listRef} role="tablist" aria-label="People">
+          {members.map((member) => {
+            const selected = member.id === activeId;
 
-          return (
-            <button
-              type="button"
-              key={member.id}
-              data-tab-id={member.id}
-              id={`tab-${member.id}`}
-              className={styles.tab}
-              role="tab"
-              aria-selected={selected}
-              aria-controls={panelId}
-              tabIndex={selected ? 0 : -1}
-              onClick={() => onSelect(member.id)}
-              onKeyDown={handleKeyDown}
-              style={{ '--member-accent': accentHex[member.accent] } as CSSProperties}
-            >
-              <MemberAvatar member={member} />
-              {member.name}
-            </button>
-          );
-        })}
+            return (
+              <button
+                type="button"
+                key={member.id}
+                data-tab-id={member.id}
+                id={`tab-${member.id}`}
+                className={styles.tab}
+                role="tab"
+                aria-selected={selected}
+                aria-controls={panelId}
+                tabIndex={selected ? 0 : -1}
+                onClick={() => onSelect(member.id)}
+                onKeyDown={handleKeyDown}
+                style={{ '--member-accent': accentHex[member.accent] } as CSSProperties}
+              >
+                <MemberAvatar member={member} />
+                {member.name}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <button

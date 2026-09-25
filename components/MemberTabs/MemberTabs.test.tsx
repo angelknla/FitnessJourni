@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { Member } from '@/types/fitness';
@@ -106,6 +106,27 @@ describe('MemberTabs', () => {
 
     await user.click(add);
     expect(onAdd).toHaveBeenCalled();
+  });
+
+  it('shows edge cues only where more tabs can be scrolled', () => {
+    setup();
+
+    const tabs = screen.getByRole('tablist', { name: 'People' });
+    const viewport = tabs.parentElement;
+    Object.defineProperties(tabs, {
+      clientWidth: { configurable: true, value: 200 },
+      scrollWidth: { configurable: true, value: 400 },
+      scrollLeft: { configurable: true, writable: true, value: 0 },
+    });
+
+    fireEvent.scroll(tabs);
+    expect(viewport).not.toHaveAttribute('data-scroll-left');
+    expect(viewport).toHaveAttribute('data-scroll-right', 'true');
+
+    tabs.scrollLeft = 200;
+    fireEvent.scroll(tabs);
+    expect(viewport).toHaveAttribute('data-scroll-left', 'true');
+    expect(viewport).not.toHaveAttribute('data-scroll-right');
   });
 
 });

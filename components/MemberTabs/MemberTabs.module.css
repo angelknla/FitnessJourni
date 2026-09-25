@@ -9,11 +9,45 @@
   min-width: 0;
 }
 
+.tabViewport {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.tabViewport::before,
+.tabViewport::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  bottom: 0;
+  width: 1.5rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s var(--ease-flow);
+}
+
+.tabViewport::before {
+  left: 0;
+  background: linear-gradient(to right, var(--c-bg), transparent);
+}
+
+.tabViewport::after {
+  right: 0;
+  background: linear-gradient(to left, var(--c-bg), transparent);
+}
+
+.tabViewport[data-scroll-left]::before,
+.tabViewport[data-scroll-right]::after {
+  opacity: 1;
+}
+
 .tabs {
   display: flex;
   gap: 0.35rem;
   overflow-x: auto;
-  flex: 1;
+  width: 100%;
   min-width: 0;
   scrollbar-width: none;
 }

@@ -6,8 +6,8 @@ export interface NavItem {
 export const navigationData: NavItem[] = [
   { label: 'Home', href: '/' },
   { label: 'Workouts', href: '/workouts' },
-  { label: 'Running', href: '/running' },
   { label: 'Logs', href: '/logs' },
+  { label: 'Running', href: '/running' },
   { label: 'Sessions', href: '/sessions' },
   { label: 'Chat', href: '/messages' },
 ];

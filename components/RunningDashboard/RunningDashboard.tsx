@@ -1,11 +1,11 @@
 'use client';
 
-import { CrossIcon } from '@components/Icons/Icons';
+import { CrossIcon, PencilIcon, PlusIcon } from '@components/Icons/Icons';
 import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
 import { accentHex } from '@data/fitnessData';
 import { fromISODate, startOfMonth, startOfWeek } from '@utils/date';
-import { type CSSProperties, useActionState, useState } from 'react';
-import { type ActionState, deleteRun, logRun } from '@/app/actions';
+import { type CSSProperties, useActionState, useEffect, useState } from 'react';
+import { type ActionState, deleteRun, editRun, logRun } from '@/app/actions';
 import { formatRunDuration, formatRunPace } from '@/lib/data/runs';
 import type { GroupRun, Member, RunTally } from '@/types/fitness';
 
@@ -31,31 +31,49 @@ const RunForm = ({
     members,
     viewerId,
     today,
+    run,
+    onSaved,
 }: {
     members: Member[];
     viewerId: string;
     today: string;
+    run?: GroupRun;
+    onSaved?: () => void;
 }) => {
-    const [state, formAction, isPending] = useActionState(logRun, initial);
-    const [hours, setHours] = useState('0');
-    const [minutes, setMinutes] = useState('30');
-    const [distance, setDistance] = useState('5');
-    const [paceMinutes, setPaceMinutes] = useState('');
-    const [paceSeconds, setPaceSeconds] = useState('');
+    const [state, formAction, isPending] = useActionState(run ? editRun : logRun, initial);
+    const [hours, setHours] = useState(String(run ? Math.floor(run.durationMinutes / 60) : 0));
+    const [minutes, setMinutes] = useState(String(run ? run.durationMinutes % 60 : 30));
+    const [distance, setDistance] = useState(String(run?.distanceKm ?? 5));
+    const [paceMinutes, setPaceMinutes] = useState(
+        run?.paceSecondsPerKm ? String(Math.floor(run.paceSecondsPerKm / 60)) : ''
+    );
+    const [paceSeconds, setPaceSeconds] = useState(
+        run?.paceSecondsPerKm ? String(run.paceSecondsPerKm % 60) : ''
+    );
     const durationMinutes = Number(hours || 0) * 60 + Number(minutes || 0);
     const distanceKm = Number(distance);
     const hasManualPace = paceMinutes !== '' || paceSeconds !== '';
     const manualPaceSeconds = Number(paceMinutes || 0) * 60 + Number(paceSeconds || 0);
     const valid = durationMinutes > 0 && distanceKm > 0 && (!hasManualPace || manualPaceSeconds > 0);
 
+    useEffect(() => {
+        if (state.ok && state.bookedAt) {
+            onSaved?.();
+        }
+    }, [onSaved, state.bookedAt, state.ok]);
+
     return (
-        <form className={styles.form} action={formAction}>
-            <input type="hidden" name="createdBy" value={viewerId} />
+        <form className={run ? `${styles.form} ${styles.editForm}` : styles.form} action={formAction}>
+            {run ? (
+                <input type="hidden" name="id" value={run.id} />
+            ) : (
+                <input type="hidden" name="createdBy" value={viewerId} />
+            )}
 
             <div className={styles.formGrid}>
                 <label className={styles.field}>
                     <span>Date</span>
-                    <input type="date" name="date" defaultValue={today} max={today} required />
+                    <input type="date" name="date" defaultValue={run?.date ?? today} max={today} required />
                 </label>
 
                 <fieldset className={styles.timeField}>
@@ -161,8 +179,8 @@ const RunForm = ({
                                 type="checkbox"
                                 name="attendee"
                                 value={member.id}
-                                defaultChecked={member.id === viewerId}
-                                disabled={member.id === viewerId}
+                                defaultChecked={run ? run.attendeeIds.includes(member.id) : member.id === viewerId}
+                                disabled={member.id === (run?.createdBy ?? viewerId)}
                             />
                             <span className={styles.personLabel}>
                                 <MemberAvatar member={member} size="1rem" />
@@ -175,8 +193,13 @@ const RunForm = ({
 
             <div className={styles.formActions}>
                 <button type="submit" className={styles.submit} disabled={isPending || !valid}>
-                    {isPending ? 'Logging…' : 'Log run'}
+                    {isPending ? (run ? 'Saving…' : 'Logging…') : (run ? 'Save changes' : 'Log run')}
                 </button>
+                {run && (
+                    <button type="button" onClick={onSaved} disabled={isPending}>
+                        Cancel
+                    </button>
+                )}
                 {state.error && (
                     <p className={styles.error} role="alert">
                         {state.error}
@@ -191,11 +214,14 @@ const RunCard = ({
     run,
     members,
     viewerId,
+    today,
 }: {
     run: GroupRun;
     members: Member[];
     viewerId: string | null;
+    today: string;
 }) => {
+    const [editing, setEditing] = useState(false);
     const [state, formAction, isPending] = useActionState(deleteRun, initial);
     const attendees = members.filter((member) => run.attendeeIds.includes(member.id));
 
@@ -241,17 +267,41 @@ const RunCard = ({
             </div>
 
             {run.createdBy === viewerId && (
-                <form action={formAction} className={styles.removeForm}>
-                    <input type="hidden" name="id" value={run.id} />
+                <div className={styles.cardActions}>
                     <button
-                        type="submit"
-                        className={styles.remove}
-                        disabled={isPending}
-                        aria-label={`Remove ${run.distanceKm.toFixed(2)} kilometre run`}
+                        type="button"
+                        className={styles.cardAction}
+                        aria-label={`Edit ${run.distanceKm.toFixed(2)} kilometre run`}
+                        aria-expanded={editing}
+                        aria-controls={`edit-run-${run.id}`}
+                        onClick={() => setEditing((current) => !current)}
                     >
-                        <CrossIcon size={13} />
+                        {editing ? <CrossIcon size={13} /> : <PencilIcon size={13} />}
                     </button>
-                </form>
+                    <form action={formAction}>
+                        <input type="hidden" name="id" value={run.id} />
+                        <button
+                            type="submit"
+                            className={`${styles.cardAction} ${styles.remove}`}
+                            disabled={isPending}
+                            aria-label={`Remove ${run.distanceKm.toFixed(2)} kilometre run`}
+                        >
+                            <CrossIcon size={13} />
+                        </button>
+                    </form>
+                </div>
+            )}
+
+            {editing && viewerId && (
+                <div className={styles.editPanel} id={`edit-run-${run.id}`}>
+                    <RunForm
+                        members={members}
+                        viewerId={viewerId}
+                        today={today}
+                        run={run}
+                        onSaved={() => setEditing(false)}
+                    />
+                </div>
             )}
 
             {state.error && (
@@ -270,6 +320,7 @@ export const RunningDashboard = ({
     viewerId,
     today,
 }: RunningDashboardProps) => {
+    const [runFormOpen, setRunFormOpen] = useState(false);
     const orderedMembers = viewerId
         ? [
             ...members.filter((member) => member.id === viewerId),
@@ -347,18 +398,29 @@ export const RunningDashboard = ({
 
             {viewerId && (
                 <section className={styles.section} aria-labelledby="log-run-heading">
-                    <div className={styles.sectionHead}>
+                    <button
+                        type="button"
+                        className={`${styles.sectionHead} ${styles.runToggle}`}
+                        aria-expanded={runFormOpen}
+                        aria-controls="log-run-form"
+                        onClick={() => setRunFormOpen((current) => !current)}
+                    >
                         <div>
                             <p className={styles.kicker}>Add effort</p>
                             <h2 id="log-run-heading">Log a run</h2>
                         </div>
-                    </div>
-                    <RunForm
-                        members={orderedMembers}
-                        viewerId={viewerId}
-                        today={today}
-                        key={runs.length}
-                    />
+                        {runFormOpen ? <CrossIcon /> : <PlusIcon />}
+                    </button>
+                    {runFormOpen && (
+                        <div id="log-run-form">
+                            <RunForm
+                                members={orderedMembers}
+                                viewerId={viewerId}
+                                today={today}
+                                key={runs.length}
+                            />
+                        </div>
+                    )}
                 </section>
             )}
 
@@ -379,6 +441,7 @@ export const RunningDashboard = ({
                                 run={run}
                                 members={orderedMembers}
                                 viewerId={viewerId}
+                                today={today}
                                 key={run.id}
                             />
                         ))}
