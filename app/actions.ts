@@ -1,6 +1,12 @@
 'use server';
 
-import { isAvatarPath } from '@data/avatarData';
+import {
+  AVATAR_UPLOAD_BUCKET,
+  AVATAR_UPLOAD_MAX_BYTES,
+  avatarObjectPath,
+  avatarUploadTypes,
+  isAvatarPath,
+} from '@data/avatarData';
 import {
   accentNames,
   activityLabels,
@@ -85,19 +91,66 @@ export const saveAvatar = async (_prev: ActionState, formData: FormData): Promis
   }
 
   const memberId = toText(formData.get('memberId'));
-  const avatarPath = toText(formData.get('avatarPath'));
+  const avatarPathEntry = formData.get('avatarPath');
+  const avatarFileEntry = formData.get('avatarFile');
+  const avatarFile =
+    avatarFileEntry instanceof File && avatarFileEntry.size > 0 ? avatarFileEntry : null;
   const notYours = await refuseUnlessOwn(memberId);
 
   if (notYours) {
     return fail(notYours);
   }
-  if (!isAvatarPath(avatarPath)) {
-    return fail('Choose one of the available profile pictures.');
+
+  let avatarPath: string | null;
+
+  if (avatarFile) {
+    if (!avatarUploadTypes.includes(avatarFile.type as (typeof avatarUploadTypes)[number])) {
+      return fail('Upload a JPEG, PNG or WebP image.');
+    }
+    if (avatarFile.size > AVATAR_UPLOAD_MAX_BYTES) {
+      return fail('Profile pictures must be 5 MB or smaller.');
+    }
+
+    const objectPath = avatarObjectPath(memberId);
+    const { error: uploadError } = await supabase.storage
+      .from(AVATAR_UPLOAD_BUCKET)
+      .upload(objectPath, avatarFile, {
+        cacheControl: '3600',
+        contentType: avatarFile.type,
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error('[saveAvatar:upload]', uploadError.message);
+      return fail('Could not upload your profile picture.');
+    }
+
+    const { data } = supabase.storage.from(AVATAR_UPLOAD_BUCKET).getPublicUrl(objectPath);
+    avatarPath = `${data.publicUrl}?v=${Date.now()}`;
+  } else {
+    const submittedPath = toText(avatarPathEntry);
+    const objectUrl = supabase.storage
+      .from(AVATAR_UPLOAD_BUCKET)
+      .getPublicUrl(avatarObjectPath(memberId)).data.publicUrl;
+    const isOwnUpload = (() => {
+      try {
+        const submitted = new URL(submittedPath);
+        const expected = new URL(objectUrl);
+        return submitted.origin === expected.origin && submitted.pathname === expected.pathname;
+      } catch {
+        return false;
+      }
+    })();
+
+    if (avatarPathEntry === null || (!isAvatarPath(submittedPath) && !isOwnUpload)) {
+      return fail('Choose or upload a profile picture.');
+    }
+    avatarPath = submittedPath || null;
   }
 
   const { error } = await supabase
     .from('members')
-    .update({ avatar_path: avatarPath || null })
+    .update({ avatar_path: avatarPath })
     .eq('id', memberId);
 
   if (error) {
@@ -372,6 +425,13 @@ export const removeMember = async (
   if (error) {
     console.error('[removeMember]', error.message);
     return fail('Could not remove them.');
+  }
+
+  const { error: avatarError } = await supabase.storage
+    .from(AVATAR_UPLOAD_BUCKET)
+    .remove([avatarObjectPath(memberId)]);
+  if (avatarError) {
+    console.error('[removeMember:avatar]', avatarError.message);
   }
 
   if (viewer.memberId === memberId) {

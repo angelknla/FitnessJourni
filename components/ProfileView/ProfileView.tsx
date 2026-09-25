@@ -1,8 +1,9 @@
 'use client';
 
+import { CrossIcon, UploadIcon } from '@components/Icons/Icons';
 import { IdentityDialog } from '@components/IdentityDialog/IdentityDialog';
 import { RemoveMemberDialog } from '@components/RemoveMemberDialog/RemoveMemberDialog';
-import { avatarOptions } from '@data/avatarData';
+import { avatarOptions, avatarUploadTypes, isAvatarPath } from '@data/avatarData';
 import { accentHex } from '@data/fitnessData';
 import { useRouter } from 'next/navigation';
 import { type CSSProperties, useActionState, useEffect, useState, useTransition } from 'react';
@@ -42,6 +43,7 @@ export const ProfileView = ({
     const [identityOpen, setIdentityOpen] = useState(false);
     const [removeOpen, setRemoveOpen] = useState(false);
     const [avatarOpen, setAvatarOpen] = useState(false);
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
     const [signingOut, startSignOut] = useTransition();
     const [profileState, profileAction, profilePending] = useActionState(
         saveProfileDetails,
@@ -56,8 +58,18 @@ export const ProfileView = ({
     useEffect(() => {
         if (avatarState.ok && avatarState.bookedAt) {
             setAvatarOpen(false);
+            setAvatarPreview(null);
         }
     }, [avatarState.ok, avatarState.bookedAt]);
+
+    useEffect(
+        () => () => {
+            if (avatarPreview) {
+                URL.revokeObjectURL(avatarPreview);
+            }
+        },
+        [avatarPreview]
+    );
 
     const currentWeight = measurements.at(-1)?.weightKg ?? null;
     const currentBmi = calculateBmi(currentWeight, profile?.heightCm ?? null);
@@ -100,6 +112,9 @@ export const ProfileView = ({
     }
 
     const accent = accentHex[member.accent];
+    const uploadedAvatar = member.avatarPath && !isAvatarPath(member.avatarPath)
+        ? member.avatarPath
+        : null;
     const weightDifference =
         currentWeight !== null && profile.targetWeightKg !== null
             ? Math.abs(currentWeight - profile.targetWeightKg)
@@ -135,8 +150,22 @@ export const ProfileView = ({
             {avatarOpen && (
                 <form id="avatar-picker" className={styles.avatarPicker} action={avatarAction}>
                     <input type="hidden" name="memberId" value={member.id} />
+                    <div className={styles.avatarPickerHead}>
+                        <h3>Profile picture</h3>
+                        <button
+                            type="button"
+                            className={styles.closeAvatarPicker}
+                            aria-label="Close profile picture chooser"
+                            onClick={() => {
+                                setAvatarOpen(false);
+                                setAvatarPreview(null);
+                            }}
+                        >
+                            <CrossIcon />
+                        </button>
+                    </div>
                     <fieldset>
-                        <legend>Profile picture</legend>
+                        <legend className="sr-only">Profile picture</legend>
                         <div className={styles.avatarOptions}>
                             <label className={styles.avatarOption}>
                                 <input
@@ -162,6 +191,32 @@ export const ProfileView = ({
                                     <span>{option.label}</span>
                                 </label>
                             ))}
+                            <label
+                                className={styles.avatarOption}
+                                data-selected={avatarPreview || uploadedAvatar ? true : undefined}
+                            >
+                                <input
+                                    className={styles.uploadInput}
+                                    type="file"
+                                    name="avatarFile"
+                                    accept={avatarUploadTypes.join(',')}
+                                    onChange={(event) => {
+                                        const file = event.currentTarget.files?.[0];
+                                        setAvatarPreview(file ? URL.createObjectURL(file) : null);
+                                    }}
+                                />
+                                {uploadedAvatar && (
+                                    <input type="hidden" name="avatarPath" value={uploadedAvatar} />
+                                )}
+                                {avatarPreview || uploadedAvatar ? (
+                                    <img src={avatarPreview ?? uploadedAvatar ?? ''} alt="" />
+                                ) : (
+                                    <span className={styles.uploadOption} aria-hidden="true">
+                                        <UploadIcon />
+                                    </span>
+                                )}
+                                <span>Upload photo</span>
+                            </label>
                         </div>
                     </fieldset>
                     <div className={styles.avatarActions}>

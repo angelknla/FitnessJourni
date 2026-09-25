@@ -83,6 +83,24 @@ export const PlusIcon = ({ size = 16 }: IconProps) => (
   </svg>
 );
 
+export const UploadIcon = ({ size = 18 }: IconProps) => (
+  <svg
+    viewBox="0 0 18 18"
+    width={size}
+    height={size}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.6"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path d="M9 12.5v-9M5.5 7 9 3.5 12.5 7" />
+    <path d="M3 11.5v3h12v-3" />
+  </svg>
+);
+
 export const CrossIcon = ({ size = 16 }: IconProps) => (
   <svg
     viewBox="0 0 16 16"

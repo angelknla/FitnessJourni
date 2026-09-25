@@ -1,5 +1,11 @@
 const nextConfig = {
   reactStrictMode: true,
+  experimental: {
+    serverActions: {
+      // Allows a 5 MB avatar plus multipart form overhead.
+      bodySizeLimit: '6mb',
+    },
+  },
   images: {
     // Enable modern image formats
     formats: ['image/avif', 'image/webp'],

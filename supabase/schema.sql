@@ -242,6 +242,45 @@ create policy messages_rw on public.messages for all to anon, authenticated usin
 create policy message_reads_rw on public.message_reads for all to anon, authenticated using (true) with check (true);
 
 -- ----------------------------------------------------------------------------
+-- Profile avatars — one deterministic object per member. Uploading again uses
+-- upsert, so this bucket cannot accumulate multiple profile pictures per user.
+-- ----------------------------------------------------------------------------
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'profile-avatars',
+  'profile-avatars',
+  true,
+  5242880,
+  array['image/jpeg', 'image/png', 'image/webp']
+)
+on conflict (id) do update set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists profile_avatars_insert on storage.objects;
+drop policy if exists profile_avatars_select on storage.objects;
+drop policy if exists profile_avatars_update on storage.objects;
+drop policy if exists profile_avatars_delete on storage.objects;
+
+create policy profile_avatars_select on storage.objects
+  for select to anon, authenticated
+  using (bucket_id = 'profile-avatars');
+
+create policy profile_avatars_insert on storage.objects
+  for insert to anon, authenticated
+  with check (bucket_id = 'profile-avatars');
+
+create policy profile_avatars_update on storage.objects
+  for update to anon, authenticated
+  using (bucket_id = 'profile-avatars')
+  with check (bucket_id = 'profile-avatars');
+
+create policy profile_avatars_delete on storage.objects
+  for delete to anon, authenticated
+  using (bucket_id = 'profile-avatars');
+
+-- ----------------------------------------------------------------------------
 -- Seed the three of you. Re-running will not create duplicates.
 -- ----------------------------------------------------------------------------
 insert into public.members (name, accent, sort_order)

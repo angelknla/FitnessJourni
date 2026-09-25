@@ -145,7 +145,7 @@ describe('ProfileView', () => {
         );
     });
 
-    it('offers local avatar previews and keeps the initial as an option', async () => {
+    it('offers presets, an initial, and an upload as the final avatar tile', async () => {
         const user = userEvent.setup();
         render(
             <ProfileView
@@ -161,6 +161,13 @@ describe('ProfileView', () => {
 
         expect(screen.getByRole('radio', { name: 'Initial' })).toBeChecked();
         expect(screen.getAllByRole('radio')).toHaveLength(7);
+        const upload = screen.getByLabelText('Upload photo');
+        expect(upload).toHaveAttribute('type', 'file');
+        expect(upload).toHaveAttribute('accept', 'image/jpeg,image/png,image/webp');
+        expect(upload.closest('div')?.lastElementChild).toBe(upload.closest('label'));
         expect(screen.getByRole('button', { name: 'Save picture' })).toBeInTheDocument();
+
+        await user.click(screen.getByRole('button', { name: 'Close profile picture chooser' }));
+        expect(screen.queryByRole('group', { name: 'Profile picture' })).not.toBeInTheDocument();
     });
 });
