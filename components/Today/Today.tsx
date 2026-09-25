@@ -77,80 +77,86 @@ export const Today = ({ members, logs, workouts, tallies, date, dateLabel }: Tod
 
       {addOpen && <AddMemberForm members={members} />}
 
-      <section
-        className={styles.panel}
+      <div
+        className={styles.panels}
         id={PANEL_ID}
         role="tabpanel"
         aria-labelledby={`tab-${active.id}`}
         tabIndex={-1}
         style={{ '--member-accent': accentHex[active.accent] } as CSSProperties}
       >
-        <div className={styles.rings}>
-          <ProgressRing
-            label="Steps"
-            display={formatCount(log.steps)}
-            targetDisplay={formatCount(targets.steps)}
-            value={log.steps}
-            target={targets.steps}
-            floor={targets.stepsMin}
-          />
-          <ProgressRing
-            label="Water"
-            display={formatMl(log.waterMl)}
-            targetDisplay={formatMl(targets.waterMl)}
-            value={log.waterMl}
-            target={targets.waterMl}
-          />
-          <ProgressRing
-            label="Calories"
-            display={formatCount(log.calories)}
-            targetDisplay={formatCount(targets.calories)}
-            value={log.calories}
-            target={targets.calories}
-            overIsBad
-          />
-        </div>
-
-        <p className={styles.floorNote}>
-          The tick on Steps marks {formatCount(targets.stepsMin)} — the minimum, inside the{' '}
-          {formatCount(targets.steps)} goal.
-        </p>
-
-        <div className={styles.macros}>
-          <div className={styles.macrosHead}>
-            <h2 className={styles.sectionHeading}>Macros</h2>
-            <button
-              type="button"
-              className={styles.editButton}
-              onClick={() => setEditingTargets((open) => !open)}
-              aria-expanded={editingTargets}
-              aria-controls={TARGETS_ID}
-              aria-label={
-                editingTargets
-                  ? 'Stop editing macro targets'
-                  : `Edit ${active.name}'s macro targets`
-              }
-            >
-              <PencilIcon />
-            </button>
+        <section className={styles.panel}>
+          <div className={styles.rings}>
+            <ProgressRing
+              label="Steps"
+              display={formatCount(log.steps)}
+              targetDisplay={formatCount(targets.steps)}
+              value={log.steps}
+              target={targets.steps}
+              floor={targets.stepsMin}
+            />
+            <ProgressRing
+              label="Water"
+              display={formatMl(log.waterMl)}
+              targetDisplay={formatMl(targets.waterMl)}
+              value={log.waterMl}
+              target={targets.waterMl}
+            />
+            <ProgressRing
+              label="Calories"
+              display={formatCount(log.calories)}
+              targetDisplay={formatCount(targets.calories)}
+              value={log.calories}
+              target={targets.calories}
+              overIsBad
+            />
           </div>
 
-          {editingTargets && (
-            <EditTargets member={active} id={TARGETS_ID} onSaved={() => setEditingTargets(false)} />
-          )}
+          <p className={styles.floorNote}>
+            The tick on Steps marks {formatCount(targets.stepsMin)} — the minimum, inside the{' '}
+            {formatCount(targets.steps)} goal.
+          </p>
 
-          <MacroBars
-            rows={[
-              { label: 'Protein', value: log.proteinG, target: targets.protein },
-              { label: 'Carbs', value: log.carbsG, target: targets.carbs },
-              { label: 'Fat', value: log.fatG, target: targets.fat },
-            ]}
-          />
-        </div>
+          <div className={styles.macros}>
+            <div className={styles.macrosHead}>
+              <h2 className={styles.sectionHeading}>Macros</h2>
+              <button
+                type="button"
+                className={styles.editButton}
+                onClick={() => setEditingTargets((open) => !open)}
+                aria-expanded={editingTargets}
+                aria-controls={TARGETS_ID}
+                aria-label={
+                  editingTargets
+                    ? 'Stop editing macro targets'
+                    : `Edit ${active.name}'s macro targets`
+                }
+              >
+                <PencilIcon />
+              </button>
+            </div>
 
-        <QuickEntry member={active} log={log} date={date} />
+            {editingTargets && (
+              <EditTargets
+                member={active}
+                id={TARGETS_ID}
+                onSaved={() => setEditingTargets(false)}
+              />
+            )}
 
-        <div className={styles.workouts}>
+            <MacroBars
+              rows={[
+                { label: 'Protein', value: log.proteinG, target: targets.protein },
+                { label: 'Carbs', value: log.carbsG, target: targets.carbs },
+                { label: 'Fat', value: log.fatG, target: targets.fat },
+              ]}
+            />
+          </div>
+
+          <QuickEntry member={active} log={log} date={date} />
+        </section>
+
+        <section className={styles.panel}>
           <div className={styles.workoutsHead}>
             <h2 className={styles.sectionHeading}>Workouts</h2>
             <Link href="/workouts" className={styles.planLink}>
@@ -163,8 +169,8 @@ export const Today = ({ members, logs, workouts, tallies, date, dateLabel }: Tod
             logged={todaysWorkouts}
             weekCount={tally.week}
           />
-        </div>
-      </section>
+        </section>
+      </div>
 
       <CompareStrip members={members} logs={logs} activeMemberId={active.id} />
     </div>

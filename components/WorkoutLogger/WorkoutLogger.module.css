@@ -203,6 +203,8 @@
 }
 
 .submit {
+  padding: 0.45rem 1.05rem;
+  font-size: 0.88rem;
   background: var(--c-accent);
   border-color: transparent;
   color: #fff;

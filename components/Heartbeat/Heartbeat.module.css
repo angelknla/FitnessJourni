@@ -1,0 +1,61 @@
+.pulse {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  /* Optical alignment with the logo's baseline. */
+  margin-bottom: -1px;
+}
+
+.svg {
+  display: block;
+  width: 5rem;
+  height: 1.7rem;
+  overflow: visible;
+}
+
+.track,
+.sweep {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Always present, deliberately quiet. */
+.track {
+  stroke: var(--accent-green);
+  stroke-width: 1.9;
+  opacity: 0.32;
+}
+
+/* A short bright segment travelling the length of the trace. */
+.sweep {
+  stroke: var(--accent-green);
+  stroke-width: 2.1;
+  stroke-dasharray: 18 100;
+  animation: sweep 2.8s linear infinite;
+}
+
+@keyframes sweep {
+  from {
+    stroke-dashoffset: 118;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* No motion: show the whole trace steadily rather than a frozen fragment. */
+@media (prefers-reduced-motion: reduce) {
+  .sweep {
+    animation: none;
+    stroke-dasharray: none;
+    opacity: 0.65;
+  }
+}
+
+@media (max-width: 400px) {
+  .svg {
+    width: 3.9rem;
+    height: 1.45rem;
+  }
+}

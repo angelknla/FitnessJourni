@@ -1,5 +1,6 @@
 'use client';
 
+import { Heartbeat } from '@components/Heartbeat/Heartbeat';
 import { LoginButton } from '@components/LoginButton/LoginButton';
 import { navigationData } from '@data/navigationData';
 import Link from 'next/link';
@@ -30,7 +31,8 @@ export const Header = ({ locked = false }: HeaderProps) => {
     <header className={scrolled ? `${styles.container} ${styles.scrolled}` : styles.container}>
       <div className={styles.inner}>
         <Link href="/" onClick={closeMenu} className={styles.logo}>
-          FitnessJourni
+          <span className={styles.logoText}>FitnessJourni</span>
+          <Heartbeat />
         </Link>
 
         {locked ? (
