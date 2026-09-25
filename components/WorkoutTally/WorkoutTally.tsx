@@ -28,7 +28,11 @@ export const WorkoutTally = ({ members, tallies, weekLabel, monthLabel }: Workou
             </th>
             <th scope="col">Today</th>
             <th scope="col">
-              <abbr title={`This week — ${weekLabel}`}>Week</abbr>
+              <abbr
+                title={`This week (${weekLabel}) against the recommended count — going over is fine`}
+              >
+                Week
+              </abbr>
             </th>
             <th scope="col">
               <abbr title={`This month — ${monthLabel}`}>Month</abbr>
@@ -66,7 +70,8 @@ export const WorkoutTally = ({ members, tallies, weekLabel, monthLabel }: Workou
     </div>
 
     <p className={styles.caption}>
-      Week runs Sunday to Saturday, matching the playbook. This week: {weekLabel}.
+      Week runs Sunday to Saturday, matching the playbook. This week: {weekLabel}. The second number
+      is the recommended count — more than that is fine.
     </p>
   </div>
 );

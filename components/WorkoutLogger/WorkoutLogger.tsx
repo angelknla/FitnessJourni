@@ -69,8 +69,13 @@ export const WorkoutLogger = ({ member, date, logged, weekCount }: WorkoutLogger
         <span className={styles.badge} data-done={trainedToday}>
           {trainedToday ? 'Trained today' : 'Not logged today'}
         </span>
-        <span className={styles.weekCount}>
-          {weekCount} of {target} this week
+        {/* Past the target, "6 of 4" would read as broken. The playbook's 4 is a
+            recommendation, not a cap, so the phrasing changes rather than the
+            number being clamped. */}
+        <span className={styles.weekCount} data-met={weekCount >= target}>
+          {weekCount >= target
+            ? `${weekCount} this week · ${target} recommended`
+            : `${weekCount} of ${target} this week`}
         </span>
       </div>
 

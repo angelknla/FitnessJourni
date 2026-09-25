@@ -35,6 +35,11 @@
   color: var(--c-ink-soft);
 }
 
+.weekCount[data-met="true"] {
+  font-weight: 600;
+  color: var(--c-good);
+}
+
 .loggedList {
   display: flex;
   flex-direction: column;

@@ -8,8 +8,8 @@
 
 .svg {
   display: block;
-  width: 5rem;
-  height: 1.7rem;
+  width: 6.5rem;
+  height: 2.1rem;
   overflow: visible;
 }
 
@@ -23,14 +23,14 @@
 /* Always present, deliberately quiet. */
 .track {
   stroke: var(--accent-green);
-  stroke-width: 1.9;
-  opacity: 0.32;
+  stroke-width: 2.2;
+  opacity: 0.34;
 }
 
 /* A short bright segment travelling the length of the trace. */
 .sweep {
   stroke: var(--accent-green);
-  stroke-width: 2.1;
+  stroke-width: 2.4;
   stroke-dasharray: 18 100;
   animation: sweep 2.8s linear infinite;
 }
@@ -55,7 +55,7 @@
 
 @media (max-width: 400px) {
   .svg {
-    width: 3.9rem;
-    height: 1.45rem;
+    width: 4.6rem;
+    height: 1.7rem;
   }
 }
