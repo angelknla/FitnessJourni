@@ -225,3 +225,12 @@
   font-size: 0.8rem;
   color: var(--c-critical);
 }
+
+/* Replaces the logging form on someone else's tab; the status badge, week count
+   and the logged list above it all stay. */
+.readOnly {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--c-ink-muted);
+}

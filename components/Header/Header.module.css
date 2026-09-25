@@ -128,8 +128,28 @@
    RESPONSIVE — collapse inline nav into a full-screen overlay
    ================================================================ */
 @media (max-width: 960px) {
+  /* Scaled down as a whole — box, bar width, bar height and the three gaps —
+     so it stays a square with evenly spaced lines rather than a squashed one.
+     The bars land at 0.5 / 0.95 / 1.4rem, a 0.45rem pitch. */
   .menu {
     display: block;
+    width: 2.1rem;
+    height: 2.1rem;
+
+    &:before,
+    &:after {
+      width: 1.45rem;
+      height: 0.18rem;
+    }
+
+    &:before {
+      top: 0.5rem;
+    }
+
+    &:after {
+      top: 0.95rem;
+      box-shadow: 0 0.45rem 0 0 var(--c-ink);
+    }
   }
 
   .nav {
@@ -193,6 +213,97 @@
   }
 
   .nav .link {
+    font-size: 1.5rem;
+  }
+}
+
+/* ---- Identity + log out ----
+   One right-aligned group holding the chip, the nav and the burger, so .inner's
+   space-between keeps the menu hard right with the logo hard left. The chip is
+   deliberately outside .nav: on mobile the nav becomes a full-screen overlay, and
+   who you are signed in as should stay visible without opening it. */
+.side {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  z-index: 110;
+}
+
+.identity {
+  flex-shrink: 0;
+  font-size: 0.84rem;
+  font-weight: 500;
+  padding: 0.35rem 0.8rem;
+  border-radius: var(--r-pill);
+  max-width: 9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.identity[data-visitor="true"] {
+  color: var(--c-ink-muted);
+}
+
+/* A menu item rather than a control: it sits among the links, so it takes their
+   weight and colour and drops the button chrome. */
+.logout {
+  font-size: 1.05rem;
+  font-weight: 500;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--c-ink-muted);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.logout:hover:not(:disabled) {
+  color: var(--c-accent);
+  background: transparent;
+}
+
+@media (max-width: 960px) {
+  /* Matches .nav .link inside the overlay. */
+  .logout {
+    font-size: 1.75rem;
+  }
+
+  /* Shares the row with the wordmark and the burger from here down, so the chip
+     gives up size first. */
+  .identity {
+    font-size: 0.72rem;
+    padding: 0.28rem 0.6rem;
+    max-width: 7rem;
+  }
+
+  /* Both edges tighten from here down: the wordmark starts closer to the left
+     and the burger sits closer to the right, which is where the room for the
+     chip between them comes from. */
+  .inner {
+    padding-inline: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .side {
+    gap: 0.6rem;
+  }
+
+  .identity {
+    font-size: 0.68rem;
+    padding: 0.26rem 0.5rem;
+    max-width: 5.5rem;
+  }
+
+  /* Must sit after the 960 rule above, not in the earlier 480 block: both match
+     at this width, and the last one wins. */
+  .inner {
+    padding-inline: 0.85rem;
+  }
+
+  .logout {
     font-size: 1.5rem;
   }
 }

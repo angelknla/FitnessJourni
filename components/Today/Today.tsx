@@ -8,6 +8,7 @@ import { MacroBars } from '@components/MacroBars/MacroBars';
 import { MemberTabs } from '@components/MemberTabs/MemberTabs';
 import { ProgressRing } from '@components/ProgressRing/ProgressRing';
 import { QuickEntry } from '@components/QuickEntry/QuickEntry';
+import { RemoveMemberDialog } from '@components/RemoveMemberDialog/RemoveMemberDialog';
 import { WorkoutLogger } from '@components/WorkoutLogger/WorkoutLogger';
 import { accentHex } from '@data/fitnessData';
 import Link from 'next/link';
@@ -26,15 +27,34 @@ interface TodayProps {
   tallies: Record<string, WorkoutTally>;
   date: string;
   dateLabel: string;
+  /** Who this browser is acting as; null for a visitor, who edits nothing. */
+  viewerId: string | null;
+  /** Decided on the server: only the admin member may remove people. */
+  canRemove: boolean;
 }
 
 const PANEL_ID = 'member-panel';
 const TARGETS_ID = 'macro-targets';
 
-export const Today = ({ members, logs, workouts, tallies, date, dateLabel }: TodayProps) => {
-  const [activeId, setActiveId] = useState(members[0]?.id ?? '');
+export const Today = ({
+  members,
+  logs,
+  workouts,
+  tallies,
+  date,
+  dateLabel,
+  viewerId,
+  canRemove,
+}: TodayProps) => {
+  /*
+   * Open on whoever is signed in, rather than on whoever sorts first — landing on
+   * someone else's day was how the wrong numbers got edited. A visitor has nobody
+   * to open on, so they still start at the first person.
+   */
+  const [activeId, setActiveId] = useState(viewerId ?? members[0]?.id ?? '');
   const [addOpen, setAddOpen] = useState(false);
   const [editingTargets, setEditingTargets] = useState(false);
+  const [removeOpen, setRemoveOpen] = useState(false);
 
   // A deleted or renamed member shouldn't leave the panel pointing at nothing.
   const active = members.find((member) => member.id === activeId) ?? members[0];
@@ -46,10 +66,16 @@ export const Today = ({ members, logs, workouts, tallies, date, dateLabel }: Tod
         <p className={styles.emptyBody}>
           Run <code>supabase/schema.sql</code> to add the starting members, or add someone below.
         </p>
-        <AddMemberForm members={members} />
+        <AddMemberForm members={members} viewerId={viewerId} />
       </section>
     );
   }
+
+  /*
+   * Presentation only. The same decision is remade server-side in the actions,
+   * because a hidden memberId can be edited by hand — see refuseUnlessOwn there.
+   */
+  const canEdit = active.id === viewerId;
 
   const log = logs[active.id] ?? emptyLog(active.id, date);
   const { targets } = active;
@@ -69,13 +95,28 @@ export const Today = ({ members, logs, workouts, tallies, date, dateLabel }: Tod
         onSelect={(id) => {
           setActiveId(id);
           setEditingTargets(false);
+          setRemoveOpen(false);
         }}
         onAdd={() => setAddOpen((open) => !open)}
         addOpen={addOpen}
         panelId={PANEL_ID}
+        /* Angel only, and only on her own tab: removing people is hers to do,
+           but the bin sitting there while she reads someone else's day looks
+           like it is aimed at them. */
+        canRemove={canRemove && canEdit}
+        onRemove={() => setRemoveOpen(true)}
       />
 
-      {addOpen && <AddMemberForm members={members} />}
+      {canRemove && (
+        <RemoveMemberDialog
+          members={members}
+          viewerId={viewerId}
+          open={removeOpen}
+          onClose={() => setRemoveOpen(false)}
+        />
+      )}
+
+      {addOpen && <AddMemberForm members={members} viewerId={viewerId} />}
 
       <div
         className={styles.panels}
@@ -120,23 +161,25 @@ export const Today = ({ members, logs, workouts, tallies, date, dateLabel }: Tod
           <div className={styles.macros}>
             <div className={styles.macrosHead}>
               <h2 className={styles.sectionHeading}>Macros</h2>
-              <button
-                type="button"
-                className={styles.editButton}
-                onClick={() => setEditingTargets((open) => !open)}
-                aria-expanded={editingTargets}
-                aria-controls={TARGETS_ID}
-                aria-label={
-                  editingTargets
-                    ? 'Stop editing macro targets'
-                    : `Edit ${active.name}'s macro targets`
-                }
-              >
-                <PencilIcon />
-              </button>
+              {canEdit && (
+                <button
+                  type="button"
+                  className={styles.editButton}
+                  onClick={() => setEditingTargets((open) => !open)}
+                  aria-expanded={editingTargets}
+                  aria-controls={TARGETS_ID}
+                  aria-label={
+                    editingTargets
+                      ? 'Stop editing macro targets'
+                      : `Edit ${active.name}'s macro targets`
+                  }
+                >
+                  <PencilIcon />
+                </button>
+              )}
             </div>
 
-            {editingTargets && (
+            {editingTargets && canEdit && (
               <EditTargets
                 member={active}
                 id={TARGETS_ID}
@@ -153,7 +196,15 @@ export const Today = ({ members, logs, workouts, tallies, date, dateLabel }: Tod
             />
           </div>
 
-          <QuickEntry member={active} log={log} date={date} />
+          {canEdit ? (
+            <QuickEntry member={active} log={log} date={date} />
+          ) : (
+            <p className={styles.readOnly}>
+              {viewerId
+                ? `You're signed in as someone else, so ${active.name}'s numbers are read-only here.`
+                : `You're looking around as a visitor. Pick yourself in the header to log a day.`}
+            </p>
+          )}
         </section>
 
         <section className={styles.panel}>
@@ -168,6 +219,7 @@ export const Today = ({ members, logs, workouts, tallies, date, dateLabel }: Tod
             date={date}
             logged={todaysWorkouts}
             weekCount={tally.week}
+            canEdit={canEdit}
           />
         </section>
       </div>

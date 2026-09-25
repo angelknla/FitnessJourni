@@ -109,3 +109,23 @@ export const EyeOffIcon = ({ size = 16 }: IconProps) => (
     <path d="M2 2l12 12" />
   </svg>
 );
+
+export const BinIcon = ({ size = 16 }: IconProps) => (
+  <svg
+    viewBox="0 0 16 16"
+    width={size}
+    height={size}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+    focusable="false"
+  >
+    {/* Lid, then body, then the two ribs — drawn symmetrically about x=8. */}
+    <path d="M2.75 4.25h10.5M6.25 4.25V2.75h3.5v1.5" />
+    <path d="M4 4.25l.6 8.4a.9.9 0 0 0 .9.85h5a.9.9 0 0 0 .9-.85l.6-8.4" />
+    <path d="M6.75 6.75v4.5M9.25 6.75v4.5" />
+  </svg>
+);

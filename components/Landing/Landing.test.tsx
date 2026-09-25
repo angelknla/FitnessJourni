@@ -1,7 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/app/auth-actions', () => ({ unlock: vi.fn(async () => ({})) }));
+vi.mock('@/app/auth-actions', () => ({
+  unlock: vi.fn(async () => ({})),
+  signInAs: vi.fn(async () => ({})),
+  lock: vi.fn(async () => undefined),
+}));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
 import { Landing } from './Landing';

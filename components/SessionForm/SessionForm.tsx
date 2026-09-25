@@ -10,12 +10,14 @@ import styles from './SessionForm.module.css';
 
 interface SessionFormProps {
   members: Member[];
+  /** Preselects "booked by"; a visitor still gets Anyone. */
+  viewerId: string | null;
 }
 
 /** Not { ok: true }, so a successful booking is distinguishable from the start. */
 const initial: ActionState = { ok: false };
 
-export const SessionForm = ({ members }: SessionFormProps) => {
+export const SessionForm = ({ members, viewerId }: SessionFormProps) => {
   const [state, formAction, isPending] = useActionState(bookSession, initial);
 
   /**
@@ -155,7 +157,9 @@ export const SessionForm = ({ members }: SessionFormProps) => {
 
         <label className={styles.whoField}>
           <span className={styles.fieldLabel}>Booked by</span>
-          <select name="createdBy" defaultValue="">
+          {/* Bookings stay group-wide — anyone can book or remove one. This only
+              saves picking your own name every time. */}
+          <select name="createdBy" defaultValue={viewerId ?? ''}>
             <option value="">Anyone</option>
             {members.map((member) => (
               <option value={member.id} key={member.id}>

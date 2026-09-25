@@ -1,6 +1,6 @@
 'use client';
 
-import { CrossIcon, PlusIcon } from '@components/Icons/Icons';
+import { BinIcon, CrossIcon, PlusIcon } from '@components/Icons/Icons';
 import { accentHex } from '@data/fitnessData';
 import { type CSSProperties, type KeyboardEvent, useRef } from 'react';
 import type { Member } from '@/types/fitness';
@@ -15,6 +15,9 @@ interface MemberTabsProps {
   addOpen: boolean;
   /** Id of the panel these tabs control, for aria-controls. */
   panelId: string;
+  /** Only the admin member gets the bin; everyone else never sees it. */
+  canRemove: boolean;
+  onRemove: () => void;
 }
 
 export const MemberTabs = ({
@@ -24,6 +27,8 @@ export const MemberTabs = ({
   onAdd,
   addOpen,
   panelId,
+  canRemove,
+  onRemove,
 }: MemberTabsProps) => {
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -97,6 +102,17 @@ export const MemberTabs = ({
       >
         {addOpen ? <CrossIcon /> : <PlusIcon />}
       </button>
+
+      {canRemove && (
+        <button
+          type="button"
+          className={styles.remove}
+          onClick={onRemove}
+          aria-label="Remove a person"
+        >
+          <BinIcon />
+        </button>
+      )}
     </div>
   );
 };

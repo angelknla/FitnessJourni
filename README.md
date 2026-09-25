@@ -62,9 +62,33 @@ Three things worth knowing:
 - **Every Server Action re-checks the gate.** Hiding the UI is not access control; a Server Action is
   a POST endpoint anyone can call directly, so the check lives there too, not just in the layout.
 
-This is one shared passcode, not accounts: there is still no record of *who* changed what, and any
-of you can edit any of the three. Real per-person identity means Supabase Auth plus tightened RLS
-policies, which slots in behind the same data layer without touching the UI.
+This is one shared passcode, not accounts. Real per-person authentication means Supabase Auth plus
+tightened RLS policies, which slots in behind the same data layer without touching the UI.
+
+### Who you are
+
+The passcode says you may be here; a second step asks *who you are*. Straight after unlocking, a
+picker lists the group plus **Visitor**, and the choice is kept in a second 90-day cookie (`fj_who`).
+
+- You **land on your own tab** instead of on whoever sorts first.
+- You can see everyone, but the entry forms only appear on **your** tab. Rings, macro bars, logged
+  workouts and the compare strip stay visible on everyone else's — comparing the group is the point.
+- **Visitor** browses everything and writes nothing. It is a real choice, stored, so it is not asked
+  again on the next load.
+- The header chip shows who you are and reopens the picker; **Log out** drops both cookies.
+- Adding someone offers to sign in as them, which is how a fresh deploy gets its first identity —
+  with an empty members table everyone is a visitor, so adding a person stays open to visitors.
+- One member, `ADMIN_MEMBER` (default `Angel`), gets a bin beside the tabs to remove people
+  entirely. Their logs and workouts cascade away; sessions they booked survive, credited to nobody.
+
+**Every write action re-checks this too**, not just the gate — the hidden `memberId` a form posts can
+be edited by hand, so `canEditMember` is applied server-side in each action. `deleteWorkout` looks the
+row's owner up first, because that form sends only a row id.
+
+The honest limits: the identity cookie is **self-asserted**, and the admin is matched **by name**.
+Anyone with the shared passcode could forge either. It prevents wrong-tab mistakes between three
+friends, not a determined person who is already inside — which is the same bargain the passcode
+itself makes. Bookings are deliberately left group-wide: anyone can book or remove one.
 
 `robots.txt` disallows everything, so none of this ends up in search results.
 
