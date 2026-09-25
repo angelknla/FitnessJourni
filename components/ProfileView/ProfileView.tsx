@@ -1,6 +1,7 @@
 'use client';
 
 import { IdentityDialog } from '@components/IdentityDialog/IdentityDialog';
+import { RemoveMemberDialog } from '@components/RemoveMemberDialog/RemoveMemberDialog';
 import { accentHex } from '@data/fitnessData';
 import { useRouter } from 'next/navigation';
 import { type CSSProperties, useActionState, useState, useTransition } from 'react';
@@ -21,6 +22,7 @@ interface ProfileViewProps {
     profile: MemberProfile | null;
     measurements: WeightMeasurement[];
     currentMonth: string;
+    canRemove?: boolean;
 }
 
 const initial: ActionState = { ok: false };
@@ -32,9 +34,11 @@ export const ProfileView = ({
     profile,
     measurements,
     currentMonth,
+    canRemove = false,
 }: ProfileViewProps) => {
     const router = useRouter();
     const [identityOpen, setIdentityOpen] = useState(false);
+    const [removeOpen, setRemoveOpen] = useState(false);
     const [signingOut, startSignOut] = useTransition();
     const [profileState, profileAction, profilePending] = useActionState(
         saveProfileDetails,
@@ -284,6 +288,15 @@ export const ProfileView = ({
                     >
                         {signingOut ? 'Logging out…' : 'Log out'}
                     </button>
+                    {canRemove && (
+                        <button
+                            type="button"
+                            className={styles.removeMember}
+                            onClick={() => setRemoveOpen(true)}
+                        >
+                            Remove someone
+                        </button>
+                    )}
                 </div>
                 <IdentityDialog
                     members={members}
@@ -291,6 +304,14 @@ export const ProfileView = ({
                     open={identityOpen}
                     onClose={() => setIdentityOpen(false)}
                 />
+                {canRemove && (
+                    <RemoveMemberDialog
+                        members={members}
+                        viewerId={member.id}
+                        open={removeOpen}
+                        onClose={() => setRemoveOpen(false)}
+                    />
+                )}
             </section>
         </div>
     );

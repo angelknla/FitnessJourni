@@ -21,8 +21,15 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'FitnessJourni',
   description: 'Shared daily tracking and training sessions',
+  manifest: '/manifest.webmanifest',
   icons: {
-    icon: '/icon.svg',
+    icon: [
+      { url: '/fitnessjourni-icon-v2.svg', type: 'image/svg+xml' },
+      { url: '/fitnessjourni-icon-192-v2.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/fitnessjourni-apple-touch-v2.png', sizes: '180x180', type: 'image/png' },
+    ],
   },
 };
 

@@ -21,10 +21,9 @@ const members: Member[] = [
   { id: 'm3', name: 'Bradley', accent: 'aqua', sortOrder: 2, targets },
 ];
 
-const setup = (activeId = 'm1', canRemove = false) => {
+const setup = (activeId = 'm1') => {
   const onSelect = vi.fn();
   const onAdd = vi.fn();
-  const onRemove = vi.fn();
 
   render(
     <MemberTabs
@@ -34,12 +33,10 @@ const setup = (activeId = 'm1', canRemove = false) => {
       onAdd={onAdd}
       addOpen={false}
       panelId="panel"
-      canRemove={canRemove}
-      onRemove={onRemove}
     />
   );
 
-  return { onSelect, onAdd, onRemove };
+  return { onSelect, onAdd };
 };
 
 describe('MemberTabs', () => {
@@ -111,18 +108,4 @@ describe('MemberTabs', () => {
     expect(onAdd).toHaveBeenCalled();
   });
 
-  it('shows no bin unless the viewer may remove people', () => {
-    setup();
-
-    expect(screen.queryByRole('button', { name: 'Remove a person' })).not.toBeInTheDocument();
-  });
-
-  it('offers the bin beside the plus for whoever may remove people', async () => {
-    const user = userEvent.setup();
-    const { onRemove } = setup('m1', true);
-
-    await user.click(screen.getByRole('button', { name: 'Remove a person' }));
-
-    expect(onRemove).toHaveBeenCalled();
-  });
 });

@@ -6,7 +6,7 @@ import type { Metadata } from 'next';
 import { getLogsForDate } from '@/lib/data/logs';
 import { getMembers } from '@/lib/data/members';
 import { getWorkoutsSince, tallyWorkouts } from '@/lib/data/workouts';
-import { canRemoveMembers, viewerFirst } from '@/lib/ownership';
+import { viewerFirst } from '@/lib/ownership';
 import { isUnlocked, readViewer } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
 
@@ -55,7 +55,6 @@ const Homepage = async () => {
       date={date}
       dateLabel={dateLabel}
       viewerId={viewer.memberId}
-      canRemove={canRemoveMembers(viewer, members)}
     />
   );
 };

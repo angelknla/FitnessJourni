@@ -6,6 +6,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getMembers } from '@/lib/data/members';
 import { getProfile } from '@/lib/data/profile';
+import { canRemoveMembers } from '@/lib/ownership';
 import { isUnlocked, readViewer } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
 
@@ -60,6 +61,7 @@ const ProfilePage = async () => {
                 profile={profile}
                 measurements={profileData?.measurements ?? []}
                 currentMonth={new Date().toISOString().slice(0, 7)}
+                canRemove={canRemoveMembers(viewer, members)}
             />
         </div>
     );

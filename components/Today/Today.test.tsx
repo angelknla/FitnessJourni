@@ -10,7 +10,6 @@ vi.mock('@/app/actions', () => ({
   logWorkout: vi.fn(async () => ({ ok: false })),
   deleteWorkout: vi.fn(async () => ({ ok: false })),
   addMember: vi.fn(async () => ({ ok: false })),
-  removeMember: vi.fn(async () => ({ ok: false })),
 }));
 vi.mock('@/app/auth-actions', () => ({
   unlock: vi.fn(async () => ({})),
@@ -51,7 +50,7 @@ const log = (memberId: string): DailyLog => ({
   fatG: 60,
 });
 
-const props = (viewerId: string | null, canRemove = false) => ({
+const props = (viewerId: string | null) => ({
   members,
   logs: { m1: log('m1'), m2: log('m2'), m3: log('m3') },
   workouts: [],
@@ -59,11 +58,9 @@ const props = (viewerId: string | null, canRemove = false) => ({
   date,
   dateLabel: 'Friday, 25 September',
   viewerId,
-  canRemove,
 });
 
-const setup = (viewerId: string | null, canRemove = false) =>
-  render(<Today {...props(viewerId, canRemove)} />);
+const setup = (viewerId: string | null) => render(<Today {...props(viewerId)} />);
 
 const selectedTab = () =>
   screen.getAllByRole('tab').find((tab) => tab.getAttribute('aria-selected') === 'true');
@@ -163,29 +160,6 @@ describe('Today', () => {
     expect(quickEntry()).not.toBeInTheDocument();
     expect(screen.getByText(/visitor/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /macro targets/ })).not.toBeInTheDocument();
-  });
-
-  it('gives the admin a bin on their own tab', () => {
-    setup('m2', true);
-
-    expect(screen.getByRole('button', { name: 'Remove a person' })).toBeInTheDocument();
-  });
-
-  /* It is a global action, but shown next to someone else's name it reads as
-     being aimed at them. */
-  it('hides the bin once the admin looks at someone else', async () => {
-    const user = userEvent.setup();
-    setup('m2', true);
-
-    await user.click(screen.getByRole('tab', { name: 'Dillon' }));
-
-    expect(screen.queryByRole('button', { name: 'Remove a person' })).not.toBeInTheDocument();
-  });
-
-  it('gives nobody else a bin', () => {
-    setup('m1', false);
-
-    expect(screen.queryByRole('button', { name: 'Remove a person' })).not.toBeInTheDocument();
   });
 
   /* Picking an identity refreshes the server tree without remounting this, so a

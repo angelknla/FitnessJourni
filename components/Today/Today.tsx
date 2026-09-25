@@ -8,7 +8,6 @@ import { MacroBars } from '@components/MacroBars/MacroBars';
 import { MemberTabs } from '@components/MemberTabs/MemberTabs';
 import { ProgressRing } from '@components/ProgressRing/ProgressRing';
 import { QuickEntry } from '@components/QuickEntry/QuickEntry';
-import { RemoveMemberDialog } from '@components/RemoveMemberDialog/RemoveMemberDialog';
 import { WorkoutLogger } from '@components/WorkoutLogger/WorkoutLogger';
 import { accentHex } from '@data/fitnessData';
 import Link from 'next/link';
@@ -29,8 +28,6 @@ interface TodayProps {
   dateLabel: string;
   /** Who this browser is acting as; null for a visitor, who edits nothing. */
   viewerId: string | null;
-  /** Decided on the server: only the admin member may remove people. */
-  canRemove: boolean;
 }
 
 const PANEL_ID = 'member-panel';
@@ -44,7 +41,6 @@ export const Today = ({
   date,
   dateLabel,
   viewerId,
-  canRemove,
 }: TodayProps) => {
   /*
    * Open on whoever is signed in, rather than on whoever sorts first — landing on
@@ -75,7 +71,6 @@ export const Today = ({
   }
   const [addOpen, setAddOpen] = useState(false);
   const [editingTargets, setEditingTargets] = useState(false);
-  const [removeOpen, setRemoveOpen] = useState(false);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
 
   // A deleted or renamed member shouldn't leave the panel pointing at nothing.
@@ -95,7 +90,6 @@ export const Today = ({
   const selectMember = (id: string) => {
     setActiveId(id);
     setEditingTargets(false);
-    setRemoveOpen(false);
   };
 
   const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
@@ -168,21 +162,7 @@ export const Today = ({
         onAdd={() => setAddOpen((open) => !open)}
         addOpen={addOpen}
         panelId={PANEL_ID}
-        /* Angel only, and only on her own tab: removing people is hers to do,
-           but the bin sitting there while she reads someone else's day looks
-           like it is aimed at them. */
-        canRemove={canRemove && canEdit}
-        onRemove={() => setRemoveOpen(true)}
       />
-
-      {canRemove && (
-        <RemoveMemberDialog
-          members={members}
-          viewerId={viewerId}
-          open={removeOpen}
-          onClose={() => setRemoveOpen(false)}
-        />
-      )}
 
       {addOpen && <AddMemberForm members={members} viewerId={viewerId} />}
 

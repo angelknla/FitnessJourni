@@ -7,6 +7,7 @@ vi.mock('@/app/actions', () => ({
     saveProfileDetails: vi.fn(async () => ({ ok: true })),
     saveWeightMeasurement: vi.fn(async () => ({ ok: true })),
     addMember: vi.fn(async () => ({ ok: false })),
+    removeMember: vi.fn(async () => ({ ok: false })),
 }));
 vi.mock('@/app/auth-actions', () => ({
     signInAs: vi.fn(async () => ({})),
@@ -103,7 +104,40 @@ describe('ProfileView', () => {
 
         await user.click(screen.getByRole('button', { name: 'Who are you?' }));
 
-        expect(screen.getByRole('dialog', { hidden: true })).toHaveAttribute('open');
+        expect(screen.getByRole('dialog', { name: 'Who are you?', hidden: true })).toHaveAttribute(
+            'open'
+        );
         expect(screen.getByRole('button', { name: 'Log out' })).toBeInTheDocument();
+    });
+
+    it('only offers member removal when the server grants permission', async () => {
+        const user = userEvent.setup();
+        const { rerender } = render(
+            <ProfileView
+                members={[member]}
+                member={member}
+                profile={profile}
+                measurements={[]}
+                currentMonth="2026-09"
+            />
+        );
+
+        expect(screen.queryByRole('button', { name: 'Remove someone' })).not.toBeInTheDocument();
+
+        rerender(
+            <ProfileView
+                members={[member]}
+                member={member}
+                profile={profile}
+                measurements={[]}
+                currentMonth="2026-09"
+                canRemove
+            />
+        );
+        await user.click(screen.getByRole('button', { name: 'Remove someone' }));
+
+        expect(screen.getByRole('dialog', { name: 'Remove someone', hidden: true })).toHaveAttribute(
+            'open'
+        );
     });
 });
