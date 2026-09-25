@@ -46,51 +46,56 @@ export const ProgressRing = ({
 
   return (
     <div className={styles.ring} data-state={state}>
-      <svg
-        className={styles.svg}
-        viewBox="0 0 100 100"
-        role="img"
-        aria-label={`${label}: ${display} of ${targetDisplay} target, ${Math.round(pct)} percent`}
-      >
-        <title>{`${label}: ${display} of ${targetDisplay} (${Math.round(pct)}%)`}</title>
+      {/* Square box that owns the geometry. The SVG and the readout are both
+          absolutely positioned inside it, so the text is centred on the ring
+          itself at any size rather than on a separately-guessed height. */}
+      <div className={styles.ringBox}>
+        <svg
+          className={styles.svg}
+          viewBox="0 0 100 100"
+          role="img"
+          aria-label={`${label}: ${display} of ${targetDisplay} target, ${Math.round(pct)} percent`}
+        >
+          <title>{`${label}: ${display} of ${targetDisplay} (${Math.round(pct)}%)`}</title>
 
-        {/* Track: a lighter step of the fill's own ramp, so the whole ring reads. */}
-        <circle
-          className={styles.track}
-          cx="50"
-          cy="50"
-          r={RADIUS}
-          fill="none"
-          strokeWidth={STROKE}
-        />
-
-        {floorFraction !== null && (
-          <line
-            className={styles.floorTick}
-            x1="50"
-            y1={50 - RADIUS - STROKE / 2}
-            x2="50"
-            y2={50 - RADIUS + STROKE / 2}
-            transform={`rotate(${floorFraction * 360} 50 50)`}
+          {/* Track: a lighter step of the fill's own ramp, so the whole ring reads. */}
+          <circle
+            className={styles.track}
+            cx="50"
+            cy="50"
+            r={RADIUS}
+            fill="none"
+            strokeWidth={STROKE}
           />
-        )}
 
-        <circle
-          className={styles.fill}
-          cx="50"
-          cy="50"
-          r={RADIUS}
-          fill="none"
-          strokeWidth={STROKE}
-          strokeLinecap="round"
-          strokeDasharray={`${dash} ${CIRCUMFERENCE - dash}`}
-          transform="rotate(-90 50 50)"
-        />
-      </svg>
+          {floorFraction !== null && (
+            <line
+              className={styles.floorTick}
+              x1="50"
+              y1={50 - RADIUS - STROKE / 2}
+              x2="50"
+              y2={50 - RADIUS + STROKE / 2}
+              transform={`rotate(${floorFraction * 360} 50 50)`}
+            />
+          )}
 
-      <div className={styles.center}>
-        <span className={styles.value}>{display}</span>
-        <span className={styles.target}>of {targetDisplay}</span>
+          <circle
+            className={styles.fill}
+            cx="50"
+            cy="50"
+            r={RADIUS}
+            fill="none"
+            strokeWidth={STROKE}
+            strokeLinecap="round"
+            strokeDasharray={`${dash} ${CIRCUMFERENCE - dash}`}
+            transform="rotate(-90 50 50)"
+          />
+        </svg>
+
+        <div className={styles.center}>
+          <span className={styles.value}>{display}</span>
+          <span className={styles.target}>of {targetDisplay}</span>
+        </div>
       </div>
 
       <p className={styles.label}>{label}</p>

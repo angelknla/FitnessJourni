@@ -3,12 +3,14 @@
    rounded data-end, square at the baseline it grows from.
    ================================================================ */
 .list {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 0.7rem;
 }
 
 .row {
+  min-width: 0;
   display: grid;
   grid-template-columns: 3.6rem 1fr auto;
   align-items: center;
@@ -16,7 +18,7 @@
 }
 
 .label {
-  font-size: 0.82rem;
+  font-size: 0.86rem;
   color: var(--c-ink-soft);
 }
 
@@ -25,7 +27,7 @@
   display: block;
   height: 8px;
   border-radius: var(--r-pill);
-  background: color-mix(in oklab, var(--member-accent) 22%, var(--c-surface));
+  background: var(--meter-track);
   overflow: hidden;
 }
 

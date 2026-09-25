@@ -1,5 +1,6 @@
 'use client';
 
+import { CrossIcon, PlusIcon } from '@components/Icons/Icons';
 import { accentHex } from '@data/fitnessData';
 import { type CSSProperties, type KeyboardEvent, useRef } from 'react';
 import type { Member } from '@/types/fitness';
@@ -94,7 +95,7 @@ export const MemberTabs = ({
         aria-expanded={addOpen}
         aria-label={addOpen ? 'Cancel adding a person' : 'Add a person'}
       >
-        {addOpen ? '×' : '+'}
+        {addOpen ? <CrossIcon /> : <PlusIcon />}
       </button>
     </div>
   );

@@ -1,5 +1,6 @@
 'use client';
 
+import { CrossIcon } from '@components/Icons/Icons';
 import { activityLabels } from '@data/fitnessData';
 import { fromISODate } from '@utils/date';
 import { useActionState } from 'react';
@@ -48,7 +49,7 @@ const SessionRow = ({ session, bookedBy }: { session: TrainingSession; bookedBy?
           disabled={isPending}
           aria-label={`Remove ${activityLabels[session.activity]} at ${session.time}`}
         >
-          {isPending ? '…' : '×'}
+          {isPending ? <span className={styles.pending}>…</span> : <CrossIcon size={14} />}
         </button>
       </form>
     </li>

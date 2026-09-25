@@ -2,6 +2,12 @@
   display: flex;
   flex-direction: column;
   gap: 1.4rem;
+  /* Without this, a scrolling descendant widens the whole page. */
+  min-width: 0;
+}
+
+.today > * {
+  min-width: 0;
 }
 
 .head {
@@ -12,7 +18,7 @@
 
 .eyebrow {
   margin: 0;
-  font-size: 0.74rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -28,6 +34,7 @@
 }
 
 .panel {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 1.3rem;
@@ -42,6 +49,7 @@
 }
 
 .rings {
+  min-width: 0;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.6rem;
@@ -49,7 +57,7 @@
 
 .floorNote {
   margin: -0.6rem 0 0;
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   line-height: 1.5;
   color: var(--c-ink-muted);
 }
@@ -63,7 +71,7 @@
 
 .sectionHeading {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;

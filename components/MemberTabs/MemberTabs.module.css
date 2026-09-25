@@ -6,6 +6,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  min-width: 0;
 }
 
 .tabs {
@@ -13,6 +14,7 @@
   gap: 0.35rem;
   overflow-x: auto;
   flex: 1;
+  min-width: 0;
   padding-bottom: 0.15rem;
   scrollbar-width: none;
 }
@@ -45,12 +47,12 @@
   color: var(--c-ink);
   font-weight: 600;
   background: var(--c-surface-raised);
-  border-color: color-mix(in oklab, var(--member-accent) 45%, var(--c-border-strong));
+  border-color: color-mix(in oklab, var(--member-accent) 70%, var(--c-border-strong));
 }
 
 .dot {
-  width: 8px;
-  height: 8px;
+  width: 11px;
+  height: 11px;
   border-radius: 50%;
   background: var(--member-accent);
   flex-shrink: 0;
@@ -58,15 +60,22 @@
 
 .add {
   flex-shrink: 0;
-  width: 2.1rem;
-  height: 2.1rem;
+  width: 2.2rem;
+  height: 2.2rem;
   padding: 0;
   display: grid;
   place-items: center;
-  font-size: 1.15rem;
-  line-height: 1;
+  line-height: 0;
   color: var(--c-ink-soft);
   background: var(--c-surface-soft);
   border: 1px solid var(--c-border);
   border-radius: 50%;
+}
+
+.add:hover:not(:disabled) {
+  color: var(--c-ink);
+}
+
+.add svg {
+  display: block;
 }

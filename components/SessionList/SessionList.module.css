@@ -1,4 +1,5 @@
 .list {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
@@ -26,6 +27,7 @@
 }
 
 .row {
+  min-width: 0;
   display: grid;
   grid-template-columns: 3.4rem 1fr auto;
   align-items: center;
@@ -68,16 +70,24 @@
 }
 
 .remove {
-  width: 1.9rem;
-  height: 1.9rem;
+  width: 2rem;
+  height: 2rem;
   padding: 0;
   display: grid;
   place-items: center;
-  font-size: 1.05rem;
-  line-height: 1;
-  color: var(--c-ink-muted);
+  line-height: 0;
+  color: var(--c-ink-soft);
   background: transparent;
   border-color: var(--c-border);
+}
+
+.remove svg {
+  display: block;
+}
+
+.pending {
+  font-size: 0.95rem;
+  line-height: 1;
 }
 
 .remove:hover:not(:disabled) {

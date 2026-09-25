@@ -1,4 +1,5 @@
 .form {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
@@ -88,6 +89,7 @@
 
 /* ---- Date rail: 14 days, scroll-snapped, no calendar dependency ---- */
 .rail {
+  min-width: 0;
   display: flex;
   gap: 0.4rem;
   overflow-x: auto;

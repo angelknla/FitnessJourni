@@ -1,26 +1,41 @@
 /* ================================================================
    PROGRESS RING — a meter: one value against its own limit.
-   Track is a lighter step of the fill's ramp, never a neutral grey,
-   so the state reads across the whole ring.
+   Track is a darker step of the fill's own ramp, never a neutral
+   grey, so the state reads across the whole ring.
    ================================================================ */
 .ring {
-  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.45rem;
+  min-width: 0;
 }
 
-.svg {
+/*
+ * Owns the geometry: a square box the SVG and the readout both fill. Centring
+ * the text against this rather than against a guessed height is what keeps it
+ * centred at every size. container-type lets the readout scale with the ring,
+ * so it never squashes on a narrow phone.
+ */
+.ringBox {
+  position: relative;
   width: 100%;
   max-width: 7.5rem;
   aspect-ratio: 1;
+  container-type: inline-size;
+}
+
+.svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   display: block;
   overflow: visible;
 }
 
 .track {
-  stroke: color-mix(in oklab, var(--member-accent) 22%, var(--c-surface));
+  stroke: var(--meter-track);
 }
 
 .fill {
@@ -34,53 +49,58 @@
 }
 
 .ring[data-state="over"] .track {
-  stroke: color-mix(in oklab, var(--c-warning) 22%, var(--c-surface));
+  stroke: color-mix(in oklab, var(--c-warning) 42%, var(--c-surface));
 }
 
 /* The playbook's lower threshold, sitting inside the ideal goal. */
 .floorTick {
-  stroke: var(--c-ink-muted);
+  stroke: var(--c-ink-soft);
   stroke-width: 2;
-  opacity: 0.9;
 }
 
-/* Centred readout. Absolutely positioned over the ring, offset for the label. */
+/* Readout, centred on the ring. place-content centres the whole two-line
+   block; text-align keeps the lines centred relative to each other. */
 .center {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: min(7.5rem, 100%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.05rem;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  text-align: center;
   pointer-events: none;
+  padding: 0 14%;
 }
 
 /* Proportional figures: tabular-nums makes a standalone value look loose. */
 .value {
-  font-size: 1.15rem;
+  font-size: clamp(0.95rem, 20cqi, 1.4rem);
   font-weight: 600;
-  line-height: 1.1;
+  line-height: 1.05;
   color: var(--c-ink);
 }
 
 .target {
-  font-size: 0.7rem;
-  color: var(--c-ink-muted);
+  font-size: clamp(0.64rem, 12cqi, 0.8rem);
+  line-height: 1.25;
+  color: var(--c-ink-soft);
+  white-space: nowrap;
 }
 
 .label {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 0.86rem;
   font-weight: 500;
   color: var(--c-ink-soft);
 }
 
-@media (min-width: 480px) {
+/* No container-query support: fall back to fixed sizes rather than clamp's
+   cqi term collapsing to its minimum. */
+@supports not (container-type: inline-size) {
   .value {
-    font-size: 1.3rem;
+    font-size: 1.1rem;
+  }
+
+  .target {
+    font-size: 0.68rem;
   }
 }
