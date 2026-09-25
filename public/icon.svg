@@ -1,11 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-  <rect width="32" height="32" rx="8" fill="#0e1116" />
-  <path
-    d="M8 20.5 13 12l4 5 3-4.5 4 8"
-    fill="none"
-    stroke="#c6f24e"
-    stroke-width="2.4"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-  />
+  <!--
+    The header's Heartbeat trace, cropped to the spike and scaled to the tile.
+    Same geometry as TRACE in components/Heartbeat/Heartbeat.tsx and the same
+    --accent-green both its paths use, so the tab matches the wordmark.
+    The transform maps x 11..35 of that 56x18 viewBox into a 5px-inset square.
+  -->
+  <rect width="32" height="32" rx="8" fill="#0b0b0c" />
+  <g transform="translate(-5.1 7.75) scale(0.917)">
+    <path
+      d="M11 9 H13 L15.5 9 L18 3 L21 15 L23.5 9 H29 L31 6.5 L33 9 H35"
+      fill="none"
+      stroke="#1aa84e"
+      stroke-width="2.8"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </g>
 </svg>
