@@ -2,8 +2,8 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
-  padding: 0.9rem;
+  gap: 0.9rem;
+  padding: 1rem;
   background: var(--c-surface-soft);
   border: 1px solid var(--c-border);
   border-radius: var(--r-lg);
@@ -17,38 +17,129 @@
 
 .legend {
   padding: 0;
-  margin-bottom: 0.6rem;
-  font-size: 0.82rem;
+  margin-bottom: 0.8rem;
+  font-size: 0.86rem;
   font-weight: 600;
   color: var(--c-ink-soft);
 }
 
-.grid {
-  min-width: 0;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.6rem;
+/* ---- Grams / percent toggle ---- */
+.modes {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.2rem;
+  margin-bottom: 0.9rem;
+  background: var(--c-bg-alt);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-pill);
 }
 
-.field {
+.mode {
+  padding: 0.35rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--c-ink-soft);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.mode:hover:not([data-active="true"]) {
+  color: var(--c-ink);
+  background: transparent;
+}
+
+.mode[data-active="true"] {
+  color: var(--c-ink);
+  font-weight: 600;
+  background: var(--c-surface-raised);
+}
+
+/* ---- Calories ---- */
+.caloriesField {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
+  max-width: 11rem;
+  margin-bottom: 0.9rem;
 }
 
 .fieldLabel {
-  font-size: 0.78rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
   color: var(--c-ink-soft);
 }
 
-.implied {
+.derived {
+  font-size: 0.72rem;
+  color: var(--c-ink-muted);
+}
+
+/* Computed, so it reads as a value rather than something to type in. */
+.caloriesOut {
+  display: block;
+  padding: 0.6rem 0.7rem;
+  font-size: 1rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-ink);
+  background: var(--c-bg-alt);
+  border: 1px dashed var(--c-border-strong);
+  border-radius: var(--r-sm);
+}
+
+/* ---- Macro rows ---- */
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.row {
+  min-width: 0;
+  display: grid;
+  /* Label · input · unit · the other representation. The input column is sized
+     to the input so the unit sits against it rather than drifting right. */
+  grid-template-columns: 4.2rem 5.5rem auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rowLabel {
+  font-size: 0.86rem;
+  color: var(--c-ink-soft);
+}
+
+.inputCell {
+  min-width: 0;
+  display: block;
+}
+
+.unit {
+  font-size: 0.82rem;
+  color: var(--c-ink-muted);
+}
+
+/* The other representation, shown live so the link between the two is visible. */
+.derivedValue {
+  font-size: 0.84rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--c-ink-muted);
+}
+
+.split {
   margin: 0;
   font-size: 0.8rem;
   line-height: 1.5;
   color: var(--c-ink-muted);
 }
 
-.implied[data-drift="true"] {
+.split[data-off="true"] {
   color: var(--c-warning);
 }
 
@@ -85,7 +176,8 @@
 }
 
 @media (max-width: 420px) {
-  .grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .row {
+    grid-template-columns: 3.4rem 4.6rem auto minmax(0, 1fr);
+    gap: 0.4rem;
   }
 }

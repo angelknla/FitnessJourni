@@ -2,6 +2,17 @@
 
 import { useActionState, useEffect, useState } from 'react';
 import { type ActionState, updateTargets } from '@/app/actions';
+import {
+  gramsFromPercents,
+  kcalFromGrams,
+  type MacroGrams,
+  type MacroKey,
+  type MacroPercents,
+  macroKeys,
+  percentsFromGrams,
+  percentTotal,
+} from '@/lib/macros';
+import { formatCount } from '@/lib/progress';
 import type { Member } from '@/types/fitness';
 
 import styles from './EditTargets.module.css';
@@ -12,17 +23,38 @@ interface EditTargetsProps {
   onSaved: () => void;
 }
 
+type Mode = 'grams' | 'percent';
+
 /** Deliberately not { ok: true }, so state.ok only becomes true after a real save. */
 const initial: ActionState = { ok: false };
 
-const KCAL_PER_G = { protein: 4, carbs: 4, fat: 9 };
+const LABELS: Record<MacroKey, string> = {
+  protein: 'Protein',
+  carbs: 'Carbs',
+  fat: 'Fat',
+};
+
+const toNumber = (value: string) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+};
 
 export const EditTargets = ({ member, id, onSaved }: EditTargetsProps) => {
   const [state, formAction, isPending] = useActionState(updateTargets, initial);
+  const [mode, setMode] = useState<Mode>('grams');
 
-  const [protein, setProtein] = useState(String(member.targets.protein));
-  const [carbs, setCarbs] = useState(String(member.targets.carbs));
-  const [fat, setFat] = useState(String(member.targets.fat));
+  const startingGrams: MacroGrams = {
+    protein: member.targets.protein,
+    carbs: member.targets.carbs,
+    fat: member.targets.fat,
+  };
+
+  // Grams are what you type in gram mode; calories + percents are what you type
+  // in percent mode. Whichever side is not being edited is derived, so the two
+  // can never drift apart on screen.
+  const [grams, setGrams] = useState<MacroGrams>(startingGrams);
+  const [calories, setCalories] = useState(String(member.targets.calories));
+  const [percents, setPercents] = useState<MacroPercents>(percentsFromGrams(startingGrams));
 
   useEffect(() => {
     if (state.ok) {
@@ -30,59 +62,151 @@ export const EditTargets = ({ member, id, onSaved }: EditTargetsProps) => {
     }
   }, [state.ok, onSaved]);
 
-  const num = (value: string) => {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+  const caloriesNumber = toNumber(calories);
+
+  const effectiveGrams = mode === 'percent' ? gramsFromPercents(caloriesNumber, percents) : grams;
+  const effectiveCalories = mode === 'percent' ? caloriesNumber : kcalFromGrams(grams);
+  const effectivePercents = mode === 'percent' ? percents : percentsFromGrams(grams);
+
+  const split = percentTotal(percents);
+  const splitOff = mode === 'percent' && split !== 100;
+
+  // Switching mode carries the current numbers across rather than resetting.
+  const switchMode = (next: Mode) => {
+    if (next === mode) {
+      return;
+    }
+
+    if (next === 'percent') {
+      setPercents(percentsFromGrams(grams));
+      setCalories(String(kcalFromGrams(grams)));
+    } else {
+      setGrams(gramsFromPercents(caloriesNumber, percents));
+    }
+
+    setMode(next);
   };
-
-  // Macros and calories are the same budget counted two ways, so a mismatch is
-  // worth showing rather than letting the two drift apart silently.
-  const impliedKcal =
-    num(protein) * KCAL_PER_G.protein + num(carbs) * KCAL_PER_G.carbs + num(fat) * KCAL_PER_G.fat;
-  const drift = impliedKcal - member.targets.calories;
-  const driftsALot = Math.abs(drift) > 100;
-
-  const fields = [
-    { name: 'protein', label: 'Protein (g)', value: protein, set: setProtein, max: 1000 },
-    { name: 'carbs', label: 'Carbs (g)', value: carbs, set: setCarbs, max: 2000 },
-    { name: 'fat', label: 'Fat (g)', value: fat, set: setFat, max: 1000 },
-  ];
 
   return (
     <form className={styles.form} action={formAction} id={id}>
       <input type="hidden" name="memberId" value={member.id} />
+      {/* What actually gets saved, whichever way it was entered. */}
+      <input type="hidden" name="calories" value={effectiveCalories} />
+      {macroKeys.map((key) => (
+        <input type="hidden" name={key} value={effectiveGrams[key]} key={key} />
+      ))}
 
       <fieldset className={styles.fieldset}>
-        <legend className={styles.legend}>{member.name}'s macro targets</legend>
+        <legend className={styles.legend}>{member.name}'s targets</legend>
 
-        <div className={styles.grid}>
-          {fields.map((field) => (
-            <label className={styles.field} key={field.name}>
-              <span className={styles.fieldLabel}>{field.label}</span>
-              <input
-                type="number"
-                name={field.name}
-                inputMode="numeric"
-                min={1}
-                max={field.max}
-                required
-                value={field.value}
-                onChange={(event) => field.set(event.target.value)}
-              />
-            </label>
+        <fieldset className={styles.modes}>
+          <legend className="sr-only">Enter macros as</legend>
+          {(['grams', 'percent'] as Mode[]).map((option) => (
+            <button
+              type="button"
+              key={option}
+              className={styles.mode}
+              data-active={mode === option}
+              aria-pressed={mode === option}
+              onClick={() => switchMode(option)}
+            >
+              {option === 'grams' ? 'Grams' : 'Percent'}
+            </button>
+          ))}
+        </fieldset>
+
+        {mode === 'percent' ? (
+          <label className={styles.caloriesField}>
+            <span className={styles.fieldLabel}>Calories</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={20000}
+              step={10}
+              required
+              value={calories}
+              onChange={(event) => setCalories(event.target.value)}
+            />
+          </label>
+        ) : (
+          <div className={styles.caloriesField}>
+            <span className={styles.fieldLabel}>
+              Calories
+              <span className={styles.derived}>from the grams below</span>
+            </span>
+            <output className={styles.caloriesOut} aria-label="Calories from the grams below">
+              {formatCount(effectiveCalories)} kcal
+            </output>
+          </div>
+        )}
+
+        <div className={styles.rows}>
+          {macroKeys.map((key) => (
+            <div className={styles.row} key={key}>
+              <span className={styles.rowLabel}>{LABELS[key]}</span>
+
+              {mode === 'grams' ? (
+                <>
+                  <label className={styles.inputCell}>
+                    <span className="sr-only">{LABELS[key]} in grams</span>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      max={2000}
+                      value={grams[key]}
+                      onChange={(event) =>
+                        setGrams((current) => ({ ...current, [key]: toNumber(event.target.value) }))
+                      }
+                    />
+                  </label>
+                  <span className={styles.unit}>g</span>
+                  <span className={styles.derivedValue}>{effectivePercents[key]}%</span>
+                </>
+              ) : (
+                <>
+                  <label className={styles.inputCell}>
+                    <span className="sr-only">{LABELS[key]} as a percentage</span>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      max={100}
+                      value={percents[key]}
+                      onChange={(event) =>
+                        setPercents((current) => ({
+                          ...current,
+                          [key]: toNumber(event.target.value),
+                        }))
+                      }
+                    />
+                  </label>
+                  <span className={styles.unit}>%</span>
+                  <span className={styles.derivedValue}>{effectiveGrams[key]} g</span>
+                </>
+              )}
+            </div>
           ))}
         </div>
       </fieldset>
 
-      <p className={styles.implied} data-drift={driftsALot}>
-        These macros come to <strong>{impliedKcal.toLocaleString('en-GB')} kcal</strong>
-        {driftsALot
-          ? ` — ${Math.abs(drift).toLocaleString('en-GB')} ${drift > 0 ? 'over' : 'under'} the ${member.targets.calories.toLocaleString('en-GB')} kcal target.`
-          : `, in line with the ${member.targets.calories.toLocaleString('en-GB')} kcal target.`}
-      </p>
+      {mode === 'percent' && (
+        <p className={styles.split} data-off={splitOff}>
+          Split adds up to <strong>{split}%</strong>
+          {splitOff ? ' — it needs to be 100%.' : '.'}
+        </p>
+      )}
+
+      {mode === 'grams' && (
+        <p className={styles.split}>
+          Those grams come to <strong>{formatCount(effectiveCalories)} kcal</strong>, which is what
+          gets saved as the calorie target.
+        </p>
+      )}
 
       <div className={styles.actions}>
-        <button type="submit" className={styles.submit} disabled={isPending}>
+        <button type="submit" className={styles.submit} disabled={isPending || splitOff}>
           {isPending ? 'Saving…' : 'Save targets'}
         </button>
         <button type="button" className={styles.cancel} onClick={onSaved}>
