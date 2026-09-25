@@ -80,3 +80,19 @@
     grid-template-columns: 1fr;
   }
 }
+
+/*
+ * Desktop only. On a tall viewport the intro sat hard against the header with
+ * dead space below it. Rather than a fixed top padding — which overshoots on a
+ * short window and causes scrolling — reserve the space between header and
+ * footer and centre within it, so it stays balanced at any height. The phone
+ * layout is untouched, where vertical space is the scarce thing.
+ */
+@media (min-width: 820px) {
+  .landing {
+    /* Reserves roughly the space between header and footer to centre within. */
+    min-height: calc(100dvh - 12rem);
+    justify-content: center;
+    gap: 3rem;
+  }
+}
