@@ -3,13 +3,19 @@
 import { AddMemberForm } from '@components/AddMemberForm/AddMemberForm';
 import { CompareStrip } from '@components/CompareStrip/CompareStrip';
 import { EditTargets } from '@components/EditTargets/EditTargets';
-import { CalendarIcon, PencilIcon } from '@components/Icons/Icons';
+import {
+  CalendarIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  PencilIcon,
+} from '@components/Icons/Icons';
 import { MacroBars } from '@components/MacroBars/MacroBars';
 import { MemberTabs } from '@components/MemberTabs/MemberTabs';
 import { ProgressRing } from '@components/ProgressRing/ProgressRing';
 import { QuickEntry } from '@components/QuickEntry/QuickEntry';
 import { WorkoutLogger } from '@components/WorkoutLogger/WorkoutLogger';
 import { accentHex } from '@data/fitnessData';
+import { fromISODate, toISODate } from '@utils/date';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type CSSProperties, type TouchEvent, useRef, useState } from 'react';
@@ -35,6 +41,11 @@ interface HomeProps {
 
 const PANEL_ID = 'member-panel';
 const TARGETS_ID = 'macro-targets';
+const adjacentDate = (date: string, offset: number) => {
+  const adjacent = fromISODate(date);
+  adjacent.setDate(adjacent.getDate() + offset);
+  return toISODate(adjacent);
+};
 
 export const Home = ({
   members,
@@ -99,6 +110,15 @@ export const Home = ({
     } catch {
       input.click();
     }
+  };
+
+  const navigateToDate = (nextDate: string) => {
+    if (nextDate > today) {
+      return;
+    }
+
+    setSelectedDate(nextDate);
+    router.push(nextDate === today ? '/' : `/?date=${nextDate}`);
   };
 
   // A deleted or renamed member shouldn't leave the panel pointing at nothing.
@@ -180,34 +200,51 @@ export const Home = ({
   return (
     <div className={styles.home}>
       <header className={styles.head}>
-        <div className={styles.dateControl}>
+        <div className={styles.dateNavigation}>
           <button
             type="button"
-            className={styles.datePicker}
-            aria-label={`Choose dashboard date, ${datePickerLabel}`}
-            onClick={openDatePicker}
+            className={styles.dateStep}
+            aria-label="Previous day"
+            onClick={() => navigateToDate(adjacentDate(selectedDate, -1))}
           >
-            <CalendarIcon size={14} />
-            <span>{datePickerLabel}</span>
+            <ChevronLeftIcon />
           </button>
-          <input
-            ref={dateInput}
-            className={styles.dateInput}
-            type="date"
-            value={selectedDate}
-            max={today}
-            aria-label="Dashboard date value"
-            tabIndex={-1}
-            onChange={(event) => {
-              const nextDate = event.target.value;
-              if (!nextDate) {
-                return;
-              }
-
-              setSelectedDate(nextDate);
-              router.push(nextDate === today ? '/' : `/?date=${nextDate}`);
-            }}
-          />
+          <div className={styles.dateControl}>
+            <button
+              type="button"
+              className={styles.datePicker}
+              aria-label={`Choose dashboard date, ${datePickerLabel}`}
+              onClick={openDatePicker}
+            >
+              <CalendarIcon size={14} />
+              <span>{datePickerLabel}</span>
+            </button>
+            <input
+              ref={dateInput}
+              className={styles.dateInput}
+              type="date"
+              value={selectedDate}
+              max={today}
+              aria-label="Dashboard date value"
+              tabIndex={-1}
+              onChange={(event) => {
+                const nextDate = event.target.value;
+                if (nextDate) {
+                  navigateToDate(nextDate);
+                }
+              }}
+            />
+          </div>
+          {!isToday && (
+            <button
+              type="button"
+              className={styles.dateStep}
+              aria-label="Next day"
+              onClick={() => navigateToDate(adjacentDate(selectedDate, 1))}
+            >
+              <ChevronRightIcon />
+            </button>
+          )}
         </div>
         <h1 className={styles.date}>{dateLabel}</h1>
       </header>

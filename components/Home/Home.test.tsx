@@ -103,6 +103,32 @@ describe('Home', () => {
     expect(navigation.push).toHaveBeenCalledWith('/?date=2026-09-20');
   });
 
+  it('steps back from today without offering a future-day control', () => {
+    navigation.push.mockClear();
+    setup('m1');
+
+    expect(screen.queryByRole('button', { name: 'Next day' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Previous day' }));
+
+    expect(navigation.push).toHaveBeenCalledWith('/?date=2026-09-24');
+  });
+
+  it('steps forward from a historical date', () => {
+    navigation.push.mockClear();
+    render(
+      <Home
+        {...props('m1')}
+        date="2026-09-24"
+        datePickerLabel="Yesterday"
+        dateLabel="Thursday, 24 September"
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next day' }));
+
+    expect(navigation.push).toHaveBeenCalledWith('/');
+  });
+
   it('labels historical dates and returns to the clean route for today', () => {
     navigation.push.mockClear();
     render(

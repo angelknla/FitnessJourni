@@ -16,10 +16,39 @@
   gap: 0.15rem;
 }
 
+.dateNavigation {
+  width: fit-content;
+  min-height: 1.75rem;
+  display: flex;
+  align-items: stretch;
+  gap: 0.3rem;
+  margin: 0 0 0.4rem;
+}
+
 .dateControl {
   position: relative;
-  width: fit-content;
-  margin: 0 0 0.4rem;
+}
+
+.dateStep {
+  width: 1.75rem;
+  min-height: 1.75rem;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  color: var(--c-ink-muted);
+  background: transparent;
+  border-color: var(--c-border);
+}
+
+.dateStep:hover:not(:disabled),
+.dateStep:focus-visible {
+  color: var(--c-ink);
+  border-color: var(--c-border-strong);
+  background: var(--c-surface-hover);
+}
+
+.dateStep svg {
+  display: block;
 }
 
 .datePicker {

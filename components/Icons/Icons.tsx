@@ -167,6 +167,18 @@ export const ArrowLeftIcon = ({ size = 15 }: IconProps) => (
   </svg>
 );
 
+export const ChevronLeftIcon = ({ size = 16 }: IconProps) => (
+  <NavIcon size={size}>
+    <path d="m14.5 5-7 7 7 7" />
+  </NavIcon>
+);
+
+export const ChevronRightIcon = ({ size = 16 }: IconProps) => (
+  <NavIcon size={size}>
+    <path d="m9.5 5 7 7-7 7" />
+  </NavIcon>
+);
+
 export const EyeIcon = ({ size = 16 }: IconProps) => (
   <svg
     viewBox="0 0 16 16"
