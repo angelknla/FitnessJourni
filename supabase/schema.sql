@@ -134,6 +134,11 @@ create table if not exists public.session_rsvps (
   primary key (session_id, member_id)
 );
 
+create table if not exists public.session_reads (
+  member_id    uuid primary key references public.members (id) on delete cascade,
+  last_read_at timestamptz not null default now()
+);
+
 -- ----------------------------------------------------------------------------
 -- workouts — one row per session done, so the tallies are just a count.
 --
@@ -220,6 +225,7 @@ alter table public.members    enable row level security;
 alter table public.daily_logs enable row level security;
 alter table public.sessions   enable row level security;
 alter table public.session_rsvps enable row level security;
+alter table public.session_reads enable row level security;
 alter table public.workouts   enable row level security;
 alter table public.runs       enable row level security;
 alter table public.run_attendees enable row level security;
@@ -231,6 +237,7 @@ drop policy if exists members_rw    on public.members;
 drop policy if exists daily_logs_rw on public.daily_logs;
 drop policy if exists sessions_rw   on public.sessions;
 drop policy if exists session_rsvps_rw on public.session_rsvps;
+drop policy if exists session_reads_rw on public.session_reads;
 drop policy if exists workouts_rw   on public.workouts;
 drop policy if exists runs_rw       on public.runs;
 drop policy if exists run_attendees_rw on public.run_attendees;
@@ -242,6 +249,7 @@ create policy members_rw    on public.members    for all to anon, authenticated 
 create policy daily_logs_rw on public.daily_logs for all to anon, authenticated using (true) with check (true);
 create policy sessions_rw   on public.sessions   for all to anon, authenticated using (true) with check (true);
 create policy session_rsvps_rw on public.session_rsvps for all to anon, authenticated using (true) with check (true);
+create policy session_reads_rw on public.session_reads for all to anon, authenticated using (true) with check (true);
 create policy workouts_rw   on public.workouts   for all to anon, authenticated using (true) with check (true);
 create policy runs_rw       on public.runs       for all to anon, authenticated using (true) with check (true);
 create policy run_attendees_rw on public.run_attendees for all to anon, authenticated using (true) with check (true);

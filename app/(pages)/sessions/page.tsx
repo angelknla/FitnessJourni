@@ -2,6 +2,7 @@ import { ArrowLeftIcon } from '@components/Icons/Icons';
 import { Landing } from '@components/Landing/Landing';
 import { SessionForm } from '@components/SessionForm/SessionForm';
 import { SessionList } from '@components/SessionList/SessionList';
+import { SessionsReadMarker } from '@components/SessionsReadMarker/SessionsReadMarker';
 import { SetupNotice } from '@components/SetupNotice/SetupNotice';
 import { toISODate } from '@utils/date';
 import type { Metadata } from 'next';
@@ -41,6 +42,7 @@ const SessionsPage = async () => {
 
   return (
     <div className={styles.page}>
+      <SessionsReadMarker />
       <Link href="/" className={styles.back}>
         <ArrowLeftIcon />
         Home

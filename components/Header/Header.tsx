@@ -28,6 +28,7 @@ interface HeaderProps {
   members?: Member[];
   viewer?: Viewer;
   hasUnreadMessages?: boolean;
+  hasUnreadSessions?: boolean;
 }
 
 const UNCHOSEN: Viewer = { memberId: null, chosen: false };
@@ -37,6 +38,7 @@ export const Header = ({
   members = [],
   viewer = UNCHOSEN,
   hasUnreadMessages = false,
+  hasUnreadSessions = false,
 }: HeaderProps) => {
   const [scrolled, setScrolled] = useState(false);
   const [identityOpen, setIdentityOpen] = useState(false);
@@ -109,9 +111,10 @@ export const Header = ({
                     >
                       <Icon />
                       <span>{item.label}</span>
-                      {item.href === '/messages' && hasUnreadMessages && (
-                        <span className={styles.unreadDot} aria-hidden="true" />
-                      )}
+                      {((item.href === '/messages' && hasUnreadMessages) ||
+                        (item.href === '/sessions' && hasUnreadSessions)) && (
+                          <span className={styles.unreadDot} aria-hidden="true" />
+                        )}
                     </Link>
                   );
                 })}

@@ -576,17 +576,33 @@ export const bookSession = async (_prev: ActionState, formData: FormData): Promi
     return fail(`There is already a ${activityLabels[activity].toLowerCase()} booked at ${time}.`);
   }
 
-  const { error } = await supabase.from('sessions').insert({
-    session_date: date,
-    session_time: time,
-    activity,
-    note: note ? note.slice(0, 200) : null,
-    created_by: createdBy || null,
-  });
+  const { data: session, error } = await supabase
+    .from('sessions')
+    .insert({
+      session_date: date,
+      session_time: time,
+      activity,
+      note: note ? note.slice(0, 200) : null,
+      created_by: createdBy || null,
+    })
+    .select('created_at')
+    .single();
 
-  if (error) {
-    console.error('[bookSession]', error.message);
+  if (error || !session) {
+    console.error('[bookSession]', error?.message ?? 'Session insert returned no row.');
     return fail('Could not book that.');
+  }
+
+  if (createdBy) {
+    const { error: readError } = await supabase
+      .from('session_reads')
+      .upsert(
+        { member_id: createdBy, last_read_at: session.created_at },
+        { onConflict: 'member_id' }
+      );
+    if (readError) {
+      console.error('[bookSession read cursor]', readError.message);
+    }
   }
 
   revalidatePath('/sessions');
@@ -1082,6 +1098,39 @@ export const markMessagesRead = async (): Promise<void> => {
   if (error) {
     console.error('[markMessagesRead]', error.message);
     return;
+  }
+
+  revalidatePath('/', 'layout');
+};
+
+export const markSessionsRead = async (): Promise<void> => {
+  if (!(await isUnlocked())) {
+    return;
+  }
+
+  const [viewer, supabase] = await Promise.all([readViewer(), Promise.resolve(getSupabase())]);
+  if (!viewer.memberId || !supabase) {
+    return;
+  }
+
+  const { data: latest } = await supabase
+    .from('sessions')
+    .select('created_at')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!latest?.created_at) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from('session_reads')
+    .upsert(
+      { member_id: viewer.memberId, last_read_at: latest.created_at },
+      { onConflict: 'member_id' }
+    );
+  if (error) {
+    console.error('[markSessionsRead]', error.message);
   }
 
   revalidatePath('/', 'layout');

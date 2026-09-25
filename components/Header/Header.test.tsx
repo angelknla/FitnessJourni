@@ -69,6 +69,12 @@ describe('Header', () => {
     expect(container.querySelector('[class*="unreadDot"]')).not.toBeInTheDocument();
   });
 
+  it('shows a subtle marker when sessions are unread', () => {
+    const { container } = render(<Header hasUnreadSessions />);
+
+    expect(container.querySelector('[class*="unreadDot"]')).toBeInTheDocument();
+  });
+
   it('marks the current route', () => {
     render(<Header />);
 

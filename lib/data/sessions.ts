@@ -26,6 +26,39 @@ export const mapSession = (row: SessionRow): TrainingSession => ({
   })),
 });
 
+export const hasUnreadSessions = (
+  latestSessionAt: string | null,
+  lastReadAt: string | null
+): boolean => Boolean(latestSessionAt && (!lastReadAt || latestSessionAt > lastReadAt));
+
+export const getHasUnreadSessions = async (memberId: string): Promise<boolean> => {
+  const supabase = getSupabase();
+  if (!supabase) {
+    return false;
+  }
+
+  const [latestResult, readResult] = await Promise.all([
+    supabase
+      .from('sessions')
+      .select('created_at')
+      .order('created_at', { ascending: false })
+      .limit(1),
+    supabase.from('session_reads').select('last_read_at').eq('member_id', memberId).maybeSingle(),
+  ]);
+
+  if (latestResult.error || readResult.error) {
+    console.error(
+      '[sessions] unread check failed:',
+      latestResult.error?.message ?? readResult.error?.message
+    );
+    return false;
+  }
+
+  const latestSessionAt = latestResult.data?.[0]?.created_at as string | undefined;
+  const lastReadAt = readResult.data?.last_read_at as string | undefined;
+  return hasUnreadSessions(latestSessionAt ?? null, lastReadAt ?? null);
+};
+
 /** Sessions from `fromDate` onwards, soonest first. */
 export const getUpcomingSessions = async (fromDate: string): Promise<TrainingSession[]> => {
   const supabase = getSupabase();

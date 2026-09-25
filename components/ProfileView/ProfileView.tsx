@@ -151,7 +151,9 @@ export const ProfileView = ({
                 <div className={styles.identityDetails}>
                     <div>
                         <p>Your profile</p>
-                        <h2 id="profile-name">{member.name}</h2>
+                        <h2 id="profile-name">
+                            {[member.name, member.surname].filter(Boolean).join(' ')}
+                        </h2>
                     </div>
                     <button
                         type="button"
@@ -362,89 +364,75 @@ export const ProfileView = ({
             <section className={styles.section} aria-labelledby="details-heading">
                 <div className={styles.sectionHead}>
                     <div>
-                        <p>Measurements & goals</p>
-                        <h2 id="details-heading">Your targets</h2>
+                        <p>Profile details</p>
+                        <h2 id="details-heading">Your information</h2>
                     </div>
                 </div>
 
                 <form className={styles.detailsForm} action={profileAction}>
                     <input type="hidden" name="memberId" value={member.id} />
-                    <label htmlFor="profile-name-input">
-                        <span>First name</span>
-                        <input
-                            id="profile-name-input"
-                            type="text"
-                            name="name"
-                            maxLength={50}
-                            defaultValue={member.firstName ?? member.name}
-                            autoComplete="given-name"
-                            required
-                        />
-                    </label>
-                    <label htmlFor="profile-surname">
-                        <span>Surname</span>
-                        <input
-                            id="profile-surname"
-                            type="text"
-                            name="surname"
-                            maxLength={50}
-                            defaultValue={member.surname ?? ''}
-                            autoComplete="family-name"
-                        />
-                    </label>
-                    <label htmlFor="profile-age">
-                        <span>Age</span>
-                        <input
-                            id="profile-age"
-                            type="number"
-                            name="age"
-                            min={13}
-                            max={120}
-                            defaultValue={profile.age ?? ''}
-                        />
-                    </label>
-                    <label htmlFor="profile-height">
-                        <span>Height</span>
-                        <span className={styles.inputUnit}>
-                            <input
-                                id="profile-height"
-                                type="number"
-                                name="heightCm"
-                                min={100}
-                                max={250}
-                                step={0.1}
-                                defaultValue={profile.heightCm ?? ''}
-                            />
-                            <span>cm</span>
-                        </span>
-                    </label>
-                    <label htmlFor="profile-weight-goal">
-                        <span>Weight goal</span>
-                        <span className={styles.inputUnit}>
-                            <input
-                                id="profile-weight-goal"
-                                type="number"
-                                name="targetWeightKg"
-                                min={25}
-                                max={500}
-                                step={0.1}
-                                defaultValue={profile.targetWeightKg ?? ''}
-                            />
-                            <span>kg</span>
-                        </span>
-                    </label>
-                    <label htmlFor="profile-bmi-goal">
-                        <span>BMI goal</span>
-                        <input
-                            id="profile-bmi-goal"
-                            type="number"
-                            name="targetBmi"
-                            min={10}
-                            max={60}
-                            step={0.1}
-                            defaultValue={profile.targetBmi ?? ''}
-                        />
-                    </label>
+                    <fieldset className={styles.detailGroup}>
+                        <legend>Personal info</legend>
+                        <div className={styles.detailFields}>
+                            <label htmlFor="profile-name-input">
+                                <span>First name</span>
+                                <input id="profile-name-input" type="text" name="name" maxLength={50} defaultValue={member.firstName ?? member.name} autoComplete="given-name" required />
+                            </label>
+                            <label htmlFor="profile-surname">
+                                <span>Surname</span>
+                                <input id="profile-surname" type="text" name="surname" maxLength={50} defaultValue={member.surname ?? ''} autoComplete="family-name" />
+                            </label>
+                            <label htmlFor="profile-age">
+                                <span>Age</span>
+                                <input id="profile-age" type="number" name="age" min={13} max={120} defaultValue={profile.age ?? ''} />
+                            </label>
+                        </div>
+                    </fieldset>
+                    <fieldset className={styles.detailGroup}>
+                        <legend>Measurements</legend>
+                        <div className={styles.detailFields}>
+                            <label htmlFor="profile-height">
+                                <span>Height</span>
+                                <span className={styles.inputUnit}>
+                                    <input id="profile-height" type="number" name="heightCm" min={100} max={250} step={0.1} defaultValue={profile.heightCm ?? ''} />
+                                    <span>cm</span>
+                                </span>
+                            </label>
+                            <label htmlFor="profile-current-weight">
+                                <span>Current weight</span>
+                                <span className={styles.inputUnit}>
+                                    <input
+                                        id="profile-current-weight"
+                                        type="number"
+                                        value={currentWeight ?? ''}
+                                        readOnly
+                                        aria-label="Current weight"
+                                        aria-describedby="profile-current-weight-note"
+                                    />
+                                    <span>kg</span>
+                                </span>
+                                <small id="profile-current-weight-note" className={styles.fieldNote}>
+                                    Updated in Monthly weight
+                                </small>
+                            </label>
+                        </div>
+                    </fieldset>
+                    <fieldset className={styles.detailGroup}>
+                        <legend>Goals and targets</legend>
+                        <div className={styles.detailFields}>
+                            <label htmlFor="profile-weight-goal">
+                                <span>Weight goal</span>
+                                <span className={styles.inputUnit}>
+                                    <input id="profile-weight-goal" type="number" name="targetWeightKg" min={25} max={500} step={0.1} defaultValue={profile.targetWeightKg ?? ''} />
+                                    <span>kg</span>
+                                </span>
+                            </label>
+                            <label htmlFor="profile-bmi-goal">
+                                <span>BMI goal</span>
+                                <input id="profile-bmi-goal" type="number" name="targetBmi" min={10} max={60} step={0.1} defaultValue={profile.targetBmi ?? ''} />
+                            </label>
+                        </div>
+                    </fieldset>
                     <div className={styles.formActions}>
                         <button type="submit" disabled={profilePending}>
                             {profilePending ? 'Saving…' : 'Save profile'}

@@ -43,11 +43,11 @@ describe('mapMember', () => {
     });
   });
 
-  it('combines first name and surname for display', () => {
+  it('keeps surname separate from the shared display name', () => {
     expect(mapMember({ ...memberRow, surname: 'Smith' })).toMatchObject({
       firstName: 'Dillon',
       surname: 'Smith',
-      name: 'Dillon Smith',
+      name: 'Dillon',
     });
   });
 

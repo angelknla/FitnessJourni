@@ -91,8 +91,12 @@ describe('ProfileView', () => {
         expect(screen.getByLabelText('First name')).toHaveValue('Dillon');
         expect(screen.getByLabelText('Surname')).toHaveValue('');
         expect(screen.getByLabelText(/^Height/)).toHaveValue(180);
+        expect(screen.getByLabelText('Current weight')).toHaveValue(null);
         expect(screen.getByLabelText(/^Weight goal/)).toHaveValue(75);
         expect(screen.getByLabelText('BMI goal')).toHaveValue(23);
+        expect(screen.getByRole('group', { name: 'Personal info' })).toBeInTheDocument();
+        expect(screen.getByRole('group', { name: 'Measurements' })).toBeInTheDocument();
+        expect(screen.getByRole('group', { name: 'Goals and targets' })).toBeInTheDocument();
     });
 
     it('opens identity switching from the account section', async () => {

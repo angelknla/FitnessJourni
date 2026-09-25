@@ -6,7 +6,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { getMembers } from '@/lib/data/members';
 import { getHasUnreadMessages } from '@/lib/data/messages';
-import { getUpcomingSessions, nextSession } from '@/lib/data/sessions';
+import { getHasUnreadSessions, getUpcomingSessions, nextSession } from '@/lib/data/sessions';
 import { viewerFirst } from '@/lib/ownership';
 import { isUnlocked, readViewer, type Viewer } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
@@ -82,12 +82,13 @@ const RootLayout = async ({ children }: LayoutProps) => {
    */
   const members: Member[] = locked || !configured ? [] : await getMembers();
   const viewer: Viewer = locked ? LOCKED_VIEWER : await readViewer();
-  const [banner, hasUnreadMessages] =
+  const [banner, hasUnreadMessages, hasUnreadSessions] =
     locked || !configured
-      ? [null, false]
+      ? [null, false, false]
       : await Promise.all([
         nextSessionBanner(members),
         viewer.memberId ? getHasUnreadMessages(viewer.memberId) : false,
+        viewer.memberId ? getHasUnreadSessions(viewer.memberId) : false,
       ]);
 
   return (
@@ -99,6 +100,7 @@ const RootLayout = async ({ children }: LayoutProps) => {
             members={viewerFirst(members, viewer.memberId)}
             viewer={viewer}
             hasUnreadMessages={hasUnreadMessages}
+            hasUnreadSessions={hasUnreadSessions}
           />
 
           {banner && (

@@ -24,7 +24,7 @@ export const mapMember = (row: MemberRow): Member => ({
   id: row.id,
   firstName: row.name,
   surname: row.surname?.trim() || null,
-  name: [row.name, row.surname?.trim()].filter(Boolean).join(' '),
+  name: row.name,
   accent: resolveAccent(row.accent, row.sort_order),
   avatarPath: row.avatar_path ?? null,
   sortOrder: row.sort_order,

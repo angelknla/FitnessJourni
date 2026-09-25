@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { TrainingSession } from '@/types/fitness';
-import { mapSession, nextSession, type SessionRow } from './sessions';
+import { hasUnreadSessions, mapSession, nextSession, type SessionRow } from './sessions';
 
 const session = (id: string, date: string, time: string): TrainingSession => ({
   id,
@@ -38,6 +38,15 @@ describe('mapSession', () => {
     };
 
     expect(mapSession(row).rsvps).toEqual([{ memberId: 'm1', status: 'going' }]);
+  });
+});
+
+describe('hasUnreadSessions', () => {
+  it('only reports bookings newer than the read cursor', () => {
+    expect(hasUnreadSessions('2026-09-25T08:30:00.000Z', null)).toBe(true);
+    expect(hasUnreadSessions('2026-09-25T08:30:00.000Z', '2026-09-25T08:29:59.000Z')).toBe(true);
+    expect(hasUnreadSessions('2026-09-25T08:30:00.000Z', '2026-09-25T08:30:00.000Z')).toBe(false);
+    expect(hasUnreadSessions(null, null)).toBe(false);
   });
 });
 
