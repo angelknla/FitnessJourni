@@ -1,6 +1,6 @@
 'use client';
 
-import { CrossIcon, PencilIcon, PlusIcon } from '@components/Icons/Icons';
+import { BinIcon, CrossIcon, PencilIcon, PlusIcon } from '@components/Icons/Icons';
 import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
 import { accentHex } from '@data/fitnessData';
 import { fromISODate, startOfMonth, startOfWeek } from '@utils/date';
@@ -287,7 +287,7 @@ const RunCard = ({
                             disabled={isPending}
                             aria-label={`Remove ${run.distanceKm.toFixed(2)} kilometre run`}
                         >
-                            <CrossIcon size={13} />
+                            <BinIcon size={13} />
                         </button>
                     </form>
                 </div>

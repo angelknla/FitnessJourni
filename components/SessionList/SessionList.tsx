@@ -1,6 +1,7 @@
 'use client';
 
-import { CrossIcon } from '@components/Icons/Icons';
+import { BinIcon } from '@components/Icons/Icons';
+import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
 import { activityLabels } from '@data/fitnessData';
 import { fromISODate } from '@utils/date';
 import { useActionState } from 'react';
@@ -38,14 +39,12 @@ const SessionRow = ({
   const [deleteState, deleteAction, isDeleting] = useActionState(deleteSession, initial);
   const [rsvpState, rsvpAction, isResponding] = useActionState(respondToSession, initial);
   const currentStatus = session.rsvps.find((rsvp) => rsvp.memberId === viewerId)?.status;
-  const namesFor = (status: RsvpStatus) =>
-    members
-      .filter((member) =>
-        session.rsvps.some((rsvp) => rsvp.memberId === member.id && rsvp.status === status)
-      )
-      .map((member) => member.name);
-  const going = namesFor('going');
-  const notGoing = namesFor('not_going');
+  const membersFor = (status: RsvpStatus) =>
+    members.filter((member) =>
+      session.rsvps.some((rsvp) => rsvp.memberId === member.id && rsvp.status === status)
+    );
+  const going = membersFor('going');
+  const notGoing = membersFor('not_going');
 
   return (
     <li className={styles.row}>
@@ -57,35 +56,39 @@ const SessionRow = ({
         {bookedBy && <span className={styles.by}>Booked by {bookedBy}</span>}
         {(going.length > 0 || notGoing.length > 0) && (
           <span className={styles.responses}>
-            {going.length > 0 && <span>Going: {going.join(', ')}</span>}
-            {notGoing.length > 0 && <span>Can't go: {notGoing.join(', ')}</span>}
+            {going.length > 0 && (
+              <span
+                className={styles.responseGroup}
+                role="img"
+                aria-label={`Going: ${going.map((member) => member.name).join(', ')}`}
+              >
+                <span>Going:</span>
+                <span className={styles.responseAvatars}>
+                  {going.map((member) => (
+                    <span key={member.id} title={member.name}>
+                      <MemberAvatar member={member} size="1.15rem" />
+                    </span>
+                  ))}
+                </span>
+              </span>
+            )}
+            {notGoing.length > 0 && (
+              <span
+                className={styles.responseGroup}
+                role="img"
+                aria-label={`Can't go: ${notGoing.map((member) => member.name).join(', ')}`}
+              >
+                <span>Can't go:</span>
+                <span className={styles.responseAvatars}>
+                  {notGoing.map((member) => (
+                    <span key={member.id} title={member.name}>
+                      <MemberAvatar member={member} size="1.15rem" />
+                    </span>
+                  ))}
+                </span>
+              </span>
+            )}
           </span>
-        )}
-        {viewerId && (
-          <form action={rsvpAction} className={styles.rsvp} aria-label="RSVP">
-            <input type="hidden" name="sessionId" value={session.id} />
-            <input type="hidden" name="memberId" value={viewerId} />
-            <button
-              type="submit"
-              name="status"
-              value="going"
-              data-active={currentStatus === 'going'}
-              aria-pressed={currentStatus === 'going'}
-              disabled={isResponding}
-            >
-              Going
-            </button>
-            <button
-              type="submit"
-              name="status"
-              value="not_going"
-              data-active={currentStatus === 'not_going'}
-              aria-pressed={currentStatus === 'not_going'}
-              disabled={isResponding}
-            >
-              Can't go
-            </button>
-          </form>
         )}
         {rsvpState.error && (
           <span className={styles.error} role="alert">
@@ -99,7 +102,34 @@ const SessionRow = ({
         )}
       </span>
 
-      <form action={deleteAction}>
+      {viewerId && (
+        <form action={rsvpAction} className={styles.rsvp} aria-label="RSVP">
+          <input type="hidden" name="sessionId" value={session.id} />
+          <input type="hidden" name="memberId" value={viewerId} />
+          <button
+            type="submit"
+            name="status"
+            value="going"
+            data-active={currentStatus === 'going'}
+            aria-pressed={currentStatus === 'going'}
+            disabled={isResponding}
+          >
+            Going
+          </button>
+          <button
+            type="submit"
+            name="status"
+            value="not_going"
+            data-active={currentStatus === 'not_going'}
+            aria-pressed={currentStatus === 'not_going'}
+            disabled={isResponding}
+          >
+            Can't go
+          </button>
+        </form>
+      )}
+
+      <form action={deleteAction} className={styles.removeForm}>
         <input type="hidden" name="id" value={session.id} />
         <button
           type="submit"
@@ -107,7 +137,7 @@ const SessionRow = ({
           disabled={isDeleting}
           aria-label={`Remove ${activityLabels[session.activity]} at ${session.time}`}
         >
-          {isDeleting ? <span className={styles.pending}>…</span> : <CrossIcon size={14} />}
+          {isDeleting ? <span className={styles.pending}>…</span> : <BinIcon size={14} />}
         </button>
       </form>
     </li>

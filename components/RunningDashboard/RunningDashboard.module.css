@@ -370,6 +370,10 @@
   border-radius: var(--r-lg);
 }
 
+.runCard:has(.cardActions) {
+  padding-right: 3.15rem;
+}
+
 .runLead {
   display: flex;
   flex-direction: column;
@@ -438,6 +442,7 @@
   top: 0.65rem;
   right: 0.65rem;
   display: flex;
+  flex-direction: column;
   gap: 0.35rem;
 }
 

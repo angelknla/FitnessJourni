@@ -1,6 +1,6 @@
 'use client';
 
-import { CrossIcon, PlusIcon } from '@components/Icons/Icons';
+import { BinIcon, CrossIcon, PlusIcon } from '@components/Icons/Icons';
 import { workoutFocuses, workoutFocusLabels } from '@data/fitnessData';
 import { useActionState, useState } from 'react';
 import { type ActionState, deleteWorkout, logWorkout } from '@/app/actions';
@@ -47,7 +47,7 @@ const LoggedWorkout = ({ workout, canEdit }: { workout: Workout; canEdit: boolea
             disabled={isPending}
             aria-label={`Remove ${describe(workout)} workout`}
           >
-            <CrossIcon size={12} />
+            <BinIcon size={12} />
           </button>
         </form>
       )}

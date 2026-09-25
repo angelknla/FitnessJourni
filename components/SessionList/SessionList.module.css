@@ -27,9 +27,13 @@
 }
 
 .row {
+  position: relative;
   min-width: 0;
   display: grid;
-  grid-template-columns: 3.4rem 1fr auto;
+  grid-template-columns: 3.4rem minmax(0, 1fr) auto;
+  grid-template-areas:
+    "time details remove"
+    ". rsvp remove";
   align-items: center;
   gap: 0.7rem;
   padding: 0.7rem 0.85rem;
@@ -39,6 +43,7 @@
 }
 
 .time {
+  grid-area: time;
   font-size: 0.95rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -46,6 +51,7 @@
 }
 
 .details {
+  grid-area: details;
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
@@ -73,10 +79,25 @@
   color: var(--c-ink-soft);
 }
 
+.responseGroup,
+.responseAvatars {
+  display: inline-flex;
+  align-items: center;
+}
+
+.responseGroup {
+  gap: 0.3rem;
+}
+
+.responseAvatars {
+  gap: 0.15rem;
+}
+
 .rsvp {
+  grid-area: rsvp;
   display: flex;
   gap: 0.35rem;
-  margin-top: 0.4rem;
+  margin-top: -0.3rem;
 }
 
 .rsvp button {
@@ -97,6 +118,10 @@
 .error {
   font-size: 0.74rem;
   color: var(--c-critical);
+}
+
+.removeForm {
+  grid-area: remove;
 }
 
 .remove {
@@ -130,4 +155,40 @@
   margin: 0;
   font-size: 0.88rem;
   color: var(--c-ink-muted);
+}
+
+@media (max-width: 520px) {
+  .row {
+    grid-template-areas:
+      "time details remove"
+      "time details rsvp";
+    grid-template-columns: 3.4rem minmax(0, 1fr) auto;
+    padding: 0.7rem 0.85rem;
+  }
+
+  .rsvp {
+    align-self: end;
+    justify-self: end;
+    margin-top: 0;
+  }
+
+  .rsvp button {
+    height: 1.45rem;
+    min-height: 0;
+    padding: 0.1rem 0.35rem;
+    font-size: 0.64rem;
+    line-height: 1;
+  }
+
+  .rsvp button[data-active="true"] {
+    color: var(--c-ink);
+    background: color-mix(in oklab, var(--c-ink) 12%, transparent);
+    border-color: var(--c-ink);
+  }
+
+  .removeForm {
+    position: static;
+    align-self: start;
+    justify-self: end;
+  }
 }

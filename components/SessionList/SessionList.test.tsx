@@ -98,8 +98,8 @@ describe('SessionList', () => {
   it('shows responses and marks the current member response', () => {
     render(<SessionList sessions={sessions} members={members} viewerId="m1" />);
 
-    expect(screen.getByText('Going: Dillon')).toBeInTheDocument();
-    expect(screen.getByText("Can't go: Angel")).toBeInTheDocument();
+    expect(screen.getByLabelText('Going: Dillon')).toBeInTheDocument();
+    expect(screen.getByLabelText("Can't go: Angel")).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'Going' })[0]).toHaveAttribute(
       'aria-pressed',
       'true'
