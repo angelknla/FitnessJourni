@@ -17,6 +17,37 @@ console.error = (...args: unknown[]) => {
   originalError(...args);
 };
 
+/*
+ * Node 26 ships its own experimental localStorage that requires
+ * --localstorage-file, and it shadows jsdom's implementation — so
+ * window.localStorage is undefined here. Components guard against that with
+ * try/catch (a real browser has it), but the tests need a working one to
+ * exercise the persistence paths at all.
+ */
+if (!window.localStorage) {
+  const store = new Map<string, string>();
+
+  Object.defineProperty(window, 'localStorage', {
+    configurable: true,
+    value: {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        store.set(key, String(value));
+      },
+      removeItem: (key: string) => {
+        store.delete(key);
+      },
+      clear: () => {
+        store.clear();
+      },
+      key: (index: number) => [...store.keys()][index] ?? null,
+      get length() {
+        return store.size;
+      },
+    },
+  });
+}
+
 // jsdom has no matchMedia; components that read it need a stub.
 if (!window.matchMedia) {
   window.matchMedia = vi.fn().mockImplementation((query: string) => ({

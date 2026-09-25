@@ -1,0 +1,116 @@
+/* ================================================================
+   NEXT SESSION BANNER — floats top-right, clear of the fixed header.
+   ================================================================ */
+.banner {
+  position: fixed;
+  top: 4.6rem;
+  right: 1rem;
+  z-index: 90;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  width: min(19rem, calc(100vw - 2rem));
+  padding: 0.85rem 0.85rem 0.85rem 0.95rem;
+  background: var(--c-surface-raised);
+  border: 1px solid var(--c-border-strong);
+  border-left: 3px solid var(--accent-green);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
+  animation: slideIn 0.35s var(--ease-flow);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(0.6rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--c-ink-muted);
+}
+
+.headline {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--c-ink);
+  overflow-wrap: anywhere;
+}
+
+.note,
+.by {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--c-ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.by {
+  color: var(--c-ink-muted);
+}
+
+.link {
+  margin-top: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--c-accent);
+  text-decoration: none;
+  width: fit-content;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.close {
+  flex-shrink: 0;
+  width: 1.7rem;
+  height: 1.7rem;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  line-height: 0;
+  color: var(--c-ink-muted);
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.close:hover:not(:disabled) {
+  color: var(--c-ink);
+  background: var(--c-surface-hover);
+  border-color: var(--c-border);
+}
+
+.close svg {
+  display: block;
+}
+
+/* On a phone it spans the width rather than crowding one corner. */
+@media (max-width: 520px) {
+  .banner {
+    top: 4.3rem;
+    right: 0.75rem;
+    left: 0.75rem;
+    width: auto;
+  }
+}

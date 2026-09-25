@@ -12,7 +12,8 @@ interface SessionFormProps {
   members: Member[];
 }
 
-const initial: ActionState = { ok: true };
+/** Not { ok: true }, so a successful booking is distinguishable from the start. */
+const initial: ActionState = { ok: false };
 
 export const SessionForm = ({ members }: SessionFormProps) => {
   const [state, formAction, isPending] = useActionState(bookSession, initial);
@@ -25,12 +26,30 @@ export const SessionForm = ({ members }: SessionFormProps) => {
   const [activity, setActivity] = useState<ActivityType>('run');
   const [dateISO, setDateISO] = useState('');
   const [time, setTime] = useState('07:00');
+  const [note, setNote] = useState('');
+  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
     const iso = toISODate(new Date());
     setTodayISO(iso);
     setDateISO((current) => current || iso);
   }, []);
+
+  /*
+   * Clears what a second tap would otherwise resubmit verbatim. Keyed on
+   * bookedAt — a primitive that changes per successful booking — so the body only
+   * calls setters and needs nothing else in the dependency list.
+   */
+  useEffect(() => {
+    if (!state.bookedAt) {
+      return;
+    }
+
+    setNote('');
+    setActivity('run');
+    setTime('07:00');
+    setDismissed(false);
+  }, [state.bookedAt]);
 
   const days = useMemo(() => (todayISO ? buildDays(todayISO, bookingWindowDays) : []), [todayISO]);
 
@@ -58,6 +77,12 @@ export const SessionForm = ({ members }: SessionFormProps) => {
       <input type="hidden" name="activity" value={activity} />
       <input type="hidden" name="date" value={dateISO} />
 
+      {state.message && !dismissed && (
+        <p className={styles.confirmed} role="status">
+          {state.message}
+        </p>
+      )}
+
       <fieldset className={styles.fieldset}>
         <legend className={styles.legend}>Activity</legend>
         <div className={styles.chips}>
@@ -71,7 +96,10 @@ export const SessionForm = ({ members }: SessionFormProps) => {
                 name="activityChoice"
                 value={option}
                 checked={activity === option}
-                onChange={() => setActivity(option)}
+                onChange={() => {
+                  setActivity(option);
+                  setDismissed(true);
+                }}
               />
               <span className={styles.chipInner}>{activityLabels[option]}</span>
             </label>
@@ -94,7 +122,10 @@ export const SessionForm = ({ members }: SessionFormProps) => {
                   value={day.iso}
                   checked={dateISO === day.iso}
                   aria-label={formats.full.format(day.date)}
-                  onChange={() => setDateISO(day.iso)}
+                  onChange={() => {
+                    setDateISO(day.iso);
+                    setDismissed(true);
+                  }}
                 />
                 <span className={styles.dateCardInner}>
                   <span className={styles.dateWeekday}>{dayLabel(day.offset, day.date)}</span>
@@ -115,7 +146,10 @@ export const SessionForm = ({ members }: SessionFormProps) => {
             name="time"
             value={time}
             required
-            onChange={(event) => setTime(event.target.value)}
+            onChange={(event) => {
+              setTime(event.target.value);
+              setDismissed(true);
+            }}
           />
         </label>
 
@@ -151,7 +185,17 @@ export const SessionForm = ({ members }: SessionFormProps) => {
 
       <label className={styles.noteField}>
         <span className={styles.fieldLabel}>Note (optional)</span>
-        <input type="text" name="note" maxLength={200} placeholder="Meet at the park gate" />
+        <input
+          type="text"
+          name="note"
+          maxLength={200}
+          placeholder="Meet at the park gate"
+          value={note}
+          onChange={(event) => {
+            setNote(event.target.value);
+            setDismissed(true);
+          }}
+        />
       </label>
 
       <div className={styles.actions}>

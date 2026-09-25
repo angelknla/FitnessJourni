@@ -37,14 +37,13 @@ describe('EditTargets', () => {
     expect(screen.getByLabelText('Carbs in grams')).toHaveValue(313);
   });
 
-  it('derives calories from the grams, not from a stored figure', () => {
+  it('shows the stored calorie target, editable from the start', () => {
     setup();
 
-    // 156*4 + 313*4 + 69*9 = 2,497 — the honest total, not the billed 2,500.
-    expect(screen.getByLabelText('Calories from the grams below')).toHaveTextContent('2,497 kcal');
+    expect(screen.getByLabelText(/Calories/)).toHaveValue(2500);
   });
 
-  it('recalculates calories live when a gram figure changes', async () => {
+  it('moves calories when a gram figure changes', async () => {
     const user = userEvent.setup();
     setup();
 
@@ -53,7 +52,47 @@ describe('EditTargets', () => {
     await user.type(protein, '200');
 
     // 200*4 + 313*4 + 69*9 = 2,673.
-    expect(screen.getByLabelText('Calories from the grams below')).toHaveTextContent('2,673 kcal');
+    expect(screen.getByLabelText(/Calories/)).toHaveValue(2673);
+  });
+
+  it('rescales the grams when calories are typed in grams mode', async () => {
+    const user = userEvent.setup();
+    const { container } = setup();
+
+    const before = Number(hidden(container, 'protein')?.value);
+
+    const calories = screen.getByLabelText(/Calories/);
+    await user.clear(calories);
+    await user.type(calories, '3000');
+
+    const after = Number(hidden(container, 'protein')?.value);
+
+    expect(after).toBeGreaterThan(before);
+    expect(Number(hidden(container, 'calories')?.value)).toBe(3000);
+  });
+
+  it('keeps the split when calories are rescaled', async () => {
+    const user = userEvent.setup();
+    setup();
+
+    const calories = screen.getByLabelText(/Calories/);
+    await user.clear(calories);
+    await user.type(calories, '3000');
+
+    // Still a 25/50/25 split, just bigger numbers.
+    expect(screen.getAllByText('25%')).toHaveLength(2);
+    expect(screen.getByText('50%')).toBeInTheDocument();
+  });
+
+  it('surfaces the rounding gap rather than hiding it', async () => {
+    const user = userEvent.setup();
+    setup();
+
+    const calories = screen.getByLabelText(/Calories/);
+    await user.clear(calories);
+    await user.type(calories, '3000');
+
+    expect(screen.getByText(/from rounding to whole grams/)).toBeInTheDocument();
   });
 
   it('shows the percentage each macro represents while editing grams', () => {
@@ -64,12 +103,13 @@ describe('EditTargets', () => {
     expect(screen.getByText('50%')).toBeInTheDocument();
   });
 
-  it('lets calories be edited directly in percent mode', async () => {
+  it('carries the calorie figure into percent mode', async () => {
     const user = userEvent.setup();
     setup();
 
     await user.click(screen.getByRole('button', { name: 'Percent' }));
 
+    // Switching recomputes it from the grams: 156*4 + 313*4 + 69*9.
     expect(screen.getByLabelText(/Calories/)).toHaveValue(2497);
   });
 
@@ -120,7 +160,7 @@ describe('EditTargets', () => {
   it('submits grams and calories whichever way they were entered', () => {
     const { container } = setup();
 
-    expect(hidden(container, 'calories')).toHaveValue('2497');
+    expect(hidden(container, 'calories')).toHaveValue('2500');
     expect(hidden(container, 'protein')).toHaveValue('156');
     expect(hidden(container, 'memberId')).toHaveValue('m1');
   });

@@ -1,6 +1,12 @@
 'use server';
 
-import { accentNames, activityTypes, defaultTargets, workoutFocuses } from '@data/fitnessData';
+import {
+  accentNames,
+  activityLabels,
+  activityTypes,
+  defaultTargets,
+  workoutFocuses,
+} from '@data/fitnessData';
 import { revalidatePath } from 'next/cache';
 import { isUnlocked } from '@/lib/session';
 import { getSupabase } from '@/lib/supabase/server';
@@ -9,6 +15,14 @@ import type { AccentName, ActivityType, WorkoutFocus } from '@/types/fitness';
 export interface ActionState {
   ok: boolean;
   error?: string;
+  /** Success text built where the values are known, so the client need not. */
+  message?: string;
+  /**
+   * Changes on every successful booking. Gives the form a primitive to key its
+   * reset effect on, instead of depending on the whole state object and dragging
+   * every field into the dependency list.
+   */
+  bookedAt?: number;
 }
 
 const ok: ActionState = { ok: true };
@@ -217,6 +231,24 @@ export const bookSession = async (_prev: ActionState, formData: FormData): Promi
     return fail('Pick an activity.');
   }
 
+  /*
+   * Nothing confirmed a booking before, so a second tap was easy and produced a
+   * duplicate row. Checked in the app rather than with a unique constraint, so the
+   * message can say what clashed. Two people booking the same slot in the same
+   * instant could still slip through; at this size that is not worth a migration.
+   */
+  const { data: clash } = await supabase
+    .from('sessions')
+    .select('id')
+    .eq('session_date', date)
+    .eq('session_time', time)
+    .eq('activity', activity)
+    .limit(1);
+
+  if (clash && clash.length > 0) {
+    return fail(`There is already a ${activityLabels[activity].toLowerCase()} booked at ${time}.`);
+  }
+
   const { error } = await supabase.from('sessions').insert({
     session_date: date,
     session_time: time,
@@ -231,7 +263,19 @@ export const bookSession = async (_prev: ActionState, formData: FormData): Promi
   }
 
   revalidatePath('/sessions');
-  return ok;
+  revalidatePath('/', 'layout');
+
+  const dayLabel = new Intl.DateTimeFormat('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  }).format(new Date(`${date}T12:00:00`));
+
+  return {
+    ok: true,
+    message: `${activityLabels[activity]} booked for ${dayLabel} at ${time}.`,
+    bookedAt: Date.now(),
+  };
 };
 
 export const deleteSession = async (
@@ -260,6 +304,8 @@ export const deleteSession = async (
   }
 
   revalidatePath('/sessions');
+  // The next-session banner lives in the layout, so it needs refreshing too.
+  revalidatePath('/', 'layout');
   return ok;
 };
 

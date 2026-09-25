@@ -65,8 +65,41 @@ export const EditTargets = ({ member, id, onSaved }: EditTargetsProps) => {
   const caloriesNumber = toNumber(calories);
 
   const effectiveGrams = mode === 'percent' ? gramsFromPercents(caloriesNumber, percents) : grams;
-  const effectiveCalories = mode === 'percent' ? caloriesNumber : kcalFromGrams(grams);
-  const effectivePercents = mode === 'percent' ? percents : percentsFromGrams(grams);
+  const effectiveCalories = caloriesNumber;
+  const effectivePercents =
+    mode === 'percent' ? percents : kcalFromGrams(grams) > 0 ? percentsFromGrams(grams) : percents;
+
+  /** What those grams add up to — may differ from the typed figure by rounding. */
+  const gramsKcal = kcalFromGrams(effectiveGrams);
+  const roundingGap = Math.abs(gramsKcal - effectiveCalories);
+
+  /*
+   * Calories is typeable in both modes. In grams mode, changing it rescales the
+   * grams at the remembered split; changing a gram figure recomputes both the
+   * calorie total and the split.
+   *
+   * The split is held in state rather than re-derived from the grams on demand,
+   * because emptying the calorie field zeroes the grams — and a split computed
+   * from all-zero grams is itself zero, which would destroy the ratio for good.
+   */
+  const changeCalories = (value: string) => {
+    setCalories(value);
+
+    if (mode === 'grams') {
+      setGrams(gramsFromPercents(toNumber(value), percents));
+    }
+  };
+
+  const changeGram = (key: MacroKey, value: string) => {
+    const next = { ...grams, [key]: toNumber(value) };
+    setGrams(next);
+    setCalories(String(kcalFromGrams(next)));
+
+    // Only a non-empty set of grams describes a meaningful split.
+    if (kcalFromGrams(next) > 0) {
+      setPercents(percentsFromGrams(next));
+    }
+  };
 
   const split = percentTotal(percents);
   const splitOff = mode === 'percent' && split !== 100;
@@ -115,31 +148,24 @@ export const EditTargets = ({ member, id, onSaved }: EditTargetsProps) => {
           ))}
         </fieldset>
 
-        {mode === 'percent' ? (
-          <label className={styles.caloriesField}>
-            <span className={styles.fieldLabel}>Calories</span>
-            <input
-              type="number"
-              inputMode="numeric"
-              min={1}
-              max={20000}
-              step={10}
-              required
-              value={calories}
-              onChange={(event) => setCalories(event.target.value)}
-            />
-          </label>
-        ) : (
-          <div className={styles.caloriesField}>
-            <span className={styles.fieldLabel}>
-              Calories
-              <span className={styles.derived}>from the grams below</span>
+        <label className={styles.caloriesField}>
+          <span className={styles.fieldLabel}>
+            Calories
+            <span className={styles.derived}>
+              {mode === 'grams' ? 'changing this rescales the grams' : 'split across the macros'}
             </span>
-            <output className={styles.caloriesOut} aria-label="Calories from the grams below">
-              {formatCount(effectiveCalories)} kcal
-            </output>
-          </div>
-        )}
+          </span>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={20000}
+            step={10}
+            required
+            value={calories}
+            onChange={(event) => changeCalories(event.target.value)}
+          />
+        </label>
 
         <div className={styles.rows}>
           {macroKeys.map((key) => (
@@ -156,9 +182,7 @@ export const EditTargets = ({ member, id, onSaved }: EditTargetsProps) => {
                       min={0}
                       max={2000}
                       value={grams[key]}
-                      onChange={(event) =>
-                        setGrams((current) => ({ ...current, [key]: toNumber(event.target.value) }))
-                      }
+                      onChange={(event) => changeGram(key, event.target.value)}
                     />
                   </label>
                   <span className={styles.unit}>g</span>
@@ -200,8 +224,16 @@ export const EditTargets = ({ member, id, onSaved }: EditTargetsProps) => {
 
       {mode === 'grams' && (
         <p className={styles.split}>
-          Those grams come to <strong>{formatCount(effectiveCalories)} kcal</strong>, which is what
-          gets saved as the calorie target.
+          {roundingGap === 0 ? (
+            <>
+              Those grams come to exactly <strong>{formatCount(gramsKcal)} kcal</strong>.
+            </>
+          ) : (
+            <>
+              Those grams come to <strong>{formatCount(gramsKcal)} kcal</strong> — {roundingGap} off
+              the {formatCount(effectiveCalories)} saved, from rounding to whole grams.
+            </>
+          )}
         </p>
       )}
 

@@ -1,4 +1,4 @@
-import { toShortTime } from '@utils/date';
+import { minutesOfTime, toShortTime } from '@utils/date';
 import { getSupabase } from '@/lib/supabase/server';
 import type { ActivityType, TrainingSession } from '@/types/fitness';
 
@@ -41,4 +41,28 @@ export const getUpcomingSessions = async (fromDate: string): Promise<TrainingSes
   }
 
   return (data as SessionRow[]).map(mapSession);
+};
+
+/**
+ * The soonest session that has not already happened. getUpcomingSessions filters
+ * by date only, so a 07:00 run is still "upcoming" at 18:00 — the time has to be
+ * compared too, or the banner advertises a session people already missed.
+ */
+export const nextSession = (
+  sessions: TrainingSession[],
+  today: string,
+  nowMinutes: number
+): TrainingSession | null => {
+  const ahead = sessions.filter((session) => {
+    if (session.date > today) {
+      return true;
+    }
+    if (session.date < today) {
+      return false;
+    }
+    return minutesOfTime(session.time) >= nowMinutes;
+  });
+
+  // The query already orders by date then time, and filtering preserves that.
+  return ahead[0] ?? null;
 };

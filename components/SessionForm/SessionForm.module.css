@@ -236,3 +236,14 @@
   font-size: 0.8rem;
   color: var(--c-critical);
 }
+
+.confirmed {
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--c-good);
+  background: color-mix(in oklab, var(--c-good) 12%, var(--c-surface));
+  border: 1px solid color-mix(in oklab, var(--c-good) 40%, var(--c-border-strong));
+  border-radius: var(--r-md);
+}
