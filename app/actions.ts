@@ -2,6 +2,7 @@
 
 import { accentNames, activityTypes, defaultTargets } from '@data/fitnessData';
 import { revalidatePath } from 'next/cache';
+import { isUnlocked } from '@/lib/session';
 import { getSupabase } from '@/lib/supabase/server';
 import type { AccentName, ActivityType } from '@/types/fitness';
 
@@ -14,6 +15,7 @@ const ok: ActionState = { ok: true };
 const fail = (error: string): ActionState => ({ ok: false, error });
 
 const NOT_CONFIGURED = 'Supabase is not connected yet — add SUPABASE_URL and SUPABASE_ANON_KEY.';
+const LOCKED = 'Locked — reload the page and log in.';
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const HH_MM = /^\d{2}:\d{2}$/;
@@ -34,6 +36,10 @@ export const saveDailyLog = async (
   _prev: ActionState,
   formData: FormData
 ): Promise<ActionState> => {
+  if (!(await isUnlocked())) {
+    return fail(LOCKED);
+  }
+
   const supabase = getSupabase();
   if (!supabase) {
     return fail(NOT_CONFIGURED);
@@ -74,6 +80,10 @@ export const saveDailyLog = async (
 };
 
 export const addMember = async (_prev: ActionState, formData: FormData): Promise<ActionState> => {
+  if (!(await isUnlocked())) {
+    return fail(LOCKED);
+  }
+
   const supabase = getSupabase();
   if (!supabase) {
     return fail(NOT_CONFIGURED);
@@ -116,6 +126,10 @@ export const updateTargets = async (
   _prev: ActionState,
   formData: FormData
 ): Promise<ActionState> => {
+  if (!(await isUnlocked())) {
+    return fail(LOCKED);
+  }
+
   const supabase = getSupabase();
   if (!supabase) {
     return fail(NOT_CONFIGURED);
@@ -149,6 +163,10 @@ export const updateTargets = async (
 };
 
 export const bookSession = async (_prev: ActionState, formData: FormData): Promise<ActionState> => {
+  if (!(await isUnlocked())) {
+    return fail(LOCKED);
+  }
+
   const supabase = getSupabase();
   if (!supabase) {
     return fail(NOT_CONFIGURED);
@@ -191,6 +209,10 @@ export const deleteSession = async (
   _prev: ActionState,
   formData: FormData
 ): Promise<ActionState> => {
+  if (!(await isUnlocked())) {
+    return fail(LOCKED);
+  }
+
   const supabase = getSupabase();
   if (!supabase) {
     return fail(NOT_CONFIGURED);

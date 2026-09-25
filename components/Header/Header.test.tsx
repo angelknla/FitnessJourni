@@ -1,6 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('@/app/auth-actions', () => ({ unlock: vi.fn(async () => ({})) }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
 import { Header } from './Header';
 
@@ -44,5 +47,13 @@ describe('Header', () => {
     await user.click(screen.getByRole('link', { name: 'Sessions' }));
 
     expect(screen.getByRole('button', { name: 'Open menu' })).toBeInTheDocument();
+  });
+
+  it('offers a way in but no navigation when locked', () => {
+    render(<Header locked />);
+
+    expect(screen.getByRole('button', { name: 'Log in' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Sessions' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Open menu' })).not.toBeInTheDocument();
   });
 });

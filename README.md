@@ -46,11 +46,27 @@ write in a Server Action, so the key is never sent to the browser. Use the publi
 The trade-off is no live push updates; pages revalidate on write instead. For daily numbers that's
 plenty, and it avoids shipping a write-capable credential to the client.
 
-### No login, by design
+### The shared passcode gate
 
-Anyone who can open the app can edit anyone's numbers, and nothing records who changed what. That's
-a deliberate v1 choice for three friends. The upgrade — a shared passcode, or Supabase Auth with
-tightened RLS policies — slots in behind the same data layer without touching the UI.
+Set `APP_PASSCODE` and the whole app goes behind one passcode the three of you share. Leave it unset
+and the app is open — so a deploy that has not configured it still works exactly as before.
+
+Locked visitors get an intro screen with a **Log in** button that opens a modal; they never reach the
+pages, so no data is fetched for them. On success a cookie is set for 90 days.
+
+Three things worth knowing:
+
+- The cookie holds a **hash** of the passcode, never the passcode itself.
+- It is still a **bearer token** — anyone who copies the cookie is in until it expires. True of any
+  session cookie, and proportionate for keeping a step tracker off the open internet.
+- **Every Server Action re-checks the gate.** Hiding the UI is not access control; a Server Action is
+  a POST endpoint anyone can call directly, so the check lives there too, not just in the layout.
+
+This is one shared passcode, not accounts: there is still no record of *who* changed what, and any
+of you can edit any of the three. Real per-person identity means Supabase Auth plus tightened RLS
+policies, which slots in behind the same data layer without touching the UI.
+
+`robots.txt` disallows everything, so none of this ends up in search results.
 
 ### Timezone
 
