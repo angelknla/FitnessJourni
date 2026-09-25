@@ -28,7 +28,7 @@ const members: Member[] = [
 
 describe('SessionForm', () => {
   it('offers every activity type', () => {
-    render(<SessionForm members={members} />);
+    render(<SessionForm members={members} viewerId={null} />);
 
     for (const label of ['Run', 'Workout', 'Swim', 'Walk', 'Cycle', 'Other']) {
       expect(screen.getByRole('radio', { name: label })).toBeInTheDocument();
@@ -36,14 +36,14 @@ describe('SessionForm', () => {
   });
 
   it('defaults to a run, since that is the usual case', () => {
-    render(<SessionForm members={members} />);
+    render(<SessionForm members={members} viewerId={null} />);
 
     expect(screen.getByRole('radio', { name: 'Run' })).toBeChecked();
   });
 
   it('switches the selected activity', async () => {
     const user = userEvent.setup();
-    render(<SessionForm members={members} />);
+    render(<SessionForm members={members} viewerId={null} />);
 
     await user.click(screen.getByRole('radio', { name: 'Swim' }));
 
@@ -52,7 +52,7 @@ describe('SessionForm', () => {
   });
 
   it('builds a 14-day rail once the browser clock is known, with today preselected', () => {
-    render(<SessionForm members={members} />);
+    render(<SessionForm members={members} viewerId={null} />);
 
     const days = screen.getAllByRole('radio', { name: /\d/ });
     expect(days).toHaveLength(14);
@@ -66,7 +66,7 @@ describe('SessionForm', () => {
 
   it('lets a quick-time chip set the time', async () => {
     const user = userEvent.setup();
-    render(<SessionForm members={members} />);
+    render(<SessionForm members={members} viewerId={null} />);
 
     const time = screen.getByLabelText('Time') as HTMLInputElement;
     expect(time.value).toBe('07:00');
@@ -77,7 +77,7 @@ describe('SessionForm', () => {
   });
 
   it('lists everyone as a possible booker, plus an anyone option', () => {
-    render(<SessionForm members={members} />);
+    render(<SessionForm members={members} viewerId={null} />);
 
     const who = screen.getByLabelText('Booked by');
 

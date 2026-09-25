@@ -26,19 +26,19 @@ const members: Member[] = [
 
 describe('AddMemberForm', () => {
   it('offers a swatch per accent slot', () => {
-    render(<AddMemberForm members={members} />);
+    render(<AddMemberForm members={members} viewerId="m1" />);
 
     expect(screen.getAllByRole('radio')).toHaveLength(8);
   });
 
   it('preselects the next free colour rather than one already in use', () => {
-    render(<AddMemberForm members={members} />);
+    render(<AddMemberForm members={members} viewerId="m1" />);
 
     expect(screen.getByRole('radio', { name: 'yellow' })).toBeChecked();
   });
 
   it('disables colours already taken, so two people cannot share one', () => {
-    render(<AddMemberForm members={members} />);
+    render(<AddMemberForm members={members} viewerId="m1" />);
 
     expect(screen.getByRole('radio', { name: 'blue — already taken' })).toBeDisabled();
     expect(screen.getByRole('radio', { name: 'orange — already taken' })).toBeDisabled();
@@ -47,7 +47,7 @@ describe('AddMemberForm', () => {
 
   it('reflects a new choice, both in the radio and in the label', async () => {
     const user = userEvent.setup();
-    render(<AddMemberForm members={members} />);
+    render(<AddMemberForm members={members} viewerId="m1" />);
 
     expect(screen.getByText('yellow')).toBeInTheDocument();
 
@@ -59,13 +59,13 @@ describe('AddMemberForm', () => {
   });
 
   it('requires a name', () => {
-    render(<AddMemberForm members={members} />);
+    render(<AddMemberForm members={members} viewerId="m1" />);
 
     expect(screen.getByLabelText('Name')).toBeRequired();
   });
 
   it('passes the sort order so a new person lands at the end', () => {
-    const { container } = render(<AddMemberForm members={members} />);
+    const { container } = render(<AddMemberForm members={members} viewerId="m1" />);
 
     expect(container.querySelector('input[name="sortOrder"]')).toHaveValue('3');
   });

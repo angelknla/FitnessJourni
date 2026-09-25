@@ -14,6 +14,8 @@ interface WorkoutLoggerProps {
   /** Today's workouts for this member, already filtered. */
   logged: Workout[];
   weekCount: number;
+  /** False on someone else's tab, or for a visitor: the list stays, the form goes. */
+  canEdit: boolean;
 }
 
 const initial: ActionState = { ok: false };
@@ -21,7 +23,7 @@ const initial: ActionState = { ok: false };
 const describe = (workout: Workout) =>
   workout.focuses.map((focus) => workoutFocusLabels[focus]).join(' + ');
 
-const LoggedWorkout = ({ workout }: { workout: Workout }) => {
+const LoggedWorkout = ({ workout, canEdit }: { workout: Workout; canEdit: boolean }) => {
   const [state, formAction, isPending] = useActionState(deleteWorkout, initial);
 
   return (
@@ -36,22 +38,24 @@ const LoggedWorkout = ({ workout }: { workout: Workout }) => {
         )}
       </span>
 
-      <form action={formAction}>
-        <input type="hidden" name="id" value={workout.id} />
-        <button
-          type="submit"
-          className={styles.remove}
-          disabled={isPending}
-          aria-label={`Remove ${describe(workout)} workout`}
-        >
-          <CrossIcon size={12} />
-        </button>
-      </form>
+      {canEdit && (
+        <form action={formAction}>
+          <input type="hidden" name="id" value={workout.id} />
+          <button
+            type="submit"
+            className={styles.remove}
+            disabled={isPending}
+            aria-label={`Remove ${describe(workout)} workout`}
+          >
+            <CrossIcon size={12} />
+          </button>
+        </form>
+      )}
     </li>
   );
 };
 
-export const WorkoutLogger = ({ member, date, logged, weekCount }: WorkoutLoggerProps) => {
+export const WorkoutLogger = ({ member, date, logged, weekCount, canEdit }: WorkoutLoggerProps) => {
   const [state, formAction, isPending] = useActionState(logWorkout, initial);
   const [picked, setPicked] = useState<WorkoutFocus[]>([]);
 
@@ -82,62 +86,72 @@ export const WorkoutLogger = ({ member, date, logged, weekCount }: WorkoutLogger
       {logged.length > 0 && (
         <ul className={styles.loggedList}>
           {logged.map((workout) => (
-            <LoggedWorkout workout={workout} key={workout.id} />
+            <LoggedWorkout workout={workout} canEdit={canEdit} key={workout.id} />
           ))}
         </ul>
       )}
 
+      {!canEdit && (
+        <p className={styles.readOnly}>
+          {trainedToday
+            ? `Only ${member.name} can change these.`
+            : `Nothing logged. Only ${member.name} can log it.`}
+        </p>
+      )}
+
       {/* Remounts after a save so the checkboxes clear. */}
-      <form className={styles.form} action={formAction} key={logged.length}>
-        <input type="hidden" name="memberId" value={member.id} />
-        <input type="hidden" name="date" value={date} />
+      {canEdit && (
+        <form className={styles.form} action={formAction} key={logged.length}>
+          <input type="hidden" name="memberId" value={member.id} />
+          <input type="hidden" name="date" value={date} />
 
-        <fieldset className={styles.fieldset}>
-          <legend className={styles.legend}>
-            {trainedToday ? 'Log another session' : `What did ${member.name} train?`}
-            <span className={styles.hint}>Pick as many as apply</span>
-          </legend>
+          <fieldset className={styles.fieldset}>
+            <legend className={styles.legend}>
+              {trainedToday ? 'Log another session' : `What did ${member.name} train?`}
+              <span className={styles.hint}>Pick as many as apply</span>
+            </legend>
 
-          <div className={styles.chips}>
-            {workoutFocuses.map((option) => (
-              <label className={styles.chip} key={option}>
-                <input
-                  className={styles.control}
-                  type="checkbox"
-                  name="focus"
-                  value={option}
-                  checked={picked.includes(option)}
-                  onChange={() => toggle(option)}
-                />
-                <span className={styles.chipInner}>{workoutFocusLabels[option]}</span>
-              </label>
-            ))}
+            <div className={styles.chips}>
+              {workoutFocuses.map((option) => (
+                <label className={styles.chip} key={option}>
+                  <input
+                    className={styles.control}
+                    type="checkbox"
+                    name="focus"
+                    value={option}
+                    checked={picked.includes(option)}
+                    onChange={() => toggle(option)}
+                  />
+                  <span className={styles.chipInner}>{workoutFocusLabels[option]}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          <label className={styles.noteField}>
+            <span className={styles.noteLabel}>Note (optional)</span>
+            <input type="text" name="note" maxLength={200} placeholder="Felt strong on bench" />
+          </label>
+
+          <div className={styles.actions}>
+            <button
+              type="submit"
+              className={styles.submit}
+              disabled={isPending || picked.length === 0}
+            >
+              {isPending ? 'Logging…' : 'Log workout'}
+            </button>
+
+            {picked.length > 0 && <span className={styles.picked}>{picked.length} selected</span>}
+
+            {state.error && (
+              <p className={styles.error} role="alert">
+                {state.error}
+              </p>
+            )}
           </div>
-        </fieldset>
-
-        <label className={styles.noteField}>
-          <span className={styles.noteLabel}>Note (optional)</span>
-          <input type="text" name="note" maxLength={200} placeholder="Felt strong on bench" />
-        </label>
-
-        <div className={styles.actions}>
-          <button
-            type="submit"
-            className={styles.submit}
-            disabled={isPending || picked.length === 0}
-          >
-            {isPending ? 'Logging…' : 'Log workout'}
-          </button>
-
-          {picked.length > 0 && <span className={styles.picked}>{picked.length} selected</span>}
-
-          {state.error && (
-            <p className={styles.error} role="alert">
-              {state.error}
-            </p>
-          )}
-        </div>
-      </form>
+        </form>
+      )}
     </div>
   );
 };

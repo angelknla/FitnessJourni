@@ -35,8 +35,16 @@ const workout = (id: string, focuses: Workout['focuses'], note: string | null = 
   note,
 });
 
-const setup = (logged: Workout[] = [], weekCount = 0) =>
-  render(<WorkoutLogger member={member} date="2026-09-25" logged={logged} weekCount={weekCount} />);
+const setup = (logged: Workout[] = [], weekCount = 0, canEdit = true) =>
+  render(
+    <WorkoutLogger
+      member={member}
+      date="2026-09-25"
+      logged={logged}
+      weekCount={weekCount}
+      canEdit={canEdit}
+    />
+  );
 
 describe('WorkoutLogger', () => {
   it('says nothing is logged when the day is empty', () => {

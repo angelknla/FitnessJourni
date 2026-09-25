@@ -8,7 +8,9 @@ import {
   workoutFocuses,
 } from '@data/fitnessData';
 import { revalidatePath } from 'next/cache';
-import { isUnlocked } from '@/lib/session';
+import { getMembers } from '@/lib/data/members';
+import { ADMIN_MEMBER_NAME, canEditMember, canRemoveMembers } from '@/lib/ownership';
+import { isUnlocked, readViewer } from '@/lib/session';
 import { getSupabase } from '@/lib/supabase/server';
 import type { AccentName, ActivityType, WorkoutFocus } from '@/types/fitness';
 
@@ -23,6 +25,13 @@ export interface ActionState {
    * every field into the dependency list.
    */
   bookedAt?: number;
+  /**
+   * The member addMember just created. Returned so the form can offer to sign in
+   * as them, which is the only way a first identity can be picked on a fresh
+   * deploy — before this there is nobody to be.
+   */
+  newMemberId?: string;
+  newMemberName?: string;
 }
 
 const ok: ActionState = { ok: true };
@@ -30,6 +39,15 @@ const fail = (error: string): ActionState => ({ ok: false, error });
 
 const NOT_CONFIGURED = 'Supabase is not connected yet — add SUPABASE_URL and SUPABASE_ANON_KEY.';
 const LOCKED = 'Locked — reload the page and log in.';
+const NOT_YOURS = 'You can only change your own numbers — switch person first.';
+
+/*
+ * The forms hide themselves when they are not yours, but that is presentation:
+ * memberId travels as a hidden input and can be edited by hand, so the decision
+ * has to be remade here against the cookie. Visitors fail this for every row.
+ */
+const refuseUnlessOwn = async (memberId: string): Promise<string | null> =>
+  canEditMember(await readViewer(), memberId) ? null : NOT_YOURS;
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const HH_MM = /^\d{2}:\d{2}$/;
@@ -67,6 +85,11 @@ export const saveDailyLog = async (
   }
   if (!ISO_DATE.test(date)) {
     return fail('That date looks wrong.');
+  }
+
+  const notYours = await refuseUnlessOwn(memberId);
+  if (notYours) {
+    return fail(notYours);
   }
 
   const { error } = await supabase.from('daily_logs').upsert(
@@ -114,18 +137,28 @@ export const addMember = async (_prev: ActionState, formData: FormData): Promise
   const requested = toText(formData.get('accent')) as AccentName;
   const accent: AccentName = accentNames.includes(requested) ? requested : 'violet';
 
-  const { error } = await supabase.from('members').insert({
-    name,
-    accent,
-    sort_order: toInt(formData.get('sortOrder'), 999),
-    target_calories: defaultTargets.calories,
-    target_protein: defaultTargets.protein,
-    target_carbs: defaultTargets.carbs,
-    target_fat: defaultTargets.fat,
-    target_steps: defaultTargets.steps,
-    target_steps_min: defaultTargets.stepsMin,
-    target_water_ml: defaultTargets.waterMl,
-  });
+  /*
+   * Deliberately not ownership-checked, unlike the other writes: a visitor has to
+   * be able to add someone, or an empty members table deadlocks — with nobody to
+   * be, everyone is a visitor, and no visitor could ever create the first person.
+   * It only ever inserts a new row, so it cannot overwrite anyone.
+   */
+  const { data, error } = await supabase
+    .from('members')
+    .insert({
+      name,
+      accent,
+      sort_order: toInt(formData.get('sortOrder'), 999),
+      target_calories: defaultTargets.calories,
+      target_protein: defaultTargets.protein,
+      target_carbs: defaultTargets.carbs,
+      target_fat: defaultTargets.fat,
+      target_steps: defaultTargets.steps,
+      target_steps_min: defaultTargets.stepsMin,
+      target_water_ml: defaultTargets.waterMl,
+    })
+    .select('id, name')
+    .single();
 
   if (error) {
     console.error('[addMember]', error.message);
@@ -133,7 +166,62 @@ export const addMember = async (_prev: ActionState, formData: FormData): Promise
   }
 
   revalidatePath('/');
-  return ok;
+  return { ok: true, newMemberId: data.id as string, newMemberName: data.name as string };
+};
+
+/**
+ * Removes a person and everything of theirs. Only the admin member may do this.
+ *
+ * Their logs and workouts go with them through the schema's on delete cascade;
+ * sessions they booked survive with created_by set null, so a group booking does
+ * not vanish because the person who entered it left.
+ */
+export const removeMember = async (
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> => {
+  if (!(await isUnlocked())) {
+    return fail(LOCKED);
+  }
+
+  const supabase = getSupabase();
+  if (!supabase) {
+    return fail(NOT_CONFIGURED);
+  }
+
+  const memberId = toText(formData.get('memberId'));
+  if (!memberId) {
+    return fail('Pick who to remove.');
+  }
+
+  /*
+   * Re-checked here, not just hidden in the UI: the button being absent is not a
+   * guard, and this one deletes rows that cascade.
+   */
+  const [viewer, members] = await Promise.all([readViewer(), getMembers()]);
+
+  if (!canRemoveMembers(viewer, members)) {
+    return fail(`Only ${ADMIN_MEMBER_NAME} can remove people.`);
+  }
+
+  const target = members.find((member) => member.id === memberId);
+  if (!target) {
+    return fail('They are already gone.');
+  }
+
+  const { error } = await supabase.from('members').delete().eq('id', memberId);
+
+  if (error) {
+    console.error('[removeMember]', error.message);
+    return fail('Could not remove them.');
+  }
+
+  revalidatePath('/');
+  revalidatePath('/logs');
+  revalidatePath('/workouts');
+  revalidatePath('/sessions');
+
+  return { ok: true, message: `${target.name} and all their entries are gone.` };
 };
 
 export const updateTargets = async (
@@ -152,6 +240,11 @@ export const updateTargets = async (
   const memberId = toText(formData.get('memberId'));
   if (!memberId) {
     return fail('Pick who these targets are for.');
+  }
+
+  const notYours = await refuseUnlessOwn(memberId);
+  if (notYours) {
+    return fail(notYours);
   }
 
   /*
@@ -344,6 +437,11 @@ export const logWorkout = async (_prev: ActionState, formData: FormData): Promis
     return fail('Pick at least one thing you trained.');
   }
 
+  const notYours = await refuseUnlessOwn(memberId);
+  if (notYours) {
+    return fail(notYours);
+  }
+
   const { error } = await supabase.from('workouts').insert({
     member_id: memberId,
     workout_date: date,
@@ -377,6 +475,25 @@ export const deleteWorkout = async (
   const id = toText(formData.get('id'));
   if (!id) {
     return fail('Nothing to remove.');
+  }
+
+  /*
+   * This form sends only the row id, so whose workout it is has to be looked up
+   * before it can be checked — there is no memberId to compare against.
+   */
+  const { data: row } = await supabase
+    .from('workouts')
+    .select('member_id')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (!row) {
+    return fail('That workout is already gone.');
+  }
+
+  const notYours = await refuseUnlessOwn(row.member_id as string);
+  if (notYours) {
+    return fail(notYours);
   }
 
   const { error } = await supabase.from('workouts').delete().eq('id', id);

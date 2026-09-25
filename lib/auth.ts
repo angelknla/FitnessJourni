@@ -15,6 +15,23 @@ export const COOKIE_NAME = 'fj_unlock';
 /** 90 days: long enough that nobody re-enters it weekly. */
 export const COOKIE_MAX_AGE = 60 * 60 * 24 * 90;
 
+/**
+ * Which of the group this browser is acting as. Separate from the gate above:
+ * the passcode says you may be here, this says whose numbers are yours.
+ *
+ * Self-asserted, and deliberately so — it stops the wrong tab being edited by
+ * accident, not someone who already has the shared passcode and means it.
+ */
+export const VIEWER_COOKIE = 'fj_who';
+
+/**
+ * Stored when someone picks Visitor. A sentinel rather than an absent cookie,
+ * because "has not chosen yet" opens the picker and "chose to just look" must
+ * not — an empty value cannot tell those apart. Member ids are uuids, so the
+ * word can never collide with one.
+ */
+export const VIEWER_VISITOR = 'visitor';
+
 const encoder = new TextEncoder();
 
 export const deriveToken = async (passcode: string): Promise<string> => {

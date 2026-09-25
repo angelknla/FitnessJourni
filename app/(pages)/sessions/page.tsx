@@ -8,7 +8,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getMembers } from '@/lib/data/members';
 import { getUpcomingSessions } from '@/lib/data/sessions';
-import { isUnlocked } from '@/lib/session';
+import { isUnlocked, readViewer } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
 
 import styles from './page.module.css';
@@ -31,7 +31,11 @@ const SessionsPage = async () => {
   }
 
   const today = toISODate(new Date());
-  const [members, sessions] = await Promise.all([getMembers(), getUpcomingSessions(today)]);
+  const [members, sessions, viewer] = await Promise.all([
+    getMembers(),
+    getUpcomingSessions(today),
+    readViewer(),
+  ]);
 
   return (
     <div className={styles.page}>
@@ -49,7 +53,7 @@ const SessionsPage = async () => {
 
       <section className={styles.booking}>
         <h2 className={styles.sectionHeading}>Book one</h2>
-        <SessionForm members={members} />
+        <SessionForm members={members} viewerId={viewer.memberId} />
       </section>
     </div>
   );

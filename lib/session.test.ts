@@ -1,20 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { deriveToken } from './auth';
 
-const cookieStore = { value: undefined as string | undefined };
+const cookieStore = {
+  value: undefined as string | undefined,
+  who: undefined as string | undefined,
+};
 
 vi.mock('next/headers', () => ({
   cookies: async () => ({
-    get: (name: string) =>
-      name === 'fj_unlock' && cookieStore.value ? { value: cookieStore.value } : undefined,
+    get: (name: string) => {
+      const value = name === 'fj_unlock' ? cookieStore.value : cookieStore.who;
+      return value ? { value } : undefined;
+    },
   }),
 }));
 
-const { isUnlocked } = await import('./session');
+const { isUnlocked, readViewer } = await import('./session');
 
 describe('isUnlocked', () => {
   beforeEach(() => {
     cookieStore.value = undefined;
+    cookieStore.who = undefined;
     delete process.env.APP_PASSCODE;
   });
 
@@ -56,5 +62,38 @@ describe('isUnlocked', () => {
 
     process.env.APP_PASSCODE = 'new-phrase';
     await expect(isUnlocked()).resolves.toBe(false);
+  });
+});
+
+describe('readViewer', () => {
+  beforeEach(() => {
+    cookieStore.who = undefined;
+  });
+
+  it('reports nobody chosen when the cookie is absent, which opens the picker', async () => {
+    await expect(readViewer()).resolves.toEqual({ memberId: null, chosen: false });
+  });
+
+  /* The distinction the sentinel exists for: choosing to just look is a choice,
+     so it must not be asked again on the next load. */
+  it('treats the visitor sentinel as chosen, with nobody to write as', async () => {
+    cookieStore.who = 'visitor';
+
+    await expect(readViewer()).resolves.toEqual({ memberId: null, chosen: true });
+  });
+
+  it('reads a member id back as that member', async () => {
+    cookieStore.who = 'aa11bb22-cccc-4ddd-8eee-ff0011223344';
+
+    await expect(readViewer()).resolves.toEqual({
+      memberId: 'aa11bb22-cccc-4ddd-8eee-ff0011223344',
+      chosen: true,
+    });
+  });
+
+  it('is independent of the gate cookie', async () => {
+    cookieStore.value = await deriveToken('shared-phrase');
+
+    await expect(readViewer()).resolves.toEqual({ memberId: null, chosen: false });
   });
 });

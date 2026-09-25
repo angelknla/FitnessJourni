@@ -6,8 +6,9 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { getMembers } from '@/lib/data/members';
 import { getUpcomingSessions, nextSession } from '@/lib/data/sessions';
-import { isUnlocked } from '@/lib/session';
+import { isUnlocked, readViewer, type Viewer } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
+import type { Member } from '@/types/fitness';
 import type { LayoutProps } from '@/types/LayoutProps';
 
 import '@/styles/globals.css';
@@ -25,8 +26,11 @@ export const metadata: Metadata = {
 
 const bannerDay = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric' });
 
+/** A locked visitor is nobody; the cookie is not even read until past the gate. */
+const LOCKED_VIEWER: Viewer = { memberId: null, chosen: false };
+
 /** The soonest session that has not happened yet, formatted for the banner. */
-const nextSessionBanner = async () => {
+const nextSessionBanner = async (members: Member[]) => {
   const now = new Date();
   const today = toISODate(now);
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
@@ -38,7 +42,6 @@ const nextSessionBanner = async () => {
     return null;
   }
 
-  const members = await getMembers();
   const bookedBy = session.createdBy
     ? members.find((member) => member.id === session.createdBy)?.name
     : undefined;
@@ -57,19 +60,26 @@ const RootLayout = async ({ children }: LayoutProps) => {
    * its fetched data still lands in the RSC payload for anyone to read.
    */
   const locked = !(await isUnlocked());
+  const configured = isSupabaseConfigured();
 
   /*
    * Only fetched once past the gate. A locked visitor must not cause this query
    * to run, because the result would be serialised into the RSC payload whether
-   * or not the banner renders.
+   * or not anything renders — which is also why the identity picker asks who you
+   * are only after the passcode, never alongside it.
+   *
+   * Fetched here rather than inside the banner because the header needs the same
+   * list for the picker, and one query serves both.
    */
-  const banner = locked || !isSupabaseConfigured() ? null : await nextSessionBanner();
+  const members: Member[] = locked || !configured ? [] : await getMembers();
+  const viewer: Viewer = locked ? LOCKED_VIEWER : await readViewer();
+  const banner = locked || !configured ? null : await nextSessionBanner(members);
 
   return (
     <html lang="en" data-scroll-behavior="smooth">
       <body className={inter.className}>
         <div className={styles.appWrapper}>
-          <Header locked={locked} />
+          <Header locked={locked} members={members} viewer={viewer} />
 
           {banner && (
             <SessionBanner

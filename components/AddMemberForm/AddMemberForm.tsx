@@ -1,5 +1,6 @@
 'use client';
 
+import { IdentityDialog, type IdentityOption } from '@components/IdentityDialog/IdentityDialog';
 import { accentHex, accentNames, nextAccent } from '@data/fitnessData';
 import { type CSSProperties, useActionState, useState } from 'react';
 import { type ActionState, addMember } from '@/app/actions';
@@ -9,12 +10,19 @@ import styles from './AddMemberForm.module.css';
 
 interface AddMemberFormProps {
   members: Member[];
+  /** Who is adding, so the prompt afterwards can say what staying means. */
+  viewerId: string | null;
 }
 
 const initial: ActionState = { ok: false };
 
-export const AddMemberForm = ({ members }: AddMemberFormProps) => {
+export const AddMemberForm = ({ members, viewerId }: AddMemberFormProps) => {
   const [state, formAction, isPending] = useActionState(addMember, initial);
+  /*
+   * Which new person's prompt has been waved away. Keyed by id rather than a
+   * boolean so adding a second person asks again instead of staying silent.
+   */
+  const [dismissed, setDismissed] = useState<string | null>(null);
 
   const used = members.map((member) => member.accent);
   /*
@@ -23,6 +31,25 @@ export const AddMemberForm = ({ members }: AddMemberFormProps) => {
    * followed the selection.
    */
   const [accent, setAccent] = useState<AccentName>(nextAccent(used));
+
+  /*
+   * Offered to whoever did the adding, visitor included — a visitor creating the
+   * first person is the only way a fresh deploy gets its first identity.
+   */
+  const prompted =
+    state.newMemberId && state.newMemberName && state.newMemberId !== dismissed
+      ? { id: state.newMemberId, name: state.newMemberName }
+      : null;
+
+  /*
+   * The revalidate usually brings the new person back in `members` before this
+   * renders, but not dependably, so they are added if still missing — otherwise
+   * the prompt would preselect someone the list does not contain.
+   */
+  const options: IdentityOption[] =
+    prompted && !members.some((member) => member.id === prompted.id)
+      ? [...members, { id: prompted.id, name: prompted.name, accent }]
+      : members;
 
   return (
     <form className={styles.form} action={formAction}>
@@ -87,6 +114,20 @@ export const AddMemberForm = ({ members }: AddMemberFormProps) => {
           </p>
         )}
       </div>
+
+      {prompted && (
+        <IdentityDialog
+          members={options}
+          viewerId={viewerId}
+          presetId={prompted.id}
+          open
+          onClose={() => setDismissed(prompted.id)}
+          title={`${prompted.name} is in`}
+          body={`Carry on as you are, or start logging as ${prompted.name}.`}
+          dismissLabel="Stay as I am"
+          submitLabel={`Log in as ${prompted.name}`}
+        />
+      )}
     </form>
   );
 };
