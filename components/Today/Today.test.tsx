@@ -51,19 +51,19 @@ const log = (memberId: string): DailyLog => ({
   fatG: 60,
 });
 
+const props = (viewerId: string | null, canRemove = false) => ({
+  members,
+  logs: { m1: log('m1'), m2: log('m2'), m3: log('m3') },
+  workouts: [],
+  tallies: {},
+  date,
+  dateLabel: 'Friday, 25 September',
+  viewerId,
+  canRemove,
+});
+
 const setup = (viewerId: string | null, canRemove = false) =>
-  render(
-    <Today
-      members={members}
-      logs={{ m1: log('m1'), m2: log('m2'), m3: log('m3') }}
-      workouts={[]}
-      tallies={{}}
-      date={date}
-      dateLabel="Friday, 25 September"
-      viewerId={viewerId}
-      canRemove={canRemove}
-    />
-  );
+  render(<Today {...props(viewerId, canRemove)} />);
 
 const selectedTab = () =>
   screen.getAllByRole('tab').find((tab) => tab.getAttribute('aria-selected') === 'true');
@@ -141,5 +141,46 @@ describe('Today', () => {
     setup('m1', false);
 
     expect(screen.queryByRole('button', { name: 'Remove a person' })).not.toBeInTheDocument();
+  });
+
+  /* Picking an identity refreshes the server tree without remounting this, so a
+     mount-time initialiser alone left a fresh login on the first person's tab. */
+  it('moves to your tab when you sign in without a remount', () => {
+    const { rerender } = render(<Today {...props(null)} />);
+    expect(selectedTab()).toHaveTextContent('Dillon');
+
+    rerender(<Today {...props('m3')} />);
+
+    expect(selectedTab()).toHaveTextContent('Bradley');
+  });
+
+  it('follows a switch from one person to another', () => {
+    const { rerender } = render(<Today {...props('m1')} />);
+
+    rerender(<Today {...props('m2')} />);
+
+    expect(selectedTab()).toHaveTextContent('Angel');
+  });
+
+  /* Every save revalidates and re-renders with the same viewer; being thrown back
+     to your own tab each time would make another person's day unreadable. */
+  it('leaves the chosen tab alone when a refresh changes nothing about who you are', async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<Today {...props('m1')} />);
+
+    await user.click(screen.getByRole('tab', { name: 'Bradley' }));
+    expect(selectedTab()).toHaveTextContent('Bradley');
+
+    rerender(<Today {...props('m1')} />);
+
+    expect(selectedTab()).toHaveTextContent('Bradley');
+  });
+
+  it('leaves a visitor where they are, having nobody to move to', () => {
+    const { rerender } = render(<Today {...props('m2')} />);
+
+    rerender(<Today {...props(null)} />);
+
+    expect(selectedTab()).toHaveTextContent('Angel');
   });
 });

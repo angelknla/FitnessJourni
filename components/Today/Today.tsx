@@ -52,6 +52,27 @@ export const Today = ({
    * to open on, so they still start at the first person.
    */
   const [activeId, setActiveId] = useState(viewerId ?? members[0]?.id ?? '');
+  const [knownViewer, setKnownViewer] = useState(viewerId);
+
+  /*
+   * Signing in sets the cookie and calls router.refresh(), which re-renders the
+   * server tree but does NOT remount this component — so the initialiser above
+   * has already run, with the viewer still null, and the tab would sit on the
+   * first person until a hard reload. Following the change explicitly is what
+   * makes a fresh login land on your own tab.
+   *
+   * Adjusted during render rather than in an effect so the old tab is never
+   * painted first, and guarded by the last id seen so it only moves when the
+   * identity actually changes — not on every revalidate after a save, which
+   * would yank you off a tab you had deliberately switched to.
+   */
+  if (viewerId !== knownViewer) {
+    setKnownViewer(viewerId);
+
+    if (viewerId) {
+      setActiveId(viewerId);
+    }
+  }
   const [addOpen, setAddOpen] = useState(false);
   const [editingTargets, setEditingTargets] = useState(false);
   const [removeOpen, setRemoveOpen] = useState(false);
