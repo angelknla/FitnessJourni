@@ -133,23 +133,29 @@
      The bars land at 0.5 / 0.95 / 1.4rem, a 0.45rem pitch. */
   .menu {
     display: block;
-    width: 2.1rem;
-    height: 2.1rem;
+    width: 2.25rem;
+    height: 2.25rem;
 
     &:before,
     &:after {
-      width: 1.45rem;
-      height: 0.18rem;
+      width: 1.55rem;
+      height: 0.19rem;
     }
 
     &:before {
-      top: 0.5rem;
+      top: 0.54rem;
     }
 
     &:after {
-      top: 0.95rem;
-      box-shadow: 0 0.45rem 0 0 var(--c-ink);
+      top: 1.02rem;
+      box-shadow: 0 0.48rem 0 0 var(--c-ink);
     }
+  }
+
+  /* A shade larger than the desktop wordmark: it has the row much more to itself
+     here, and the tighter edges below paid for the space. */
+  .logoText {
+    font-size: 1.2rem;
   }
 
   .nav {
@@ -273,9 +279,9 @@
   /* Shares the row with the wordmark and the burger from here down, so the chip
      gives up size first. */
   .identity {
-    font-size: 0.72rem;
-    padding: 0.28rem 0.6rem;
-    max-width: 7rem;
+    font-size: 0.78rem;
+    padding: 0.3rem 0.65rem;
+    max-width: 7.5rem;
   }
 
   /* Both edges tighten from here down: the wordmark starts closer to the left
@@ -292,9 +298,9 @@
   }
 
   .identity {
-    font-size: 0.68rem;
-    padding: 0.26rem 0.5rem;
-    max-width: 5.5rem;
+    font-size: 0.74rem;
+    padding: 0.28rem 0.55rem;
+    max-width: 6rem;
   }
 
   /* Must sit after the 960 rule above, not in the earlier 480 block: both match
