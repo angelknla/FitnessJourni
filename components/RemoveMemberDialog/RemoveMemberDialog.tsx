@@ -11,6 +11,8 @@ interface RemoveMemberDialogProps {
   members: Member[];
   /** Who is doing the removing, so the warning can say when it is themselves. */
   viewerId: string | null;
+  /** Admins choose a target; everyone else can only confirm removing themselves. */
+  canRemoveOthers?: boolean;
   open: boolean;
   onClose: () => void;
 }
@@ -20,6 +22,7 @@ const initial: ActionState = { ok: false };
 export const RemoveMemberDialog = ({
   members,
   viewerId,
+  canRemoveOthers = false,
   open,
   onClose,
 }: RemoveMemberDialogProps) => {
@@ -36,12 +39,12 @@ export const RemoveMemberDialog = ({
 
     if (open && !dialog.open) {
       // Never reopen with a previous choice still armed.
-      setPicked('');
+      setPicked(canRemoveOthers ? '' : (viewerId ?? ''));
       dialog.showModal();
     } else if (!open && dialog.open) {
       dialog.close();
     }
-  }, [open]);
+  }, [canRemoveOthers, open, viewerId]);
 
   useEffect(() => {
     if (state.ok) {
@@ -55,36 +58,41 @@ export const RemoveMemberDialog = ({
     <dialog className={styles.dialog} ref={dialogRef} aria-labelledby={headingId} onClose={onClose}>
       <form className={styles.form} action={formAction}>
         <h2 className={styles.title} id={headingId}>
-          Remove someone
+          {canRemoveOthers ? 'Remove someone' : 'Remove your account'}
         </h2>
         <p className={styles.body}>
-          This deletes the person and every day and workout they have logged. Sessions they booked
-          stay, credited to nobody. It cannot be undone.
+          {canRemoveOthers
+            ? 'This deletes the person and every day and workout they have logged. Sessions they booked stay, credited to nobody. It cannot be undone.'
+            : 'This deletes your account and every day and workout you have logged. Sessions you booked stay, credited to nobody. It cannot be undone.'}
         </p>
 
-        <fieldset className={styles.fieldset}>
-          <legend className="sr-only">Who to remove</legend>
+        {canRemoveOthers ? (
+          <fieldset className={styles.fieldset}>
+            <legend className="sr-only">Who to remove</legend>
 
-          {members.map((member) => (
-            <label
-              className={styles.option}
-              key={member.id}
-              style={{ '--option-accent': accentHex[member.accent] } as CSSProperties}
-            >
-              <input
-                className={styles.control}
-                type="radio"
-                name="memberId"
-                value={member.id}
-                checked={picked === member.id}
-                onChange={() => setPicked(member.id)}
-              />
-              <span className={styles.dot} />
-              <span className={styles.optionName}>{member.name}</span>
-              {member.id === viewerId && <span className={styles.you}>you</span>}
-            </label>
-          ))}
-        </fieldset>
+            {members.map((member) => (
+              <label
+                className={styles.option}
+                key={member.id}
+                style={{ '--option-accent': accentHex[member.accent] } as CSSProperties}
+              >
+                <input
+                  className={styles.control}
+                  type="radio"
+                  name="memberId"
+                  value={member.id}
+                  checked={picked === member.id}
+                  onChange={() => setPicked(member.id)}
+                />
+                <span className={styles.dot} />
+                <span className={styles.optionName}>{member.name}</span>
+                {member.id === viewerId && <span className={styles.you}>you</span>}
+              </label>
+            ))}
+          </fieldset>
+        ) : (
+          <input type="hidden" name="memberId" value={picked} />
+        )}
 
         {target?.id === viewerId && (
           <p className={styles.warning}>

@@ -24,7 +24,7 @@ interface ProfileViewProps {
     profile: MemberProfile | null;
     measurements: WeightMeasurement[];
     currentMonth: string;
-    canRemove?: boolean;
+    canRemoveOthers?: boolean;
 }
 
 const initial: ActionState = { ok: false };
@@ -36,7 +36,7 @@ export const ProfileView = ({
     profile,
     measurements,
     currentMonth,
-    canRemove = false,
+    canRemoveOthers = false,
 }: ProfileViewProps) => {
     const router = useRouter();
     const [identityOpen, setIdentityOpen] = useState(false);
@@ -360,15 +360,13 @@ export const ProfileView = ({
                     >
                         {signingOut ? 'Logging out…' : 'Log out'}
                     </button>
-                    {canRemove && (
-                        <button
-                            type="button"
-                            className={styles.removeMember}
-                            onClick={() => setRemoveOpen(true)}
-                        >
-                            Remove someone
-                        </button>
-                    )}
+                    <button
+                        type="button"
+                        className={styles.removeMember}
+                        onClick={() => setRemoveOpen(true)}
+                    >
+                        {canRemoveOthers ? 'Remove someone' : 'Remove my account'}
+                    </button>
                 </div>
                 <IdentityDialog
                     members={members}
@@ -376,14 +374,13 @@ export const ProfileView = ({
                     open={identityOpen}
                     onClose={() => setIdentityOpen(false)}
                 />
-                {canRemove && (
-                    <RemoveMemberDialog
-                        members={members}
-                        viewerId={member.id}
-                        open={removeOpen}
-                        onClose={() => setRemoveOpen(false)}
-                    />
-                )}
+                <RemoveMemberDialog
+                    members={members}
+                    viewerId={member.id}
+                    canRemoveOthers={canRemoveOthers}
+                    open={removeOpen}
+                    onClose={() => setRemoveOpen(false)}
+                />
             </section>
         </div>
     );

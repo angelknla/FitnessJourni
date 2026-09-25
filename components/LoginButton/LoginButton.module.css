@@ -69,7 +69,7 @@
   display: block;
 }
 
-/* Room for the reveal button so a long passcode never runs under it. */
+/* Room for the reveal button so a long password never runs under it. */
 .input {
   padding-right: 2.6rem;
 }

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { ADMIN_MEMBER_NAME, canEditMember, canRemoveMembers, viewerFirst } from './ownership';
+import {
+  ADMIN_MEMBER_NAME,
+  canEditMember,
+  canRemoveMember,
+  canRemoveMembers,
+  viewerFirst,
+} from './ownership';
 import type { Viewer } from './session';
 
 const signedIn: Viewer = { memberId: 'm1', chosen: true };
@@ -59,6 +65,31 @@ describe('canRemoveMembers', () => {
     const scruffy = [{ id: 'm2', name: `  ${ADMIN_MEMBER_NAME.toUpperCase()} ` }];
 
     expect(canRemoveMembers({ memberId: 'm2', chosen: true }, scruffy)).toBe(true);
+  });
+});
+
+describe('canRemoveMember', () => {
+  const members = [
+    { id: 'm1', name: 'Dillon' },
+    { id: 'm2', name: ADMIN_MEMBER_NAME },
+    { id: 'm3', name: 'Bradley' },
+  ];
+
+  it('lets the admin remove any existing member', () => {
+    expect(canRemoveMember({ memberId: 'm2', chosen: true }, 'm1', members)).toBe(true);
+  });
+
+  it('lets a member remove themselves', () => {
+    expect(canRemoveMember({ memberId: 'm1', chosen: true }, 'm1', members)).toBe(true);
+  });
+
+  it('does not let a non-admin remove another member', () => {
+    expect(canRemoveMember({ memberId: 'm1', chosen: true }, 'm3', members)).toBe(false);
+  });
+
+  it('refuses visitors and missing targets', () => {
+    expect(canRemoveMember({ memberId: null, chosen: true }, 'm1', members)).toBe(false);
+    expect(canRemoveMember({ memberId: 'm1', chosen: true }, 'gone', members)).toBe(false);
   });
 });
 

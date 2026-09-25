@@ -66,6 +66,8 @@ export const IdentityDialog = ({
   const [picked, setPicked] = useState(presetId ?? viewerId ?? VIEWER_VISITOR);
   const [mode, setMode] = useState<'identity' | 'create'>('identity');
   const [created, setCreated] = useState<MemberCreateOption | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
 
   const handleMemberAdded = useCallback((member: MemberCreateOption) => {
     setCreated(member);
@@ -76,6 +78,7 @@ export const IdentityDialog = ({
   const closeDialog = useCallback(() => {
     setMode('identity');
     setCreated(null);
+    setPickerOpen(false);
     onClose();
   }, [onClose]);
 
@@ -90,6 +93,7 @@ export const IdentityDialog = ({
     if (open && !dialog.open) {
       setMode('identity');
       setCreated(null);
+      setPickerOpen(false);
       setPicked(presetId ?? viewerId ?? VIEWER_VISITOR);
       dialog.showModal();
     } else if (!open && dialog.open) {
@@ -104,6 +108,21 @@ export const IdentityDialog = ({
     }
   }, [state.ok, closeDialog, router]);
 
+  useEffect(() => {
+    if (!pickerOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!pickerRef.current?.contains(event.target as Node)) {
+        setPickerOpen(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [pickerOpen]);
+
   const options =
     created && !members.some((member) => member.id === created.id) ? [...members, created] : members;
   const promptTitle = created ? `${created.name} is in` : title;
@@ -112,6 +131,18 @@ export const IdentityDialog = ({
     : body;
   const promptDismissLabel = created ? (viewerId ? 'Stay as I am' : 'Stay visitor') : dismissLabel;
   const promptSubmitLabel = created ? `Log in as ${created.name}` : submitLabel;
+  const selectedMember = options.find((member) => member.id === picked);
+  const selectedName = selectedMember?.name ?? 'Visitor';
+  const selectedStatus = selectedMember
+    ? selectedMember.id === viewerId
+      ? 'signed in'
+      : ''
+    : 'look, don’t log';
+
+  const chooseIdentity = (memberId: string) => {
+    setPicked(memberId);
+    setPickerOpen(false);
+  };
 
   return (
     <dialog
@@ -142,57 +173,81 @@ export const IdentityDialog = ({
           </h2>
           <p className={styles.body}>{promptBody}</p>
 
-          <fieldset className={styles.fieldset}>
-            <legend className="sr-only">{promptTitle}</legend>
-
-            {options.map((member) => (
-              <label
-                className={styles.option}
-                key={member.id}
-                style={{ '--option-accent': accentHex[member.accent] } as CSSProperties}
-              >
-                <input
-                  className={styles.control}
-                  type="radio"
-                  name="memberId"
-                  value={member.id}
-                  checked={picked === member.id}
-                  onChange={() => setPicked(member.id)}
-                />
-                <span className={styles.dot} />
-                <span className={styles.optionName}>{member.name}</span>
-                {member.id === viewerId && <span className={styles.current}>signed in</span>}
-              </label>
-            ))}
-
-            <label className={styles.option} data-visitor>
-              <input
-                className={styles.control}
-                type="radio"
-                name="memberId"
-                value={VIEWER_VISITOR}
-                checked={picked === VIEWER_VISITOR}
-                onChange={() => setPicked(VIEWER_VISITOR)}
+          <div className={styles.picker} ref={pickerRef}>
+            <input type="hidden" name="memberId" value={picked} />
+            <button
+              type="button"
+              className={styles.pickerTrigger}
+              aria-haspopup="listbox"
+              aria-expanded={pickerOpen}
+              onClick={() => setPickerOpen((current) => !current)}
+            >
+              <span
+                className={styles.dot}
+                data-visitor={!selectedMember || undefined}
+                style={
+                  selectedMember
+                    ? ({ '--option-accent': accentHex[selectedMember.accent] } as CSSProperties)
+                    : undefined
+                }
               />
-              <span className={styles.dot} />
-              <span className={styles.optionName}>Visitor</span>
-              <span className={styles.current}>look, don’t log</span>
-            </label>
+              <span className={styles.optionName}>{selectedName}</span>
+              {selectedStatus && <span className={styles.current}>{selectedStatus}</span>}
+              <span className={styles.chevron} aria-hidden="true" />
+            </button>
 
-            {!created && (
-              <button
-                type="button"
-                className={`${styles.option} ${styles.newUser}`}
-                onClick={() => setMode('create')}
-              >
-                <span className={styles.addMark} aria-hidden="true">
-                  +
-                </span>
-                <span className={styles.optionName}>New user</span>
-                <span className={styles.current}>add yourself</span>
-              </button>
+            {pickerOpen && (
+              <div className={styles.dropdown}>
+                <div className={styles.options} role="listbox" aria-label={promptTitle}>
+                  {options.map((member) => (
+                    <button
+                      type="button"
+                      className={styles.option}
+                      role="option"
+                      aria-selected={picked === member.id}
+                      key={member.id}
+                      style={{ '--option-accent': accentHex[member.accent] } as CSSProperties}
+                      onClick={() => chooseIdentity(member.id)}
+                    >
+                      <span className={styles.dot} />
+                      <span className={styles.optionName}>{member.name}</span>
+                      {member.id === viewerId && <span className={styles.current}>signed in</span>}
+                    </button>
+                  ))}
+
+                  <button
+                    type="button"
+                    className={styles.option}
+                    role="option"
+                    aria-selected={picked === VIEWER_VISITOR}
+                    data-visitor
+                    onClick={() => chooseIdentity(VIEWER_VISITOR)}
+                  >
+                    <span className={styles.dot} />
+                    <span className={styles.optionName}>Visitor</span>
+                    <span className={styles.current}>look, don’t log</span>
+                  </button>
+                </div>
+
+                {!created && (
+                  <button
+                    type="button"
+                    className={`${styles.option} ${styles.newUser}`}
+                    onClick={() => {
+                      setPickerOpen(false);
+                      setMode('create');
+                    }}
+                  >
+                    <span className={styles.addMark} aria-hidden="true">
+                      +
+                    </span>
+                    <span className={styles.optionName}>New user</span>
+                    <span className={styles.current}>add yourself</span>
+                  </button>
+                )}
+              </div>
             )}
-          </fieldset>
+          </div>
 
           {state.error && (
             <p className={styles.error} role="alert">

@@ -41,12 +41,12 @@ export const LoginButton = ({ variant = 'header' }: LoginButtonProps) => {
       <dialog className={styles.dialog} ref={dialogRef} aria-labelledby="login-heading">
         <form className={styles.form} action={formAction}>
           <h2 className={styles.title} id="login-heading">
-            Enter the passcode
+            Enter the password
           </h2>
           <p className={styles.body}>The one your group shares.</p>
 
           <label className={styles.field}>
-            <span className={styles.label}>Passcode</span>
+            <span className={styles.label}>Password</span>
             <span className={styles.inputWrap}>
               <input
                 className={styles.input}
@@ -59,7 +59,7 @@ export const LoginButton = ({ variant = 'header' }: LoginButtonProps) => {
                 type="button"
                 className={styles.reveal}
                 onClick={() => setRevealed((shown) => !shown)}
-                aria-label={revealed ? 'Hide passcode' : 'Show passcode'}
+                aria-label={revealed ? 'Hide password' : 'Show password'}
                 aria-pressed={revealed}
               >
                 {revealed ? <EyeOffIcon size={15} /> : <EyeIcon size={15} />}
@@ -82,7 +82,7 @@ export const LoginButton = ({ variant = 'header' }: LoginButtonProps) => {
               Cancel
             </button>
             <button type="submit" className={styles.submit} disabled={isPending}>
-              {isPending ? 'Checking…' : 'Unlock'}
+              {isPending ? 'Logging in…' : 'Sign in'}
             </button>
           </div>
         </form>

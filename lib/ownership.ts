@@ -47,3 +47,13 @@ export const canRemoveMembers = (
 
   return you ? named(you.name) === named(ADMIN_MEMBER_NAME) : false;
 };
+
+export const canRemoveMember = (
+  viewer: Viewer,
+  targetId: string,
+  members: readonly { id: string; name: string }[]
+): boolean => {
+  const targetExists = members.some((member) => member.id === targetId);
+
+  return targetExists && (canEditMember(viewer, targetId) || canRemoveMembers(viewer, members));
+};

@@ -9,8 +9,10 @@ import {
   workoutFocuses,
 } from '@data/fitnessData';
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
+import { VIEWER_COOKIE } from '@/lib/auth';
 import { getMembers } from '@/lib/data/members';
-import { ADMIN_MEMBER_NAME, canEditMember, canRemoveMembers } from '@/lib/ownership';
+import { ADMIN_MEMBER_NAME, canEditMember, canRemoveMember } from '@/lib/ownership';
 import { isUnlocked, readViewer } from '@/lib/session';
 import { getSupabase } from '@/lib/supabase/server';
 import type { AccentName, ActivityType, WorkoutFocus } from '@/types/fitness';
@@ -325,7 +327,8 @@ export const addMember = async (_prev: ActionState, formData: FormData): Promise
 };
 
 /**
- * Removes a person and everything of theirs. Only the admin member may do this.
+ * Removes a person and everything of theirs. The admin may remove anyone;
+ * everyone else may remove only themselves.
  *
  * Their logs and workouts go with them through the schema's on delete cascade;
  * sessions they booked survive with created_by set null, so a group booking does
@@ -355,13 +358,13 @@ export const removeMember = async (
    */
   const [viewer, members] = await Promise.all([readViewer(), getMembers()]);
 
-  if (!canRemoveMembers(viewer, members)) {
-    return fail(`Only ${ADMIN_MEMBER_NAME} can remove people.`);
-  }
-
   const target = members.find((member) => member.id === memberId);
   if (!target) {
     return fail('They are already gone.');
+  }
+
+  if (!canRemoveMember(viewer, memberId, members)) {
+    return fail(`Only ${ADMIN_MEMBER_NAME} can remove another person.`);
   }
 
   const { error } = await supabase.from('members').delete().eq('id', memberId);
@@ -371,7 +374,12 @@ export const removeMember = async (
     return fail('Could not remove them.');
   }
 
+  if (viewer.memberId === memberId) {
+    (await cookies()).delete(VIEWER_COOKIE);
+  }
+
   revalidatePath('/');
+  revalidatePath('/profile');
   revalidatePath('/logs');
   revalidatePath('/workouts');
   revalidatePath('/sessions');

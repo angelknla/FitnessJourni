@@ -61,7 +61,7 @@ const ProfilePage = async () => {
                 profile={profile}
                 measurements={profileData?.measurements ?? []}
                 currentMonth={new Date().toISOString().slice(0, 7)}
-                canRemove={canRemoveMembers(viewer, members)}
+                canRemoveOthers={canRemoveMembers(viewer, members)}
             />
         </div>
     );

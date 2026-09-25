@@ -42,14 +42,22 @@ beforeAll(() => {
 const setup = (props: Partial<Parameters<typeof IdentityDialog>[0]> = {}) =>
   render(<IdentityDialog members={members} viewerId={null} open onClose={vi.fn()} {...props} />);
 
-const radio = (name: string) => screen.getByRole('radio', { name: new RegExp(name) });
+const openPicker = async (user: ReturnType<typeof userEvent.setup>) => {
+  await user.click(screen.getByRole('button', { name: /Visitor|Dillon|Angel|Bradley|Casey/ }));
+};
+
+const option = (name: string) => screen.getByRole('option', { name: new RegExp(name) });
 
 describe('IdentityDialog', () => {
-  it('offers everyone plus a visitor option', () => {
+  it('offers everyone plus a visitor option in a custom dropdown', async () => {
+    const user = userEvent.setup();
     setup();
 
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    await openPicker(user);
+
     for (const name of ['Dillon', 'Angel', 'Bradley', 'Visitor']) {
-      expect(radio(name)).toBeInTheDocument();
+      expect(option(name)).toBeInTheDocument();
     }
     expect(screen.getByRole('button', { name: /New user/ })).toBeInTheDocument();
   });
@@ -58,12 +66,13 @@ describe('IdentityDialog', () => {
     const user = userEvent.setup();
     setup();
 
+    await openPicker(user);
     await user.click(screen.getByRole('button', { name: /New user/ }));
     await user.type(screen.getByLabelText('Name'), 'Casey');
     await user.click(screen.getByRole('button', { name: 'Add person' }));
 
     expect(await screen.findByRole('heading', { name: 'Casey is in' })).toBeInTheDocument();
-    expect(radio('Casey')).toBeChecked();
+    expect(screen.getByRole('button', { name: 'Casey' })).toHaveAttribute('aria-expanded', 'false');
     expect(screen.getByRole('button', { name: 'Log in as Casey' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Stay visitor' })).toBeInTheDocument();
   });
@@ -77,31 +86,32 @@ describe('IdentityDialog', () => {
   /* Nobody picked yet, so the safe default is the option that writes nothing
      rather than whoever happens to be first in the list. */
   it('preselects visitor when nobody is signed in', () => {
-    setup();
+    const { container } = setup();
 
-    expect(radio('Visitor')).toBeChecked();
-    expect(radio('Dillon')).not.toBeChecked();
+    expect(screen.getByRole('button', { name: /Visitor/ })).toBeInTheDocument();
+    expect(container.querySelector('form')).toHaveFormValues({ memberId: 'visitor' });
   });
 
   it('preselects the current person and marks them as signed in', () => {
     setup({ viewerId: 'm2' });
 
-    expect(radio('Angel')).toBeChecked();
+    expect(screen.getByRole('button', { name: /Angel/ })).toBeInTheDocument();
     expect(screen.getByText('signed in')).toBeInTheDocument();
   });
 
   it('preselects a preset over the current person, for someone just added', () => {
-    setup({ viewerId: 'm1', presetId: 'm3' });
+    const { container } = setup({ viewerId: 'm1', presetId: 'm3' });
 
-    expect(radio('Bradley')).toBeChecked();
-    expect(radio('Dillon')).not.toBeChecked();
+    expect(screen.getByRole('button', { name: /Bradley/ })).toBeInTheDocument();
+    expect(container.querySelector('form')).toHaveFormValues({ memberId: 'm3' });
   });
 
   it('submits the chosen id', async () => {
     const user = userEvent.setup();
     const { container } = setup();
 
-    await user.click(radio('Angel'));
+    await openPicker(user);
+    await user.click(option('Angel'));
 
     // What the form would actually post, rather than which radio looks checked.
     expect(container.querySelector('form')).toHaveFormValues({ memberId: 'm2' });

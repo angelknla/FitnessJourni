@@ -111,7 +111,7 @@ describe('ProfileView', () => {
         expect(screen.getByRole('button', { name: 'Log out' })).toBeInTheDocument();
     });
 
-    it('only offers member removal when the server grants permission', async () => {
+    it('offers self-removal normally and the member picker to admins', async () => {
         const user = userEvent.setup();
         const { rerender } = render(
             <ProfileView
@@ -123,7 +123,10 @@ describe('ProfileView', () => {
             />
         );
 
-        expect(screen.queryByRole('button', { name: 'Remove someone' })).not.toBeInTheDocument();
+        await user.click(screen.getByRole('button', { name: 'Remove my account' }));
+        expect(
+            screen.getByRole('dialog', { name: 'Remove your account', hidden: true })
+        ).toHaveAttribute('open');
 
         rerender(
             <ProfileView
@@ -132,7 +135,7 @@ describe('ProfileView', () => {
                 profile={profile}
                 measurements={[]}
                 currentMonth="2026-09"
-                canRemove
+                canRemoveOthers
             />
         );
         await user.click(screen.getByRole('button', { name: 'Remove someone' }));

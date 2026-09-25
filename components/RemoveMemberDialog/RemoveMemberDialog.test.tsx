@@ -38,7 +38,16 @@ beforeAll(() => {
 });
 
 const setup = (props: Partial<Parameters<typeof RemoveMemberDialog>[0]> = {}) =>
-  render(<RemoveMemberDialog members={members} viewerId="m2" open onClose={vi.fn()} {...props} />);
+  render(
+    <RemoveMemberDialog
+      members={members}
+      viewerId="m2"
+      canRemoveOthers
+      open
+      onClose={vi.fn()}
+      {...props}
+    />
+  );
 
 describe('RemoveMemberDialog', () => {
   it('lists everyone, and marks which one is you', () => {
@@ -80,6 +89,15 @@ describe('RemoveMemberDialog', () => {
     await user.click(screen.getByRole('radio', { name: /Angel/ }));
 
     expect(screen.getByText(/That is you/)).toBeInTheDocument();
+  });
+
+  it('gives non-admins a self-only confirmation without a member picker', () => {
+    const { container } = setup({ viewerId: 'm1', canRemoveOthers: false });
+
+    expect(screen.getByRole('heading', { name: 'Remove your account' })).toBeInTheDocument();
+    expect(screen.queryByRole('radio')).not.toBeInTheDocument();
+    expect(container.querySelector('form')).toHaveFormValues({ memberId: 'm1' });
+    expect(screen.getByRole('button', { name: 'Remove Dillon' })).toBeEnabled();
   });
 
   it('submits the chosen id', async () => {

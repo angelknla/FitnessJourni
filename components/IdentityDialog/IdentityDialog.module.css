@@ -5,6 +5,7 @@
   background: var(--c-surface);
   color: var(--c-ink);
   width: min(23rem, calc(100vw - 2rem));
+  overflow: visible;
   box-shadow: var(--shadow-lg);
 }
 
@@ -33,37 +34,61 @@
   color: var(--c-ink-soft);
 }
 
-.fieldset {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  margin: 0;
-  padding: 0;
-  border: 0;
+.picker {
+  position: relative;
 }
 
-/* Positioned so the visually-hidden radio keeps its containing block local. */
+.pickerTrigger,
 .option {
-  position: relative;
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 0.6rem;
   padding: 0.55rem 0.7rem;
+  font: inherit;
+  color: var(--c-ink);
+  text-align: left;
+  background: transparent;
   border: 1px solid var(--c-border);
   border-radius: var(--r-lg);
   cursor: pointer;
 }
 
+.pickerTrigger {
+  min-height: 2.65rem;
+  background: var(--c-surface-raised);
+}
+
+.pickerTrigger:hover,
 .option:hover {
   border-color: var(--c-border-strong);
 }
 
+.dropdown {
+  position: absolute;
+  z-index: 2;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  right: 0;
+  padding: 0.35rem;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.options {
+  max-height: min(14rem, 42vh);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 .newUser {
-  width: 100%;
-  font: inherit;
-  color: var(--c-ink);
-  text-align: left;
-  background: transparent;
+  margin-top: 0.35rem;
+  border-style: dashed;
 }
 
 .addMark {
@@ -79,14 +104,6 @@
   border-radius: 50%;
 }
 
-.control {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  margin: 0;
-}
-
 .dot {
   flex-shrink: 0;
   width: 0.85rem;
@@ -95,6 +112,7 @@
   background: var(--option-accent, var(--c-ink-muted));
 }
 
+.dot[data-visitor],
 .option[data-visitor] .dot {
   background: transparent;
   border: 1px dashed var(--c-ink-muted);
@@ -111,21 +129,33 @@
   color: var(--c-ink-muted);
 }
 
-/* The ring is gapped by the surface colour so it reads on any accent. */
-.control:checked + .dot {
+.chevron {
+  flex-shrink: 0;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-left: auto;
+  border-right: 1.5px solid var(--c-ink-muted);
+  border-bottom: 1.5px solid var(--c-ink-muted);
+  transform: translateY(-0.12rem) rotate(45deg);
+}
+
+.pickerTrigger .current + .chevron {
+  margin-left: 0.1rem;
+}
+
+.pickerTrigger[aria-expanded="true"] .chevron {
+  transform: translateY(0.12rem) rotate(225deg);
+}
+
+.option[aria-selected="true"] .dot {
   box-shadow:
     0 0 0 2px var(--c-surface),
     0 0 0 4px var(--option-accent, var(--c-ink));
 }
 
-.option:has(.control:checked) {
+.option[aria-selected="true"] {
   border-color: var(--option-accent, var(--c-border-strong));
   background: var(--c-surface-raised);
-}
-
-.control:focus-visible + .dot {
-  outline: 2px solid var(--c-accent);
-  outline-offset: 2px;
 }
 
 .error {
