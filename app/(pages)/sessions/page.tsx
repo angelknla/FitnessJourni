@@ -1,12 +1,12 @@
-import { ArrowLeftIcon } from '@components/Icons/Icons';
 import { Landing } from '@components/Landing/Landing';
+import { PageHeader } from '@components/PageHeader/PageHeader';
+import { PageLayout } from '@components/PageLayout/PageLayout';
 import { SessionForm } from '@components/SessionForm/SessionForm';
 import { SessionList } from '@components/SessionList/SessionList';
 import { SessionsReadMarker } from '@components/SessionsReadMarker/SessionsReadMarker';
 import { SetupNotice } from '@components/SetupNotice/SetupNotice';
 import { toISODate } from '@utils/date';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { getMembers } from '@/lib/data/members';
 import { getUpcomingSessions } from '@/lib/data/sessions';
 import { viewerFirst } from '@/lib/ownership';
@@ -41,17 +41,9 @@ const SessionsPage = async () => {
   const orderedMembers = viewerFirst(members, viewer.memberId);
 
   return (
-    <div className={styles.page}>
+    <PageLayout>
       <SessionsReadMarker />
-      <Link href="/" className={styles.back}>
-        <ArrowLeftIcon />
-        Home
-      </Link>
-
-      <header className={styles.head}>
-        <p className={styles.eyebrow}>Sessions</p>
-        <h1 className={styles.title}>What's coming up</h1>
-      </header>
+      <PageHeader animatedBack eyebrow="Sessions" title="What's coming up" />
 
       <SessionList sessions={sessions} members={orderedMembers} viewerId={viewer.memberId} />
 
@@ -59,7 +51,7 @@ const SessionsPage = async () => {
         <h2 className={styles.sectionHeading}>Book one</h2>
         <SessionForm members={orderedMembers} viewerId={viewer.memberId} />
       </section>
-    </div>
+    </PageLayout>
   );
 };
 

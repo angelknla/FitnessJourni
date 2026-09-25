@@ -1,4 +1,5 @@
 import { accentHex } from '@data/fitnessData';
+import Image from 'next/image';
 import type { CSSProperties } from 'react';
 import type { Member } from '@/types/fitness';
 
@@ -21,6 +22,14 @@ export const MemberAvatar = ({ member, size = '1.25rem' }: MemberAvatarProps) =>
             } as CSSProperties
         }
     >
-        {member.avatarPath && <img src={member.avatarPath} alt="" />}
+        {member.avatarPath && (
+            <Image
+                src={member.avatarPath}
+                alt=""
+                width={48}
+                height={48}
+                unoptimized={member.avatarPath.startsWith('http://')}
+            />
+        )}
     </span>
 );

@@ -3,6 +3,7 @@
 import { UploadIcon } from '@components/Icons/Icons';
 import { avatarOptions, avatarUploadTypes } from '@data/avatarData';
 import { accentHex, accentNames, nextAccent } from '@data/fitnessData';
+import Image from 'next/image';
 import { type CSSProperties, useActionState, useEffect, useRef, useState } from 'react';
 import { type ActionState, addMember } from '@/app/actions';
 import type { AccentName } from '@/types/fitness';
@@ -158,7 +159,7 @@ export const MemberCreateForm = ({
                                 checked={avatarPath === option.path}
                                 onChange={() => chooseAvatar(option.path)}
                             />
-                            <img src={option.path} alt="" />
+                            <Image src={option.path} alt="" width={36} height={36} />
                             <span>{option.label}</span>
                         </label>
                     ))}
@@ -173,7 +174,13 @@ export const MemberCreateForm = ({
                         />
                         <label htmlFor="new-member-avatar" className={styles.uploadLabel}>
                             {avatarPreview ? (
-                                <img src={avatarPreview} alt="" />
+                                <Image
+                                    src={avatarPreview}
+                                    alt=""
+                                    width={36}
+                                    height={36}
+                                    unoptimized
+                                />
                             ) : (
                                 <span className={styles.uploadOption} aria-hidden="true">
                                     <UploadIcon />

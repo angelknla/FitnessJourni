@@ -1,9 +1,9 @@
-import { ArrowLeftIcon } from '@components/Icons/Icons';
 import { Landing } from '@components/Landing/Landing';
 import { MessageBoard } from '@components/MessageBoard/MessageBoard';
+import { PageHeader } from '@components/PageHeader/PageHeader';
+import { PageLayout } from '@components/PageLayout/PageLayout';
 import { SetupNotice } from '@components/SetupNotice/SetupNotice';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { getMembers } from '@/lib/data/members';
 import { getMessages } from '@/lib/data/messages';
 import { viewerFirst } from '@/lib/ownership';
@@ -35,23 +35,15 @@ const MessagesPage = async () => {
     ]);
 
     return (
-        <div className={styles.page}>
-            <Link href="/" className={styles.back}>
-                <ArrowLeftIcon />
-                Home
-            </Link>
-
-            <header className={styles.head}>
-                <p className={styles.eyebrow}>Chat</p>
-                <h1 className={styles.title}>A little momentum goes a long way</h1>
-            </header>
+        <PageLayout className={styles.page}>
+            <PageHeader eyebrow="Chat" title="A little momentum goes a long way" />
 
             <MessageBoard
                 members={viewerFirst(members, viewer.memberId)}
                 messages={messages}
                 viewerId={viewer.memberId}
             />
-        </div>
+        </PageLayout>
     );
 };
 

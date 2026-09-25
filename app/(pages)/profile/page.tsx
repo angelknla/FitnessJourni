@@ -1,5 +1,6 @@
 import { ArrowLeftIcon } from '@components/Icons/Icons';
 import { Landing } from '@components/Landing/Landing';
+import { PageLayout } from '@components/PageLayout/PageLayout';
 import { ProfileView } from '@components/ProfileView/ProfileView';
 import { SetupNotice } from '@components/SetupNotice/SetupNotice';
 import type { Metadata } from 'next';
@@ -44,7 +45,7 @@ const ProfilePage = async () => {
             : null);
 
     return (
-        <div className={styles.page}>
+        <PageLayout>
             <Link href="/" className={styles.back}>
                 <ArrowLeftIcon />
                 Home
@@ -63,7 +64,7 @@ const ProfilePage = async () => {
                 currentMonth={new Date().toISOString().slice(0, 7)}
                 canRemoveOthers={canRemoveMembers(viewer, members)}
             />
-        </div>
+        </PageLayout>
     );
 };
 

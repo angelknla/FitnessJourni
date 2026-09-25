@@ -1,11 +1,11 @@
-import { ArrowLeftIcon } from '@components/Icons/Icons';
 import { Landing } from '@components/Landing/Landing';
+import { PageHeader } from '@components/PageHeader/PageHeader';
+import { PageLayout } from '@components/PageLayout/PageLayout';
 import { SetupNotice } from '@components/SetupNotice/SetupNotice';
 import { WorkoutPlan } from '@components/WorkoutPlan/WorkoutPlan';
 import { WorkoutTally } from '@components/WorkoutTally/WorkoutTally';
 import { earlier, fromISODate, startOfMonth, startOfWeek, toISODate } from '@utils/date';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { getMembers } from '@/lib/data/members';
 import { getWorkoutsSince, tallyWorkouts } from '@/lib/data/workouts';
 import { viewerFirst } from '@/lib/ownership';
@@ -58,16 +58,8 @@ const WorkoutsPage = async () => {
   weekEnd.setDate(weekEnd.getDate() + 6);
 
   return (
-    <div className={styles.page}>
-      <Link href="/" className={styles.back}>
-        <ArrowLeftIcon />
-        Home
-      </Link>
-
-      <header className={styles.head}>
-        <p className={styles.eyebrow}>Workouts</p>
-        <h1 className={styles.title}>The split, and who has shown up</h1>
-      </header>
+    <PageLayout>
+      <PageHeader animatedBack eyebrow="Workouts" title="The split, and who has shown up" />
 
       <section className={styles.section}>
         <h2 className={styles.sectionHeading}>This week and month</h2>
@@ -87,7 +79,7 @@ const WorkoutsPage = async () => {
         </p>
         <WorkoutPlan />
       </section>
-    </div>
+    </PageLayout>
   );
 };
 

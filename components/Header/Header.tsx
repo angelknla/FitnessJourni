@@ -13,6 +13,7 @@ import { IdentityDialog } from '@components/IdentityDialog/IdentityDialog';
 import { LoginButton } from '@components/LoginButton/LoginButton';
 import { accentHex } from '@data/fitnessData';
 import { navigationData } from '@data/navigationData';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { type CSSProperties, useCallback, useEffect, useState } from 'react';
@@ -130,7 +131,17 @@ export const Header = ({
                   }
                   aria-label={`Open ${identityLabel} profile`}
                 >
-                  {you?.avatarPath ? <img src={you.avatarPath} alt="" /> : identityInitial}
+                  {you?.avatarPath ? (
+                    <Image
+                      src={you.avatarPath}
+                      alt=""
+                      width={32}
+                      height={32}
+                      unoptimized={you.avatarPath.startsWith('http://')}
+                    />
+                  ) : (
+                    identityInitial
+                  )}
                 </Link>
               )}
 

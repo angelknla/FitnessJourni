@@ -1,4 +1,5 @@
 import { defaultTargets, resolveAccent } from '@data/fitnessData';
+import { cache } from 'react';
 import { getSupabase } from '@/lib/supabase/server';
 import type { Member } from '@/types/fitness';
 
@@ -45,7 +46,7 @@ export const mapMember = (row: MemberRow): Member => ({
   },
 });
 
-export const getMembers = async (): Promise<Member[]> => {
+export const getMembers = cache(async (): Promise<Member[]> => {
   const supabase = getSupabase();
   if (!supabase) {
     return [];
@@ -63,4 +64,4 @@ export const getMembers = async (): Promise<Member[]> => {
   }
 
   return (data as MemberRow[]).map(mapMember);
-};
+});

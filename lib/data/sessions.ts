@@ -1,4 +1,5 @@
 import { minutesOfTime, toShortTime } from '@utils/date';
+import { cache } from 'react';
 import { getSupabase } from '@/lib/supabase/server';
 import type { ActivityType, RsvpStatus, TrainingSession } from '@/types/fitness';
 
@@ -60,7 +61,7 @@ export const getHasUnreadSessions = async (memberId: string): Promise<boolean> =
 };
 
 /** Sessions from `fromDate` onwards, soonest first. */
-export const getUpcomingSessions = async (fromDate: string): Promise<TrainingSession[]> => {
+export const getUpcomingSessions = cache(async (fromDate: string): Promise<TrainingSession[]> => {
   const supabase = getSupabase();
   if (!supabase) {
     return [];
@@ -79,7 +80,7 @@ export const getUpcomingSessions = async (fromDate: string): Promise<TrainingSes
   }
 
   return (data as SessionRow[]).map(mapSession);
-};
+});
 
 /**
  * The soonest session that has not already happened. getUpcomingSessions filters

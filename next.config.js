@@ -1,3 +1,17 @@
+const remotePatterns = [];
+
+try {
+  const supabaseUrl = new URL(process.env.SUPABASE_URL);
+  remotePatterns.push({
+    protocol: supabaseUrl.protocol.slice(0, -1),
+    hostname: supabaseUrl.hostname,
+    port: supabaseUrl.port,
+    pathname: '/storage/v1/object/public/profile-avatars/**',
+  });
+} catch {
+  // The app still builds without Supabase credentials and shows its setup notice.
+}
+
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
@@ -14,6 +28,11 @@ const nextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     // Configure image qualities
     qualities: [75, 80, 85],
+    // Uploaded avatar URLs are versioned after every change, so long-lived
+    // optimized variants cannot mask a newly saved photo.
+    minimumCacheTTL: 60 * 60 * 24 * 31,
+    maximumResponseBody: 5 * 1024 * 1024,
+    remotePatterns,
   },
   // Improve performance with compression
   compress: true,

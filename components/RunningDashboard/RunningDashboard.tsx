@@ -7,6 +7,7 @@ import { fromISODate, startOfMonth, startOfWeek } from '@utils/date';
 import { type CSSProperties, useActionState, useEffect, useState } from 'react';
 import { type ActionState, deleteRun, editRun, logRun } from '@/app/actions';
 import { formatRunDuration, formatRunPace } from '@/lib/data/runs';
+import { viewerFirst } from '@/lib/ownership';
 import type { GroupRun, Member, RunTally } from '@/types/fitness';
 
 import styles from './RunningDashboard.module.css';
@@ -321,12 +322,7 @@ export const RunningDashboard = ({
     today,
 }: RunningDashboardProps) => {
     const [runFormOpen, setRunFormOpen] = useState(false);
-    const orderedMembers = viewerId
-        ? [
-            ...members.filter((member) => member.id === viewerId),
-            ...members.filter((member) => member.id !== viewerId),
-        ]
-        : members;
+    const orderedMembers = viewerFirst(members, viewerId);
     const monthStart = startOfMonth(today);
     const weekStart = startOfWeek(today);
     const monthRuns = runs.filter((run) => run.date >= monthStart && run.date <= today);

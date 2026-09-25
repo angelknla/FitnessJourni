@@ -17,9 +17,9 @@ import { workoutsForToday } from '@/lib/data/workouts';
 import { formatCount, formatMl } from '@/lib/progress';
 import type { DailyLog, Member, Workout, WorkoutTally } from '@/types/fitness';
 
-import styles from './Today.module.css';
+import styles from './Home.module.css';
 
-interface TodayProps {
+interface HomeProps {
   members: Member[];
   logs: Record<string, DailyLog>;
   workouts: Workout[];
@@ -33,7 +33,7 @@ interface TodayProps {
 const PANEL_ID = 'member-panel';
 const TARGETS_ID = 'macro-targets';
 
-export const Today = ({
+export const Home = ({
   members,
   logs,
   workouts,
@@ -41,7 +41,7 @@ export const Today = ({
   date,
   dateLabel,
   viewerId,
-}: TodayProps) => {
+}: HomeProps) => {
   /*
    * Open on whoever is signed in, rather than on whoever sorts first — landing on
    * someone else's day was how the wrong numbers got edited. A visitor has nobody
@@ -149,7 +149,7 @@ export const Today = ({
   const tally = tallies[active.id] ?? { today: 0, week: 0, month: 0 };
 
   return (
-    <div className={styles.today}>
+    <div className={styles.home}>
       <header className={styles.head}>
         <p className={styles.eyebrow}>Today</p>
         <h1 className={styles.date}>{dateLabel}</h1>
@@ -174,7 +174,14 @@ export const Today = ({
         tabIndex={-1}
         style={{ '--member-accent': accentHex[active.accent] } as CSSProperties}
       >
-        <section className={styles.panel}>
+        <section
+          className={`${styles.panel} ${styles.swipePanel}`}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={() => {
+            touchStart.current = null;
+          }}
+        >
           <div className={styles.rings}>
             <ProgressRing
               label="Steps"
@@ -206,14 +213,7 @@ export const Today = ({
             {formatCount(targets.steps)} goal.
           </p>
 
-          <div
-            className={styles.macros}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-            onTouchCancel={() => {
-              touchStart.current = null;
-            }}
-          >
+          <div className={styles.macros}>
             <div className={styles.macrosHead}>
               <h2 className={styles.sectionHeading}>Macros</h2>
               {canEdit && (

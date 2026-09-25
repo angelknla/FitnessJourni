@@ -1,6 +1,6 @@
+import { Home } from '@components/Home/Home';
 import { Landing } from '@components/Landing/Landing';
 import { SetupNotice } from '@components/SetupNotice/SetupNotice';
-import { Today } from '@components/Today/Today';
 import { earlier, startOfMonth, startOfWeek, toISODate } from '@utils/date';
 import type { Metadata } from 'next';
 import { getLogsForDate } from '@/lib/data/logs';
@@ -47,7 +47,7 @@ const Homepage = async () => {
   ]);
 
   return (
-    <Today
+    <Home
       members={viewerFirst(members, viewer.memberId)}
       logs={logs}
       workouts={workouts}

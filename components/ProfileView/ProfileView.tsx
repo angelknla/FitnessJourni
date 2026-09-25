@@ -5,6 +5,7 @@ import { IdentityDialog } from '@components/IdentityDialog/IdentityDialog';
 import { RemoveMemberDialog } from '@components/RemoveMemberDialog/RemoveMemberDialog';
 import { avatarOptions, avatarUploadTypes, isAvatarPath } from '@data/avatarData';
 import { accentHex } from '@data/fitnessData';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
     type CSSProperties,
@@ -143,7 +144,13 @@ export const ProfileView = ({
             <section className={styles.identity} aria-labelledby="profile-name">
                 <div className={styles.avatar}>
                     {member.avatarPath ? (
-                        <img src={member.avatarPath} alt="" />
+                        <Image
+                            src={member.avatarPath}
+                            alt=""
+                            width={88}
+                            height={88}
+                            unoptimized={member.avatarPath.startsWith('http://')}
+                        />
                     ) : (
                         member.name.charAt(0).toUpperCase()
                     )}
@@ -209,7 +216,7 @@ export const ProfileView = ({
                                         checked={selectedAvatar === option.path}
                                         onChange={() => chooseAvatar(option.path)}
                                     />
-                                    <img src={option.path} alt="" />
+                                    <Image src={option.path} alt="" width={46} height={46} />
                                     <span>{option.label}</span>
                                 </label>
                             ))}
@@ -233,7 +240,15 @@ export const ProfileView = ({
                                 />
                                 <label htmlFor="avatar-upload" className={styles.uploadLabel}>
                                     {avatarPreview || uploadedAvatar ? (
-                                        <img src={avatarPreview ?? uploadedAvatar ?? ''} alt="" />
+                                        <Image
+                                            src={avatarPreview ?? uploadedAvatar ?? ''}
+                                            alt=""
+                                            width={46}
+                                            height={46}
+                                            unoptimized={Boolean(
+                                                avatarPreview || uploadedAvatar?.startsWith('http://')
+                                            )}
+                                        />
                                     ) : (
                                         <span className={styles.uploadOption} aria-hidden="true">
                                             <UploadIcon />

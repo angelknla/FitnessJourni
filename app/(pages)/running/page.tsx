@@ -1,17 +1,15 @@
-import { ArrowLeftIcon } from '@components/Icons/Icons';
 import { Landing } from '@components/Landing/Landing';
+import { PageHeader } from '@components/PageHeader/PageHeader';
+import { PageLayout } from '@components/PageLayout/PageLayout';
 import { RunningDashboard } from '@components/RunningDashboard/RunningDashboard';
 import { SetupNotice } from '@components/SetupNotice/SetupNotice';
 import { earlier, startOfMonth, startOfWeek, toISODate } from '@utils/date';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { getMembers } from '@/lib/data/members';
 import { getRunsSince, tallyRuns } from '@/lib/data/runs';
 import { viewerFirst } from '@/lib/ownership';
 import { isUnlocked, readViewer } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
-
-import styles from './page.module.css';
 
 export const metadata: Metadata = {
     title: 'Running — FitnessJourni',
@@ -37,16 +35,8 @@ const RunningPage = async () => {
     ]);
 
     return (
-        <div className={styles.page}>
-            <Link href="/" className={styles.back}>
-                <ArrowLeftIcon />
-                Home
-            </Link>
-
-            <header className={styles.head}>
-                <p className={styles.eyebrow}>Running</p>
-                <h1 className={styles.title}>Miles together, momentum shared</h1>
-            </header>
+        <PageLayout>
+            <PageHeader eyebrow="Running" title="Miles together, momentum shared" />
 
             <RunningDashboard
                 members={viewerFirst(members, viewer.memberId)}
@@ -55,7 +45,7 @@ const RunningPage = async () => {
                 viewerId={viewer.memberId}
                 today={today}
             />
-        </div>
+        </PageLayout>
     );
 };
 

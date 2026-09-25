@@ -18,7 +18,7 @@ vi.mock('@/app/auth-actions', () => ({
 }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
-import { Today } from './Today';
+import { Home } from './Home';
 
 const targets: MemberTargets = {
   calories: 2500,
@@ -60,14 +60,14 @@ const props = (viewerId: string | null) => ({
   viewerId,
 });
 
-const setup = (viewerId: string | null) => render(<Today {...props(viewerId)} />);
+const setup = (viewerId: string | null) => render(<Home {...props(viewerId)} />);
 
 const selectedTab = () =>
   screen.getAllByRole('tab').find((tab) => tab.getAttribute('aria-selected') === 'true');
 
 const quickEntry = () => screen.queryByRole('button', { name: /Log .*'s day/ });
 
-describe('Today', () => {
+describe('Home', () => {
   it('opens on the signed-in person, not on whoever sorts first', () => {
     setup('m3');
 
@@ -131,17 +131,19 @@ describe('Today', () => {
     expect(screen.getByText(/Protein: 150 of 156 grams/)).toBeInTheDocument();
   });
 
-  it('moves between member tabs when the macros section is swiped', () => {
+  it('moves between member tabs when the rounded summary panel is swiped', () => {
     setup('m1');
-    const macros = screen.getByRole('heading', { name: 'Macros' }).parentElement?.parentElement;
+    const panel = screen.getByRole('heading', { name: 'Macros' }).closest('section');
+    const measurements = screen.getByRole('img', { name: /^Steps:/ });
 
-    expect(macros).not.toBeNull();
-    fireEvent.touchStart(macros!, { touches: [{ clientX: 180, clientY: 100 }] });
-    fireEvent.touchEnd(macros!, { changedTouches: [{ clientX: 80, clientY: 105 }] });
+    expect(panel).not.toBeNull();
+    expect(panel).toContainElement(measurements);
+    fireEvent.touchStart(measurements!, { touches: [{ clientX: 180, clientY: 100 }] });
+    fireEvent.touchEnd(measurements!, { changedTouches: [{ clientX: 80, clientY: 105 }] });
     expect(selectedTab()).toHaveTextContent('Angel');
 
-    fireEvent.touchStart(macros!, { touches: [{ clientX: 80, clientY: 100 }] });
-    fireEvent.touchEnd(macros!, { changedTouches: [{ clientX: 180, clientY: 105 }] });
+    fireEvent.touchStart(panel!, { touches: [{ clientX: 80, clientY: 100 }] });
+    fireEvent.touchEnd(panel!, { changedTouches: [{ clientX: 180, clientY: 105 }] });
     expect(selectedTab()).toHaveTextContent('Dillon');
   });
 
@@ -165,18 +167,18 @@ describe('Today', () => {
   /* Picking an identity refreshes the server tree without remounting this, so a
      mount-time initialiser alone left a fresh login on the first person's tab. */
   it('moves to your tab when you sign in without a remount', () => {
-    const { rerender } = render(<Today {...props(null)} />);
+    const { rerender } = render(<Home {...props(null)} />);
     expect(selectedTab()).toHaveTextContent('Dillon');
 
-    rerender(<Today {...props('m3')} />);
+    rerender(<Home {...props('m3')} />);
 
     expect(selectedTab()).toHaveTextContent('Bradley');
   });
 
   it('follows a switch from one person to another', () => {
-    const { rerender } = render(<Today {...props('m1')} />);
+    const { rerender } = render(<Home {...props('m1')} />);
 
-    rerender(<Today {...props('m2')} />);
+    rerender(<Home {...props('m2')} />);
 
     expect(selectedTab()).toHaveTextContent('Angel');
   });
@@ -185,20 +187,20 @@ describe('Today', () => {
      to your own tab each time would make another person's day unreadable. */
   it('leaves the chosen tab alone when a refresh changes nothing about who you are', async () => {
     const user = userEvent.setup();
-    const { rerender } = render(<Today {...props('m1')} />);
+    const { rerender } = render(<Home {...props('m1')} />);
 
     await user.click(screen.getByRole('tab', { name: 'Bradley' }));
     expect(selectedTab()).toHaveTextContent('Bradley');
 
-    rerender(<Today {...props('m1')} />);
+    rerender(<Home {...props('m1')} />);
 
     expect(selectedTab()).toHaveTextContent('Bradley');
   });
 
   it('leaves a visitor where they are, having nobody to move to', () => {
-    const { rerender } = render(<Today {...props('m2')} />);
+    const { rerender } = render(<Home {...props('m2')} />);
 
-    rerender(<Today {...props(null)} />);
+    rerender(<Home {...props(null)} />);
 
     expect(selectedTab()).toHaveTextContent('Angel');
   });
@@ -238,9 +240,9 @@ describe('Today', () => {
   });
 
   it('reorders as soon as the identity changes, without a remount', () => {
-    const { rerender } = render(<Today {...props('m1')} />);
+    const { rerender } = render(<Home {...props('m1')} />);
 
-    rerender(<Today {...props('m2')} />);
+    rerender(<Home {...props('m2')} />);
 
     expect(screen.getAllByRole('tab')[0]).toHaveTextContent('Angel');
   });

@@ -1,6 +1,7 @@
-import { ArrowLeftIcon } from '@components/Icons/Icons';
 import { Landing } from '@components/Landing/Landing';
 import { LogsTable } from '@components/LogsTable/LogsTable';
+import { PageHeader } from '@components/PageHeader/PageHeader';
+import { PageLayout } from '@components/PageLayout/PageLayout';
 import { SetupNotice } from '@components/SetupNotice/SetupNotice';
 import { fromISODate, startOfMonth, startOfWeek, toISODate } from '@utils/date';
 import type { Metadata } from 'next';
@@ -68,16 +69,8 @@ const LogsPage = async ({ searchParams }: LogsPageProps) => {
         : `${monthYear.format(now)} so far. Averages are per day logged, which is why Days sits beside them.`;
 
   return (
-    <div className={styles.page}>
-      <Link href="/" className={styles.back}>
-        <ArrowLeftIcon />
-        Home
-      </Link>
-
-      <header className={styles.head}>
-        <p className={styles.eyebrow}>Logs</p>
-        <h1 className={styles.title}>How everyone is doing</h1>
-      </header>
+    <PageLayout>
+      <PageHeader animatedBack eyebrow="Logs" title="How everyone is doing" />
 
       <nav className={styles.periods} aria-label="Period">
         {PERIODS.map((option) => (
@@ -105,7 +98,7 @@ const LogsPage = async ({ searchParams }: LogsPageProps) => {
         A ★ marks whoever leads a column. Calories have no star on purpose — that is a budget to
         hit, not a number to win.
       </p>
-    </div>
+    </PageLayout>
   );
 };
 
