@@ -155,12 +155,16 @@ export const EditTargets = ({ member, id, onSaved }: EditTargetsProps) => {
               {mode === 'grams' ? 'changing this rescales the grams' : 'split across the macros'}
             </span>
           </span>
+          {/*
+            step is any whole number: a 10 here made the browser reject 2,543,
+            including totals the grams above had just derived.
+          */}
           <input
             type="number"
             inputMode="numeric"
             min={1}
             max={20000}
-            step={10}
+            step={1}
             required
             value={calories}
             onChange={(event) => changeCalories(event.target.value)}

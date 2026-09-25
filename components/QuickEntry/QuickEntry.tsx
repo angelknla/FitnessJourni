@@ -20,7 +20,9 @@ const show = (value: number) => (value === 0 ? '' : String(value));
 const fields = [
   { name: 'steps', label: 'Steps', max: 200000, step: 1 },
   { name: 'waterMl', label: 'Water (ml)', max: 20000, step: 50 },
-  { name: 'calories', label: 'Calories', max: 20000, step: 10 },
+  // step is 1 on every food figure: a coarser one made the browser reject any
+  // number in between, so 543 kcal came back asking for 540 or 550.
+  { name: 'calories', label: 'Calories', max: 20000, step: 1 },
   { name: 'proteinG', label: 'Protein (g)', max: 1000, step: 1 },
   { name: 'carbsG', label: 'Carbs (g)', max: 2000, step: 1 },
   { name: 'fatG', label: 'Fat (g)', max: 1000, step: 1 },
