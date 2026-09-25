@@ -1,7 +1,8 @@
 .form {
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
+  gap: 1rem;
   padding: 1rem;
   background: var(--c-surface);
   border: 1px solid var(--c-border);
@@ -17,51 +18,117 @@
 .legend {
   padding: 0;
   margin-bottom: 0.7rem;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--c-ink-muted);
 }
 
-.row {
-  display: flex;
-  align-items: flex-end;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-}
-
 .nameField {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
-  flex: 1 1 9rem;
-}
-
-.colourField {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  flex: 0 1 9rem;
 }
 
 .fieldLabel {
-  font-size: 0.76rem;
+  padding: 0;
+  font-size: 0.82rem;
   color: var(--c-ink-soft);
 }
 
-.preview {
-  width: 1.6rem;
-  height: 1.6rem;
-  margin-bottom: 0.35rem;
+/* ---- Colour swatches ---- */
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.5rem;
+}
+
+/*
+ * position: relative keeps the hidden radio's containing block here. Without it
+ * an absolutely positioned control escapes to the document and can stretch the
+ * page — the bug that put 584px of overflow on the sessions route.
+ */
+.swatch {
+  position: relative;
+  cursor: pointer;
+  line-height: 0;
+}
+
+.control {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  margin: 0;
+  pointer-events: none;
+}
+
+.dot {
+  display: block;
+  width: 1.15rem;
+  height: 1.15rem;
   border-radius: 50%;
-  background: var(--member-accent);
-  flex-shrink: 0;
+  background: var(--swatch);
+  box-shadow: 0 0 0 1px var(--c-border-strong);
+  transition:
+    box-shadow 0.18s var(--ease-flow),
+    transform 0.18s var(--ease-flow);
+}
+
+.swatch:hover .dot {
+  transform: scale(1.1);
+}
+
+/* A ring gapped by the surface colour, so the selection reads on any hue. */
+.control:checked + .dot {
+  box-shadow:
+    0 0 0 2px var(--c-surface),
+    0 0 0 4px var(--swatch);
+}
+
+.control:focus-visible + .dot {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 3px;
+}
+
+/* Taken colours stay visible but clearly unavailable. */
+.control:disabled + .dot {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+.control:disabled + .dot::after {
+  content: "";
+  position: absolute;
+  inset: 45% -10%;
+  border-top: 1.5px solid var(--c-ink);
+  transform: rotate(-45deg);
+}
+
+.swatch:has(.control:disabled) {
+  cursor: not-allowed;
+}
+
+.swatch:has(.control:disabled):hover .dot {
+  transform: none;
+}
+
+.chosen {
+  margin: 0.6rem 0 0;
+  font-size: 0.8rem;
+  color: var(--c-ink-muted);
+}
+
+.chosenName {
+  color: var(--c-ink);
+  text-transform: capitalize;
 }
 
 .hint {
-  margin: 0.7rem 0 0;
-  font-size: 0.76rem;
+  margin: 0;
+  font-size: 0.78rem;
   line-height: 1.5;
   color: var(--c-ink-muted);
 }
@@ -71,6 +138,19 @@
   align-items: center;
   gap: 0.8rem;
   flex-wrap: wrap;
+}
+
+.submit {
+  padding: 0.45rem 1.05rem;
+  font-size: 0.88rem;
+  background: var(--c-accent);
+  border-color: transparent;
+  color: #fff;
+}
+
+.submit:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--c-accent) 85%, #fff);
+  border-color: transparent;
 }
 
 .error {
