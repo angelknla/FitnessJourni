@@ -162,6 +162,10 @@
   color: var(--c-ink-muted);
 }
 
+.feed > .dateDivider:first-child {
+  margin-top: 0.15rem;
+}
+
 .dateDivider::before,
 .dateDivider::after {
   content: "";
