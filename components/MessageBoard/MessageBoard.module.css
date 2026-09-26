@@ -106,7 +106,7 @@
 .feed {
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: 0.9rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -144,6 +144,7 @@
 }
 
 .bubble {
+  position: relative;
   width: fit-content;
   max-width: min(74%, 36rem);
   padding: 0.75rem 0.9rem;
@@ -157,6 +158,10 @@
   background: color-mix(in oklab, var(--message-accent) 14%, var(--c-surface-raised));
   border-color: color-mix(in oklab, var(--message-accent) 36%, var(--c-border));
   border-radius: var(--r-md) 0.25rem var(--r-md) var(--r-md);
+}
+
+.bubble.hasReactions {
+  padding-bottom: 1.6rem;
 }
 
 .meta {
@@ -298,12 +303,18 @@
 }
 
 .reactions {
-  min-height: 1.75rem;
+  position: absolute;
+  z-index: 2;
+  left: -0.25rem;
+  bottom: 0;
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin-top: 0.55rem;
+  transform: translateY(30%);
+}
+
+.own .reactions {
+  right: -0.25rem;
+  left: auto;
 }
 
 .reactionControl {
@@ -311,8 +322,7 @@
   display: flex;
 }
 
-.reactionToggle,
-.reactionCount {
+.reactionToggle {
   min-height: 1.75rem;
   display: inline-flex;
   align-items: center;
@@ -321,22 +331,22 @@
   padding: 0.25rem 0.5rem;
   font-size: 0.72rem;
   color: var(--c-ink-muted);
-  background: transparent;
+  background: var(--c-surface-raised);
   border-color: var(--c-border);
   border-radius: 999px;
 }
 
 .reactionToggle:hover:not(:disabled),
-.reactionToggle[aria-expanded="true"],
-.reactionCount:hover:not(:disabled),
-.reactionCount[aria-pressed="true"] {
+.reactionToggle[aria-expanded="true"] {
   color: var(--c-ink);
   background: var(--c-surface-soft);
   border-color: var(--c-border-strong);
 }
 
-.reactionCount[aria-pressed="true"] {
-  color: var(--c-serious);
+.reactionBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
 }
 
 .reactionPicker {
@@ -442,6 +452,10 @@
   .bubble {
     max-width: 82%;
     padding: 0.55rem 0.7rem;
+  }
+
+  .bubble.hasReactions {
+    padding-bottom: 1.4rem;
   }
 
   .bubble p {

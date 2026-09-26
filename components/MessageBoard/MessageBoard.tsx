@@ -91,6 +91,9 @@ const MessageBubble = ({
             count: message.reactions.filter((reaction) => reaction.type === option.type).length,
         }))
         .filter((option) => option.count > 0);
+    const reactionSummary = reactionCounts
+        .map((reaction) => `${reaction.label}, ${reaction.count} ${reaction.count === 1 ? 'reaction' : 'reactions'}`)
+        .join('. ');
 
     const clearLongPress = () => {
         if (longPressTimerRef.current) {
@@ -183,7 +186,7 @@ const MessageBubble = ({
 
     return (
         <article
-            className={styles.bubble}
+            className={`${styles.bubble} ${viewerId || reactionCounts.length > 0 ? styles.hasReactions : ''}`}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
@@ -278,19 +281,28 @@ const MessageBubble = ({
             )}
             {(viewerId || reactionCounts.length > 0) && (
                 <div className={styles.reactions}>
-                    {viewerId && (
+                    {viewerId ? (
                         <form ref={reactionFormRef} action={reactionAction} className={styles.reactionControl}>
                             <input type="hidden" name="messageId" value={message.id} />
                             <input ref={reactionInputRef} type="hidden" name="reaction" defaultValue="heart" />
                             <button
                                 type="button"
                                 className={styles.reactionToggle}
-                                aria-label="React to message"
+                                aria-label={reactionSummary ? `React to message. ${reactionSummary}` : 'React to message'}
                                 aria-expanded={reactionPickerOpen}
                                 disabled={isReacting}
                                 onClick={() => setReactionPickerOpen((open) => !open)}
                             >
-                                <ReactionIcon size={14} />
+                                {reactionCounts.length > 0 ? (
+                                    reactionCounts.map((reaction) => (
+                                        <span className={styles.reactionBadge} key={reaction.type}>
+                                            <span aria-hidden="true">{reaction.emoji}</span>
+                                            <span>{reaction.count}</span>
+                                        </span>
+                                    ))
+                                ) : (
+                                    <ReactionIcon size={14} />
+                                )}
                             </button>
                             {reactionPickerOpen && (
                                 <fieldset className={styles.reactionPicker}>
@@ -309,21 +321,16 @@ const MessageBubble = ({
                                 </fieldset>
                             )}
                         </form>
+                    ) : (
+                        <span className={styles.reactionToggle} role="img" aria-label={reactionSummary}>
+                            {reactionCounts.map((reaction) => (
+                                <span className={styles.reactionBadge} key={reaction.type}>
+                                    <span aria-hidden="true">{reaction.emoji}</span>
+                                    <span>{reaction.count}</span>
+                                </span>
+                            ))}
+                        </span>
                     )}
-                    {reactionCounts.map((reaction) => (
-                        <button
-                            type="button"
-                            className={styles.reactionCount}
-                            key={reaction.type}
-                            aria-label={`${reaction.label}, ${reaction.count} ${reaction.count === 1 ? 'reaction' : 'reactions'}`}
-                            aria-pressed={viewerReaction === reaction.type}
-                            disabled={!viewerId || isReacting}
-                            onClick={() => submitReaction(reaction.type)}
-                        >
-                            <span aria-hidden="true">{reaction.emoji}</span>
-                            <span>{reaction.count}</span>
-                        </button>
-                    ))}
                 </div>
             )}
             {(editState.error || deleteState.error || reactionState.error) && (

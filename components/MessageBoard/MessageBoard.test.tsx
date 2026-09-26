@@ -150,11 +150,11 @@ describe('MessageBoard', () => {
             />
         );
 
-        expect(screen.getByRole('button', { name: 'Heart, 3 reactions' })).toHaveAttribute(
-            'aria-pressed',
-            'true'
-        );
-        await user.click(screen.getByRole('button', { name: 'React to message' }));
+        const reactionTrigger = screen.getByRole('button', {
+            name: 'React to message. Heart, 3 reactions',
+        });
+        expect(reactionTrigger).toHaveTextContent('❤️3');
+        await user.click(reactionTrigger);
         for (const label of ['Heart', 'Smile', 'Shocked', 'Angry']) {
             expect(screen.getByRole('button', { name: `${label} reaction` })).toBeInTheDocument();
         }
