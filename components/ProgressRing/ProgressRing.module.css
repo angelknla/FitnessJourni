@@ -41,7 +41,7 @@
   max-width: 7.5rem;
   aspect-ratio: 1;
   container-type: inline-size;
-  filter: drop-shadow(0 6px 14px color-mix(in oklab, var(--member-accent) 18%, transparent));
+  filter: drop-shadow(0 6px 13px color-mix(in oklab, var(--member-accent) 16%, transparent));
   transition:
     filter 0.3s var(--ease-flow),
     transform 0.3s var(--ease-flow);
@@ -49,7 +49,7 @@
 
 @media (hover: hover) and (pointer: fine) {
   .ring:hover .ringBox {
-    filter: drop-shadow(0 8px 18px color-mix(in oklab, var(--member-accent) 18%, transparent));
+    filter: drop-shadow(0 8px 17px color-mix(in oklab, var(--member-accent) 16%, transparent));
     transform: translateY(-2px) scale(1.015);
   }
 }
@@ -69,7 +69,7 @@
 
 .fill {
   stroke: var(--member-accent);
-  filter: drop-shadow(0 0 3px color-mix(in oklab, var(--member-accent) 55%, transparent));
+  filter: drop-shadow(0 0 3px color-mix(in oklab, var(--member-accent) 48%, transparent));
   transition: stroke-dasharray 0.5s var(--ease-flow);
 }
 

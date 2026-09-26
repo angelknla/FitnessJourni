@@ -194,16 +194,16 @@
   background:
     linear-gradient(
       145deg,
-      color-mix(in oklab, var(--person-accent) 9%, transparent),
+      color-mix(in oklab, var(--person-accent) 8%, transparent),
       transparent 50%
     ),
     var(--c-surface);
   border: 1px solid color-mix(in oklab, var(--person-accent) 24%, var(--c-border));
   border-radius: var(--r-xl);
   box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--person-accent) 28%, transparent),
+    inset 0 1px 0 color-mix(in oklab, var(--person-accent) 25%, transparent),
     0 14px 34px rgb(0 0 0 / 28%),
-    0 0 24px color-mix(in oklab, var(--person-accent) 5%, transparent);
+    0 0 22px color-mix(in oklab, var(--person-accent) 4%, transparent);
 }
 
 .tally::before {
@@ -461,14 +461,14 @@
   padding: 1rem;
   overflow: clip;
   background:
-    linear-gradient(145deg, color-mix(in oklab, var(--c-good) 8%, transparent), transparent 48%),
+    linear-gradient(145deg, color-mix(in oklab, var(--c-good) 7%, transparent), transparent 48%),
     var(--c-surface);
   border: 1px solid color-mix(in oklab, var(--c-good) 24%, var(--c-border));
   border-radius: var(--r-xl);
   box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--c-good) 24%, transparent),
+    inset 0 1px 0 color-mix(in oklab, var(--c-good) 21%, transparent),
     0 14px 34px rgb(0 0 0 / 28%),
-    0 0 24px color-mix(in oklab, var(--c-good) 5%, transparent);
+    0 0 22px color-mix(in oklab, var(--c-good) 4%, transparent);
 }
 
 .runCard:has(.cardActions) {

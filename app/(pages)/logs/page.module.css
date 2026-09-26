@@ -57,7 +57,7 @@
   border-color: color-mix(in oklab, var(--c-accent) 70%, var(--c-border-strong));
   box-shadow:
     inset 0 1px 0 color-mix(in oklab, #fff 12%, transparent),
-    0 6px 18px color-mix(in oklab, var(--c-accent) 22%, transparent);
+    0 6px 17px color-mix(in oklab, var(--c-accent) 19%, transparent);
   transform: translateY(-1px);
 }
 

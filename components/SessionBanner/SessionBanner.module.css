@@ -15,16 +15,16 @@
   background:
     linear-gradient(
       145deg,
-      color-mix(in oklab, var(--accent-green) 9%, transparent),
+      color-mix(in oklab, var(--accent-green) 8%, transparent),
       transparent 45%
     ),
     rgb(20 20 22 / 94%);
   border: 1px solid color-mix(in oklab, var(--accent-green) 22%, var(--c-border));
   border-radius: var(--r-lg);
   box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--accent-green) 24%, transparent),
+    inset 0 1px 0 color-mix(in oklab, var(--accent-green) 21%, transparent),
     0 14px 34px rgb(0 0 0 / 32%),
-    0 0 20px color-mix(in oklab, var(--accent-green) 4%, transparent);
+    0 0 19px color-mix(in oklab, var(--accent-green) 3%, transparent);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   animation: slideIn 0.35s var(--ease-flow);
