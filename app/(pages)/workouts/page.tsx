@@ -73,10 +73,6 @@ const WorkoutsPage = async () => {
 
       <section className={styles.section}>
         <h2 className={styles.sectionHeading}>The playbook split</h2>
-        <p className={styles.note}>
-          Four lifting days a week, plus cardio on Wednesday and Friday. Tap a session for the
-          exercises, sets and cues.
-        </p>
         <WorkoutPlan />
       </section>
     </PageLayout>

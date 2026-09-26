@@ -45,5 +45,6 @@ describe('WorkoutTally', () => {
         expect(within(cards[0]).getByRole('img')).toHaveAccessibleName(
             '3 of 4 recommended workouts this week'
         );
+        expect(screen.queryByText(/Week runs Sunday to Saturday/)).not.toBeInTheDocument();
     });
 });

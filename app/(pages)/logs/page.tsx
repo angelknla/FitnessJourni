@@ -3,7 +3,7 @@ import { LogsTable } from '@components/LogsTable/LogsTable';
 import { PageHeader } from '@components/PageHeader/PageHeader';
 import { PageLayout } from '@components/PageLayout/PageLayout';
 import { SetupNotice } from '@components/SetupNotice/SetupNotice';
-import { fromISODate, startOfMonth, startOfWeek, toISODate } from '@utils/date';
+import { startOfMonth, startOfWeek, toISODate } from '@utils/date';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { leaders, type Period, summarise } from '@/lib/aggregate';
@@ -28,9 +28,6 @@ const PERIODS: { key: Period; label: string }[] = [
   { key: 'week', label: 'This week' },
   { key: 'month', label: 'This month' },
 ];
-
-const dayMonth = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' });
-const monthYear = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric' });
 
 interface LogsPageProps {
   searchParams: Promise<{ period?: string }>;
@@ -64,13 +61,6 @@ const LogsPage = async ({ searchParams }: LogsPageProps) => {
   const summaries = summarise(logs, from, today);
   const workoutCounts = countWorkouts(workouts, from, today);
 
-  const caption =
-    period === 'today'
-      ? `${dayMonth.format(now)}. Averages are hidden — over a single day they just repeat the total.`
-      : period === 'week'
-        ? `${dayMonth.format(fromISODate(from))} to ${dayMonth.format(now)}, a Sunday-start week. Averages are per day logged; sleep uses only days with sleep entered.`
-        : `${monthYear.format(now)} so far. Averages are per day logged; sleep uses only days with sleep entered.`;
-
   return (
     <PageLayout>
       <PageHeader eyebrow="Logs" title="How everyone is doing" />
@@ -95,13 +85,9 @@ const LogsPage = async ({ searchParams }: LogsPageProps) => {
         workoutCounts={workoutCounts}
         leaders={leaders(summaries)}
         showAverages={period !== 'today'}
-        caption={caption}
       />
 
-      <p className={styles.note}>
-        A ★ marks whoever leads a column. Calories have no star on purpose — that is a budget to
-        hit, not a number to win.
-      </p>
+      <p className={styles.note}>A ★ marks whoever leads a column.</p>
     </PageLayout>
   );
 };

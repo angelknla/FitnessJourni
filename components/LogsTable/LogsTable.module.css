@@ -1,8 +1,80 @@
-.outer {
+.plot {
+  position: relative;
   min-width: 0;
+  height: 10.25rem;
+  display: grid;
+  grid-template-columns: repeat(var(--metric-count), calc((100% - 1.8rem) / 5));
+  align-items: stretch;
+  gap: 0.45rem;
+  padding: 0.4rem 0.1rem 0.25rem;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+}
+
+.plot::before {
+  content: "";
+  position: absolute;
+  inset: 1.65rem 0.1rem 1.9rem;
+  pointer-events: none;
+  background-image: linear-gradient(to top, var(--c-border) 1px, transparent 1px);
+  background-size: 100% 33.333%;
+  opacity: 0.45;
+}
+
+.column {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-rows: 1.3rem minmax(0, 1fr) 1.8rem;
+  justify-items: center;
+  gap: 0.3rem;
+  scroll-snap-align: start;
+}
+
+.value {
+  align-self: end;
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--c-ink);
+}
+
+.barTrack {
+  width: min(2.35rem, 80%);
+  height: 100%;
   display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
+  align-items: flex-end;
+  overflow: hidden;
+  background: color-mix(in oklab, var(--member-accent) 4%, var(--meter-track));
+  border: 1px solid color-mix(in oklab, var(--member-accent) 11%, var(--c-border));
+  border-radius: var(--r-sm) var(--r-sm) 0 0;
+}
+
+.barFill {
+  width: 100%;
+  height: var(--bar-height);
+  background: var(--member-accent);
+  border-radius: var(--r-sm) var(--r-sm) 0 0;
+  box-shadow: 0 0 12px color-mix(in oklab, var(--member-accent) 28%, transparent);
+  transform-origin: bottom;
+  animation: bar-rise 0.45s var(--ease-flow) both;
+  animation-delay: calc(var(--column-index) * 45ms);
+}
+
+.barFill:not([data-zero="true"]) {
+  min-height: 0.2rem;
+}
+
+.member {
+  max-width: 100%;
+  font-size: 0.66rem;
+  line-height: 1.15;
+  text-align: center;
+  overflow-wrap: anywhere;
+  color: var(--c-ink-muted);
 }
 
 .profiles {
@@ -17,10 +89,11 @@
   flex-direction: column;
   gap: 0.9rem;
   padding: 1rem;
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
+  background: color-mix(in oklab, var(--member-accent) 4%, var(--c-surface));
+  border: 1px solid color-mix(in oklab, var(--member-accent) 22%, var(--c-border));
   border-top: 3px solid var(--member-accent);
   border-radius: var(--r-lg);
+  box-shadow: 0 6px 18px color-mix(in oklab, var(--member-accent) 6%, transparent);
 }
 
 .profileHead {
@@ -28,6 +101,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid color-mix(in oklab, var(--member-accent) 18%, var(--c-border));
 }
 
 .name {
@@ -41,106 +116,22 @@
   color: var(--c-ink);
 }
 
-.days {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.25rem;
-  padding: 0.28rem 0.55rem;
-  font-size: 0.7rem;
-  color: var(--c-ink-muted);
-  background: var(--c-surface-soft);
-  border-radius: var(--r-pill);
-}
-
-.days strong {
-  font-size: 0.84rem;
-  color: var(--c-ink);
-}
-
-.stepsFeature abbr,
-.days abbr,
-.metric abbr {
-  text-decoration: none;
-}
-
-.stepsFeature {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: end;
-  gap: 0.35rem 0.8rem;
-}
-
-.stepsFeature > span:first-child,
-.metric dt {
-  font-size: 0.7rem;
-  color: var(--c-ink-muted);
-}
-
-.stepsFeature > strong {
-  font-size: 1.35rem;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-  color: var(--c-ink);
-}
-
-.stepsTrack {
-  grid-column: 1 / -1;
-  height: 0.42rem;
-  overflow: hidden;
-  border-radius: var(--r-pill);
-  background: var(--meter-track);
-}
-
-.stepsTrack > span {
-  display: block;
-  min-width: 0.18rem;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--member-accent);
-}
-
-.metrics {
-  margin: 0;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  border-top: 1px solid var(--c-border);
-  border-left: 1px solid var(--c-border);
-}
-
-.metric {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  padding: 0.65rem;
-  border-right: 1px solid var(--c-border);
-  border-bottom: 1px solid var(--c-border);
-}
-
-.metric dd {
-  margin: 0;
-  font-size: 0.9rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--c-ink-soft);
-}
-
-.metric dd[data-leader="true"],
-.days[data-leader="true"] strong {
-  color: var(--c-ink);
-}
-
 .crown {
   margin-left: 0.25rem;
   color: var(--c-warning);
 }
 
-.caption {
-  margin: 0;
-  font-size: 0.76rem;
-  line-height: 1.5;
-  color: var(--c-ink-muted);
+@keyframes bar-rise {
+  from {
+    opacity: 0.35;
+    transform: scaleY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barFill {
+    animation: none;
+  }
 }
 
 @media (max-width: 720px) {

@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { LogSummary, RankedMetric } from '@/lib/aggregate';
 import type { Member } from '@/types/fitness';
@@ -52,7 +52,7 @@ const leaders: Record<RankedMetric, string[]> = {
 };
 
 describe('LogsTable', () => {
-    it('keeps every period metric and leader marker in visual profiles', () => {
+    it('shows one accessible column chart per person with every period metric', () => {
         render(
             <LogsTable
                 members={members}
@@ -60,24 +60,18 @@ describe('LogsTable', () => {
                 workoutCounts={{ m1: 3 }}
                 leaders={leaders}
                 showAverages
-                caption="Averages are per day logged."
             />
         );
 
-        const list = screen.getByRole('list', { name: 'Log summaries' });
-        const profiles = within(list).getAllByRole('listitem');
-        expect(profiles).toHaveLength(2);
-        expect(profiles[0]).toHaveTextContent('5 days');
-        expect(profiles[0]).toHaveTextContent('50,000');
-        expect(profiles[0]).toHaveTextContent('10,000');
-        expect(profiles[0]).toHaveTextContent('2.5 L');
-        expect(profiles[0]).toHaveTextContent('150 g');
-        expect(profiles[0]).toHaveTextContent('2,400');
-        expect(profiles[0]).toHaveTextContent('7.5 h');
-        expect(profiles[0]).toHaveTextContent('Workouts3');
-        expect(profiles[1]).toHaveTextContent('Workouts0');
-        expect(within(profiles[0]).getAllByText('★')).toHaveLength(5);
-        expect(screen.getByText('Averages are per day logged.')).toBeInTheDocument();
+        expect(screen.getByRole('list', { name: 'Progress charts by person' })).toBeInTheDocument();
+        expect(screen.getAllByRole('listitem')).toHaveLength(2);
+        expect(screen.getByRole('img', { name: /Dillon progress:.*Workouts 3.*Steps 50,000/ }))
+            .toBeInTheDocument();
+        expect(screen.getByRole('img', { name: /Angel progress:.*Workouts 0.*Steps 36,000/ }))
+            .toBeInTheDocument();
+        expect(screen.queryByText('Protein/day')).not.toBeInTheDocument();
+        expect(screen.queryByText('kcal/day')).not.toBeInTheDocument();
+        expect(screen.getAllByText('★')).toHaveLength(4);
     });
 
     it('shows daily sleep without calling it an average on the Today view', () => {
@@ -88,14 +82,14 @@ describe('LogsTable', () => {
                 workoutCounts={{ m1: 1 }}
                 leaders={leaders}
                 showAverages={false}
-                caption="Today"
             />
         );
 
         expect(screen.queryByText('Steps/day')).not.toBeInTheDocument();
+        expect(screen.getAllByRole('listitem')).toHaveLength(2);
         expect(screen.getAllByText('Water/day')).toHaveLength(2);
-        expect(screen.getAllByText('Protein/day')).toHaveLength(2);
-        expect(screen.getAllByText('kcal/day')).toHaveLength(2);
+        expect(screen.queryByText('Protein/day')).not.toBeInTheDocument();
+        expect(screen.queryByText('kcal/day')).not.toBeInTheDocument();
         expect(screen.getAllByText('Sleep')).toHaveLength(2);
         expect(screen.queryByText('Sleep/day')).not.toBeInTheDocument();
     });
