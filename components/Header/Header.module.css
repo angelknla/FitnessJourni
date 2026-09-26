@@ -66,10 +66,18 @@
   color: var(--c-ink-soft);
   text-decoration: none;
   font-weight: 500;
-  transition: color 0.2s ease;
+  transition:
+    color 0.2s var(--ease-flow),
+    transform 0.2s var(--ease-flow);
 
   &:hover {
     color: var(--c-accent);
+  }
+}
+
+@media (min-width: 961px) and (hover: hover) {
+  .link:hover {
+    transform: translateY(-2px);
   }
 }
 
@@ -123,6 +131,10 @@
     box-shadow: var(--shadow-lg);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
+  }
+
+  .nav .link:active {
+    transform: scale(0.94);
   }
 
   .nav::before {

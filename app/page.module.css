@@ -5,7 +5,7 @@
   min-height: 100dvh;
   max-width: 100%;
   overflow-x: hidden;
-  background: var(--c-bg);
+  background: transparent;
 }
 
 .content {
@@ -16,15 +16,17 @@
   margin: 0 auto;
   /* 16px side gutter on phones, clearing the fixed header at the top. */
   padding: 5rem 1rem 3rem;
-  animation: fadeIn 0.4s ease-out;
+  animation: page-enter 0.55s var(--ease-flow) both;
 }
 
-@keyframes fadeIn {
+@keyframes page-enter {
   from {
     opacity: 0;
+    transform: translateY(0.5rem);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 

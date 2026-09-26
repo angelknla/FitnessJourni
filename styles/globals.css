@@ -73,6 +73,9 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
   --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.45);
+  --shadow-float:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 12px 32px rgba(0, 0, 0, 0.28);
 
   /* Type + motion */
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -97,7 +100,11 @@ body {
   /* clip rather than hidden: no scroll container, so the page can never gain a
      horizontal scrollbar even if a descendant misbehaves. */
   overflow-x: clip;
-  background: var(--c-bg);
+  background:
+    linear-gradient(135deg, rgb(57 135 229 / 5%) 0%, transparent 32rem),
+    linear-gradient(315deg, rgb(25 158 112 / 3%) 0%, transparent 28rem),
+    var(--c-bg);
+  background-attachment: fixed;
   color: var(--c-ink);
   font-family: var(--font-sans);
 }
@@ -133,6 +140,8 @@ button {
   padding: 0.55rem 1.2rem;
   width: fit-content;
   transition:
+    transform 0.2s var(--ease-flow),
+    box-shadow 0.2s var(--ease-flow),
     background-color 0.2s var(--ease-flow),
     border-color 0.2s var(--ease-flow),
     color 0.2s var(--ease-flow);
@@ -141,6 +150,13 @@ button {
 button:hover:not(:disabled) {
   background: var(--c-surface-hover);
   border-color: var(--c-border-strong);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+button:active:not(:disabled) {
+  box-shadow: none;
+  transform: translateY(1px) scale(0.985);
 }
 
 button:disabled {
@@ -159,13 +175,18 @@ textarea {
   border-radius: var(--r-sm);
   padding: 0.6rem 0.7rem;
   width: 100%;
-  transition: border-color 0.2s var(--ease-flow);
+  transition:
+    background-color 0.2s var(--ease-flow),
+    border-color 0.2s var(--ease-flow),
+    box-shadow 0.2s var(--ease-flow);
 }
 
 input:focus,
 select:focus,
 textarea:focus {
   border-color: var(--c-accent);
+  background: var(--c-surface-soft);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--c-accent) 14%, transparent);
   outline: none;
 }
 
@@ -201,6 +222,27 @@ ul {
 
 a {
   color: inherit;
+}
+
+dialog[open] {
+  animation: dialog-enter 0.3s var(--ease-flow) both;
+}
+
+dialog[open]::backdrop {
+  animation: backdrop-enter 0.25s ease-out both;
+}
+
+@keyframes dialog-enter {
+  from {
+    opacity: 0;
+    transform: translateY(0.6rem) scale(0.985);
+  }
+}
+
+@keyframes backdrop-enter {
+  from {
+    opacity: 0;
+  }
 }
 
 .text-balance {

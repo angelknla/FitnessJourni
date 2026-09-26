@@ -23,6 +23,17 @@
   max-width: 7.5rem;
   aspect-ratio: 1;
   container-type: inline-size;
+  filter: drop-shadow(0 5px 12px color-mix(in oklab, var(--member-accent) 8%, transparent));
+  transition:
+    filter 0.3s var(--ease-flow),
+    transform 0.3s var(--ease-flow);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ring:hover .ringBox {
+    filter: drop-shadow(0 8px 18px color-mix(in oklab, var(--member-accent) 18%, transparent));
+    transform: translateY(-2px) scale(1.015);
+  }
 }
 
 .svg {
