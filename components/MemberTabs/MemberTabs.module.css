@@ -108,10 +108,13 @@
   display: grid;
   place-items: center;
   line-height: 0;
-  color: var(--c-ink-soft);
-  background: var(--c-surface-soft);
-  border: 1px solid var(--c-border);
+  color: var(--c-ink);
+  background: linear-gradient(180deg, rgb(255 255 255 / 9%), rgb(255 255 255 / 3%));
+  border: 1px solid color-mix(in oklab, var(--c-ink) 20%, var(--c-border));
   border-radius: 50%;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 14%),
+    0 5px 14px rgb(0 0 0 / 20%);
 }
 
 .add:hover:not(:disabled) {
