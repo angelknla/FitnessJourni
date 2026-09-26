@@ -44,6 +44,7 @@ export const Header = ({
 }: HeaderProps) => {
   const [scrolled, setScrolled] = useState(false);
   const [identityOpen, setIdentityOpen] = useState(false);
+  const [resyncing, setResyncing] = useState(false);
   const pathname = usePathname();
 
   const closeIdentity = useCallback(() => setIdentityOpen(false), []);
@@ -71,6 +72,11 @@ export const Header = ({
   const you = members.find((member) => member.id === viewer.memberId);
   const identityLabel = viewer.chosen ? (you?.name ?? 'Visitor') : 'Who are you?';
   const identityInitial = you?.name.charAt(0).toUpperCase() ?? (viewer.chosen ? 'V' : '?');
+  const handleResync = () => {
+    if (resyncing) return;
+    setResyncing(true);
+    window.setTimeout(() => window.location.reload(), 500);
+  };
   const navIcons = {
     '/': HomeIcon,
     '/workouts': DumbbellIcon,
@@ -128,8 +134,10 @@ export const Header = ({
                     type="button"
                     className={styles.resync}
                     aria-label="Reload page"
+                    aria-busy={resyncing}
                     title="Reload page"
-                    onClick={() => window.location.reload()}
+                    disabled={resyncing}
+                    onClick={handleResync}
                   >
                     <ResyncIcon />
                   </button>

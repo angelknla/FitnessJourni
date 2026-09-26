@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/app/auth-actions', () => ({
@@ -97,6 +98,17 @@ describe('Header', () => {
     expect(profile).toHaveTextContent('A');
     expect(profile).toHaveStyle({ '--identity-accent': '#d95926' });
     expect(screen.getByRole('button', { name: 'Reload page' })).toBeInTheDocument();
+  });
+
+  it('starts the reload animation immediately after clicking resync', async () => {
+    const user = userEvent.setup();
+    render(<Header members={members} viewer={{ memberId: 'm2', chosen: true }} />);
+
+    const resync = screen.getByRole('button', { name: 'Reload page' });
+    await user.click(resync);
+
+    expect(resync).toHaveAttribute('aria-busy', 'true');
+    expect(resync).toBeDisabled();
   });
 
   it('shows the selected avatar instead of the initial', () => {

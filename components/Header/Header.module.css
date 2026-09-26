@@ -184,6 +184,22 @@
   border-color: transparent;
 }
 
+.resync[aria-busy="true"] svg {
+  animation: resync-spin 0.55s linear infinite;
+}
+
+@keyframes resync-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .resync[aria-busy="true"] svg {
+    animation-duration: 1.2s;
+  }
+}
+
 .identity {
   flex-shrink: 0;
   width: 2rem;
