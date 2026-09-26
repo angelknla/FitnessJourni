@@ -14,11 +14,12 @@ interface SessionBannerProps {
   bookedBy?: string;
   /** Pre-formatted on the server, so the banner needs no clock of its own. */
   whenLabel: string;
+  expiresAt: number;
 }
 
 const STORAGE_KEY = 'fj_dismissed_session';
 
-export const SessionBanner = ({ session, bookedBy, whenLabel }: SessionBannerProps) => {
+export const SessionBanner = ({ session, bookedBy, whenLabel, expiresAt }: SessionBannerProps) => {
   /*
    * Starts hidden and appears after mount once storage has been read. Rendering
    * it first and hiding it would flash the banner at someone who dismissed it.
@@ -35,8 +36,13 @@ export const SessionBanner = ({ session, bookedBy, whenLabel }: SessionBannerPro
       dismissedId = null;
     }
 
-    setVisible(dismissedId !== session.id);
-  }, [session.id]);
+    const remaining = expiresAt - Date.now();
+    setVisible(dismissedId !== session.id && remaining > 0);
+
+    if (remaining <= 0) return;
+    const timeout = window.setTimeout(() => setVisible(false), remaining);
+    return () => window.clearTimeout(timeout);
+  }, [expiresAt, session.id]);
 
   const dismiss = () => {
     setVisible(false);

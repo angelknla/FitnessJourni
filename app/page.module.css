@@ -38,4 +38,12 @@
   .appWrapper {
     padding-bottom: calc(4.35rem + env(safe-area-inset-bottom));
   }
+
+  .appWrapper:has([data-page="chat"]) {
+    padding-bottom: 0;
+  }
+
+  .appWrapper:has([data-page="chat"]) > footer {
+    display: none;
+  }
 }

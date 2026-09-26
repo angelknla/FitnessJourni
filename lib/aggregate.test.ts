@@ -11,6 +11,7 @@ const log = (memberId: string, date: string, over: Partial<DailyLog> = {}): Dail
   proteinG: 150,
   carbsG: 300,
   fatG: 60,
+  sleepHours: null,
   ...over,
 });
 
@@ -32,7 +33,24 @@ describe('summarise', () => {
       avgWaterMl: 2000,
       avgCalories: 2200,
       avgProteinG: 150,
+      sleepDaysLogged: 0,
+      avgSleepHours: 0,
     });
+  });
+
+  it('averages sleep only across days with sleep recorded', () => {
+    const summaries = summarise(
+      [
+        log('m1', '2026-09-21', { sleepHours: 7 }),
+        log('m1', '2026-09-22', { sleepHours: 8 }),
+        log('m1', '2026-09-23', { sleepHours: null }),
+      ],
+      '2026-09-20',
+      '2026-09-25'
+    );
+
+    expect(summaries.m1.sleepDaysLogged).toBe(2);
+    expect(summaries.m1.avgSleepHours).toBe(7.5);
   });
 
   it('ignores days outside the window', () => {
@@ -80,6 +98,8 @@ describe('leaders', () => {
       avgWaterMl: 2000,
       avgCalories: 3000,
       avgProteinG: 150,
+      sleepDaysLogged: 5,
+      avgSleepHours: 8,
     },
     m2: {
       daysLogged: 3,
@@ -88,6 +108,8 @@ describe('leaders', () => {
       avgWaterMl: 2000,
       avgCalories: 2000,
       avgProteinG: 100,
+      sleepDaysLogged: 3,
+      avgSleepHours: 7,
     },
   };
 

@@ -58,7 +58,12 @@ const nextSessionBanner = async (members: Member[]) => {
   const dayLabel =
     session.date === today ? 'Today' : bannerDay.format(new Date(`${session.date}T12:00:00`));
 
-  return { session, bookedBy, whenLabel: `${dayLabel} at ${session.time}` };
+  return {
+    session,
+    bookedBy,
+    whenLabel: `${dayLabel} at ${session.time}`,
+    expiresAt: new Date(`${session.date}T${session.time}:00`).getTime() + 30 * 60 * 1000,
+  };
 };
 
 const RootLayout = async ({ children }: LayoutProps) => {
@@ -108,6 +113,7 @@ const RootLayout = async ({ children }: LayoutProps) => {
               session={banner.session}
               bookedBy={banner.bookedBy}
               whenLabel={banner.whenLabel}
+              expiresAt={banner.expiresAt}
             />
           )}
           <main className={styles.content}>{children}</main>

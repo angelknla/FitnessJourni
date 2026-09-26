@@ -1,6 +1,11 @@
 .avatar {
   width: var(--member-avatar-size);
   height: var(--member-avatar-size);
+  min-width: var(--member-avatar-size);
+  min-height: var(--member-avatar-size);
+  max-width: var(--member-avatar-size);
+  max-height: var(--member-avatar-size);
+  aspect-ratio: 1 / 1;
   flex: 0 0 var(--member-avatar-size);
   display: inline-grid;
   place-items: center;
@@ -21,8 +26,12 @@
 .avatar img {
   width: 100%;
   height: 100%;
+  min-width: 100%;
+  min-height: 100%;
+  aspect-ratio: 1 / 1;
   display: block;
   object-fit: cover;
+  border-radius: 50%;
 }
 
 .avatar::before {

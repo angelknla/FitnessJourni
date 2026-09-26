@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { Workout, WorkoutFocus } from '@/types/fitness';
-import { mapWorkout, tallyWorkouts, type WorkoutRow, workoutsForToday } from './workouts';
+import {
+  countWorkouts,
+  mapWorkout,
+  tallyWorkouts,
+  type WorkoutRow,
+  workoutsForToday,
+} from './workouts';
 
 const make = (memberId: string, date: string, focuses: WorkoutFocus[] = ['upper']): Workout => ({
   id: `${memberId}-${date}-${focuses.join('')}`,
@@ -111,6 +117,24 @@ describe('tallyWorkouts', () => {
 
   it('has no entry for someone who has not trained', () => {
     expect(tallyWorkouts([], today).m1).toBeUndefined();
+  });
+});
+
+describe('countWorkouts', () => {
+  it('counts each session inside the selected Logs period', () => {
+    const counts = countWorkouts(
+      [
+        make('m1', '2026-09-19'),
+        make('m1', '2026-09-20'),
+        make('m1', '2026-09-25'),
+        make('m2', '2026-09-24'),
+        make('m2', '2026-09-26'),
+      ],
+      '2026-09-20',
+      '2026-09-25'
+    );
+
+    expect(counts).toEqual({ m1: 2, m2: 1 });
   });
 });
 

@@ -1,5 +1,5 @@
 import { getSupabase } from '@/lib/supabase/server';
-import type { MessagePost } from '@/types/fitness';
+import type { MessagePost, MessageReaction, MessageReactionType } from '@/types/fitness';
 
 export interface MessageRow {
   id: string;
@@ -8,11 +8,18 @@ export interface MessageRow {
   created_at: string;
 }
 
-export const mapMessage = (row: MessageRow): MessagePost => ({
+export interface MessageReactionRow {
+  message_id: string;
+  member_id: string;
+  reaction: string;
+}
+
+export const mapMessage = (row: MessageRow, reactions: MessageReaction[] = []): MessagePost => ({
   id: row.id,
   memberId: row.member_id,
   content: row.content,
   createdAt: row.created_at,
+  reactions,
 });
 
 export const hasUnreadMessages = (
@@ -37,7 +44,32 @@ export const getMessages = async (): Promise<MessagePost[]> => {
     return [];
   }
 
-  return (data as MessageRow[]).map(mapMessage);
+  const rows = data as MessageRow[];
+  if (rows.length === 0) {
+    return [];
+  }
+
+  const { data: reactionData, error: reactionError } = await supabase
+    .from('message_reactions')
+    .select('message_id, member_id, reaction')
+    .in(
+      'message_id',
+      rows.map((row) => row.id)
+    );
+
+  if (reactionError) {
+    console.error('[message reactions] read failed:', reactionError.message);
+    return rows.map((row) => mapMessage(row));
+  }
+
+  const reactionsByMessage = new Map<string, MessageReaction[]>();
+  for (const row of reactionData as MessageReactionRow[]) {
+    const reactions = reactionsByMessage.get(row.message_id) ?? [];
+    reactions.push({ memberId: row.member_id, type: row.reaction as MessageReactionType });
+    reactionsByMessage.set(row.message_id, reactions);
+  }
+
+  return rows.map((row) => mapMessage(row, reactionsByMessage.get(row.id)));
 };
 
 export const getHasUnreadMessages = async (memberId: string): Promise<boolean> => {

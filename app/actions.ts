@@ -21,7 +21,7 @@ import { getMembers } from '@/lib/data/members';
 import { ADMIN_MEMBER_NAME, canEditMember, canRemoveMember } from '@/lib/ownership';
 import { isUnlocked, readViewer } from '@/lib/session';
 import { getSupabase } from '@/lib/supabase/server';
-import type { AccentName, ActivityType, WorkoutFocus } from '@/types/fitness';
+import type { AccentName, ActivityType, MessageReactionType, WorkoutFocus } from '@/types/fitness';
 
 export interface ActionState {
   ok: boolean;
@@ -183,6 +183,10 @@ export const saveProfileDetails = async (
   const heightCm = toOptionalNumber(formData.get('heightCm'));
   const targetWeightKg = toOptionalNumber(formData.get('targetWeightKg'));
   const targetBmi = toOptionalNumber(formData.get('targetBmi'));
+  const saveCurrentWeight = formData.get('saveCurrentWeight') === 'true';
+  const currentMonthInput = toText(formData.get('currentMonth'));
+  const currentMonth = MONTH_INPUT.test(currentMonthInput) ? `${currentMonthInput}-01` : '';
+  const currentWeightKg = toOptionalNumber(formData.get('currentWeightKg'));
   const notYours = await refuseUnlessOwn(memberId);
 
   if (notYours) {
@@ -209,6 +213,16 @@ export const saveProfileDetails = async (
   if (targetBmi !== null && (!Number.isFinite(targetBmi) || targetBmi < 10 || targetBmi > 60)) {
     return fail('Enter a BMI goal from 10 to 60.');
   }
+  if (
+    saveCurrentWeight &&
+    (!currentMonth ||
+      currentWeightKg === null ||
+      !Number.isFinite(currentWeightKg) ||
+      currentWeightKg < 25 ||
+      currentWeightKg > 500)
+  ) {
+    return fail('Enter a current weight from 25 to 500 kg.');
+  }
 
   const { error } = await supabase
     .from('members')
@@ -225,6 +239,23 @@ export const saveProfileDetails = async (
   if (error) {
     console.error('[saveProfileDetails]', error.message);
     return fail('Could not save your profile.');
+  }
+
+  if (saveCurrentWeight && currentWeightKg !== null) {
+    const { error: weightError } = await supabase.from('weight_measurements').upsert(
+      {
+        member_id: memberId,
+        month_start: currentMonth,
+        weight_kg: Math.round(currentWeightKg * 100) / 100,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'member_id,month_start' }
+    );
+
+    if (weightError) {
+      console.error('[saveProfileDetails:weight]', weightError.message);
+      return fail('Your profile saved, but the current weight did not. Try that weight again.');
+    }
   }
 
   revalidatePath('/profile');
@@ -330,6 +361,55 @@ export const saveDailyLog = async (
 
   revalidatePath('/');
   return ok;
+};
+
+export const saveSleep = async (_prev: ActionState, formData: FormData): Promise<ActionState> => {
+  if (!(await isUnlocked())) {
+    return fail(LOCKED);
+  }
+
+  const supabase = getSupabase();
+  if (!supabase) {
+    return fail(NOT_CONFIGURED);
+  }
+
+  const memberId = toText(formData.get('memberId'));
+  const date = toText(formData.get('date'));
+  const sleepHours = Number(formData.get('sleepHours'));
+
+  if (!memberId) {
+    return fail('Pick who this is for.');
+  }
+  if (!ISO_DATE.test(date)) {
+    return fail('That date looks wrong.');
+  }
+
+  const notYours = await refuseUnlessOwn(memberId);
+  if (notYours) {
+    return fail(notYours);
+  }
+  if (!Number.isFinite(sleepHours) || sleepHours < 0.1 || sleepHours > 24) {
+    return fail('Enter sleep from 0.1 to 24 hours.');
+  }
+
+  const { error } = await supabase.from('daily_logs').upsert(
+    {
+      member_id: memberId,
+      log_date: date,
+      sleep_hours: Math.round(sleepHours * 10) / 10,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'member_id,log_date' }
+  );
+
+  if (error) {
+    console.error('[saveSleep]', error.message);
+    return fail('Could not save that sleep.');
+  }
+
+  revalidatePath('/');
+  revalidatePath('/logs');
+  return { ok: true, message: 'Sleep saved.', bookedAt: Date.now() };
 };
 
 export const addMember = async (_prev: ActionState, formData: FormData): Promise<ActionState> => {
@@ -865,7 +945,7 @@ export const logRun = async (_prev: ActionState, formData: FormData): Promise<Ac
   const createdBy = toText(formData.get('createdBy'));
   const date = toText(formData.get('date'));
   const hours = toInt(formData.get('hours'), 24);
-  const minutes = toInt(formData.get('minutes'), 59);
+  const minutes = Number(formData.get('minutes') ?? 0);
   const distanceKm = Number(formData.get('distanceKm'));
   const paceMinutesText = toText(formData.get('paceMinutes'));
   const paceSecondsText = toText(formData.get('paceSeconds'));
@@ -873,7 +953,7 @@ export const logRun = async (_prev: ActionState, formData: FormData): Promise<Ac
   const paceMinutes = Number(paceMinutesText || 0);
   const paceSeconds = Number(paceSecondsText || 0);
   const manualPaceSeconds = paceMinutes * 60 + paceSeconds;
-  const durationMinutes = hours * 60 + minutes;
+  const durationMinutes = Math.round((hours * 60 + minutes) * 10) / 10;
 
   if (!createdBy) {
     return fail('Pick who is logging this run.');
@@ -881,7 +961,14 @@ export const logRun = async (_prev: ActionState, formData: FormData): Promise<Ac
   if (!ISO_DATE.test(date)) {
     return fail('Pick a valid run date.');
   }
-  if (durationMinutes < 1 || durationMinutes > 1440) {
+  if (
+    !Number.isFinite(minutes) ||
+    minutes < 0 ||
+    minutes > 59.9 ||
+    Math.abs(minutes - Math.round(minutes * 10) / 10) > 1e-9 ||
+    durationMinutes < 1 ||
+    durationMinutes > 1440
+  ) {
     return fail('Enter how long the run took.');
   }
   if (!Number.isFinite(distanceKm) || distanceKm <= 0 || distanceKm > 1000) {
@@ -958,7 +1045,7 @@ export const editRun = async (_prev: ActionState, formData: FormData): Promise<A
   const id = toText(formData.get('id'));
   const date = toText(formData.get('date'));
   const hours = toInt(formData.get('hours'), 24);
-  const minutes = toInt(formData.get('minutes'), 59);
+  const minutes = Number(formData.get('minutes') ?? 0);
   const distanceKm = Number(formData.get('distanceKm'));
   const paceMinutesText = toText(formData.get('paceMinutes'));
   const paceSecondsText = toText(formData.get('paceSeconds'));
@@ -966,7 +1053,7 @@ export const editRun = async (_prev: ActionState, formData: FormData): Promise<A
   const paceMinutes = Number(paceMinutesText || 0);
   const paceSeconds = Number(paceSecondsText || 0);
   const manualPaceSeconds = paceMinutes * 60 + paceSeconds;
-  const durationMinutes = hours * 60 + minutes;
+  const durationMinutes = Math.round((hours * 60 + minutes) * 10) / 10;
 
   if (!id) {
     return fail('That run is missing.');
@@ -974,7 +1061,14 @@ export const editRun = async (_prev: ActionState, formData: FormData): Promise<A
   if (!ISO_DATE.test(date)) {
     return fail('Pick a valid run date.');
   }
-  if (durationMinutes < 1 || durationMinutes > 1440) {
+  if (
+    !Number.isFinite(minutes) ||
+    minutes < 0 ||
+    minutes > 59.9 ||
+    Math.abs(minutes - Math.round(minutes * 10) / 10) > 1e-9 ||
+    durationMinutes < 1 ||
+    durationMinutes > 1440
+  ) {
     return fail('Enter how long the run took.');
   }
   if (!Number.isFinite(distanceKm) || distanceKm <= 0 || distanceKm > 1000) {
@@ -1216,6 +1310,70 @@ export const deleteMessage = async (
   revalidatePath('/messages');
   revalidatePath('/', 'layout');
   return ok;
+};
+
+const messageReactionTypes: MessageReactionType[] = ['heart', 'smile', 'shocked', 'angry'];
+
+export const reactToMessage = async (
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> => {
+  if (!(await isUnlocked())) {
+    return fail(LOCKED);
+  }
+
+  const supabase = getSupabase();
+  if (!supabase) {
+    return fail(NOT_CONFIGURED);
+  }
+
+  const viewer = await readViewer();
+  const messageId = toText(formData.get('messageId'));
+  const reaction = toText(formData.get('reaction')) as MessageReactionType;
+
+  if (!viewer.memberId) {
+    return fail('Choose who you are before reacting.');
+  }
+  if (!messageId || !messageReactionTypes.includes(reaction)) {
+    return fail('Choose a reaction.');
+  }
+
+  const { data: existing, error: readError } = await supabase
+    .from('message_reactions')
+    .select('reaction')
+    .eq('message_id', messageId)
+    .eq('member_id', viewer.memberId)
+    .maybeSingle();
+
+  if (readError) {
+    console.error('[reactToMessage:read]', readError.message);
+    return fail('Could not update that reaction.');
+  }
+
+  const reactionQuery =
+    existing?.reaction === reaction
+      ? supabase
+          .from('message_reactions')
+          .delete()
+          .eq('message_id', messageId)
+          .eq('member_id', viewer.memberId)
+      : supabase.from('message_reactions').upsert(
+          {
+            message_id: messageId,
+            member_id: viewer.memberId,
+            reaction,
+          },
+          { onConflict: 'message_id,member_id' }
+        );
+
+  const { error } = await reactionQuery;
+  if (error) {
+    console.error('[reactToMessage]', error.message);
+    return fail('Could not update that reaction.');
+  }
+
+  revalidatePath('/messages');
+  return { ok: true, bookedAt: Date.now() };
 };
 
 export const markMessagesRead = async (): Promise<void> => {

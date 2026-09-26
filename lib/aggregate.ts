@@ -14,6 +14,8 @@ export interface LogSummary {
   avgWaterMl: number;
   avgCalories: number;
   avgProteinG: number;
+  sleepDaysLogged: number;
+  avgSleepHours: number;
 }
 
 export const emptySummary: LogSummary = {
@@ -23,11 +25,17 @@ export const emptySummary: LogSummary = {
   avgWaterMl: 0,
   avgCalories: 0,
   avgProteinG: 0,
+  sleepDaysLogged: 0,
+  avgSleepHours: 0,
 };
 
 /** A day counts as logged only if something was actually entered. */
 const hasContent = (log: DailyLog) =>
-  log.steps > 0 || log.waterMl > 0 || log.calories > 0 || log.proteinG > 0;
+  log.steps > 0 ||
+  log.waterMl > 0 ||
+  log.calories > 0 ||
+  log.proteinG > 0 ||
+  log.sleepHours !== null;
 
 /**
  * Per-member summaries over the given window. Averages divide by days logged,
@@ -59,6 +67,10 @@ export const summarise = (
     summary.avgWaterMl += log.waterMl;
     summary.avgCalories += log.calories;
     summary.avgProteinG += log.proteinG;
+    if (log.sleepHours !== null) {
+      summary.sleepDaysLogged += 1;
+      summary.avgSleepHours += log.sleepHours;
+    }
   }
 
   for (const summary of Object.values(byMember)) {
@@ -67,6 +79,8 @@ export const summarise = (
     summary.avgWaterMl = Math.round(summary.avgWaterMl / days);
     summary.avgCalories = Math.round(summary.avgCalories / days);
     summary.avgProteinG = Math.round(summary.avgProteinG / days);
+    const sleepDays = summary.sleepDaysLogged || 1;
+    summary.avgSleepHours = Math.round((summary.avgSleepHours / sleepDays) * 100) / 100;
   }
 
   return byMember;

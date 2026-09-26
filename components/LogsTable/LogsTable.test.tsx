@@ -28,6 +28,8 @@ const summaries: Record<string, LogSummary> = {
         avgWaterMl: 2500,
         avgCalories: 2400,
         avgProteinG: 150,
+        sleepDaysLogged: 5,
+        avgSleepHours: 7.5,
     },
     m2: {
         daysLogged: 4,
@@ -36,6 +38,8 @@ const summaries: Record<string, LogSummary> = {
         avgWaterMl: 2200,
         avgCalories: 2100,
         avgProteinG: 130,
+        sleepDaysLogged: 0,
+        avgSleepHours: 0,
     },
 };
 
@@ -53,6 +57,7 @@ describe('LogsTable', () => {
             <LogsTable
                 members={members}
                 summaries={summaries}
+                workoutCounts={{ m1: 3 }}
                 leaders={leaders}
                 showAverages
                 caption="Averages are per day logged."
@@ -68,15 +73,19 @@ describe('LogsTable', () => {
         expect(profiles[0]).toHaveTextContent('2.5 L');
         expect(profiles[0]).toHaveTextContent('150 g');
         expect(profiles[0]).toHaveTextContent('2,400');
+        expect(profiles[0]).toHaveTextContent('7.5 h');
+        expect(profiles[0]).toHaveTextContent('Workouts3');
+        expect(profiles[1]).toHaveTextContent('Workouts0');
         expect(within(profiles[0]).getAllByText('★')).toHaveLength(5);
         expect(screen.getByText('Averages are per day logged.')).toBeInTheDocument();
     });
 
-    it('hides only Steps/day on the Today view', () => {
+    it('shows daily sleep without calling it an average on the Today view', () => {
         render(
             <LogsTable
                 members={members}
                 summaries={summaries}
+                workoutCounts={{ m1: 1 }}
                 leaders={leaders}
                 showAverages={false}
                 caption="Today"
@@ -87,5 +96,7 @@ describe('LogsTable', () => {
         expect(screen.getAllByText('Water/day')).toHaveLength(2);
         expect(screen.getAllByText('Protein/day')).toHaveLength(2);
         expect(screen.getAllByText('kcal/day')).toHaveLength(2);
+        expect(screen.getAllByText('Sleep')).toHaveLength(2);
+        expect(screen.queryByText('Sleep/day')).not.toBeInTheDocument();
     });
 });

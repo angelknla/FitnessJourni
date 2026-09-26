@@ -38,6 +38,12 @@ interface ProfileViewProps {
 
 const initial: ActionState = { ok: false };
 const monthLabel = new Intl.DateTimeFormat('en-GB', { month: 'short', year: 'numeric' });
+const CHART_WIDTH = 640;
+const CHART_HEIGHT = 220;
+const CHART_LEFT = 44;
+const CHART_RIGHT = 14;
+const CHART_TOP = 14;
+const CHART_BOTTOM = 36;
 
 export const ProfileView = ({
     members,
@@ -67,6 +73,29 @@ export const ProfileView = ({
     );
     const [avatarState, avatarAction, avatarPending] = useActionState(saveAvatar, initial);
 
+    const currentWeight = measurements.at(-1)?.weightKg ?? null;
+    const currentMonthMeasurement = measurements.find((item) => item.month.startsWith(currentMonth));
+    const [weightMonth, setWeightMonth] = useState(currentMonth);
+    const [currentWeightDraft, setCurrentWeightDraft] = useState(
+        String(currentMonthMeasurement?.weightKg ?? currentWeight ?? '')
+    );
+    const [monthlyWeightDraft, setMonthlyWeightDraft] = useState(
+        String(currentMonthMeasurement?.weightKg ?? currentWeight ?? '')
+    );
+    const [currentWeightChanged, setCurrentWeightChanged] = useState(false);
+
+    useEffect(() => {
+        if (!member?.id) {
+            return;
+        }
+
+        const nextWeight = String(currentMonthMeasurement?.weightKg ?? currentWeight ?? '');
+        setWeightMonth(currentMonth);
+        setCurrentWeightDraft(nextWeight);
+        setMonthlyWeightDraft(nextWeight);
+        setCurrentWeightChanged(false);
+    }, [currentMonth, currentMonthMeasurement?.weightKg, currentWeight, member?.id]);
+
     useEffect(() => {
         if (avatarState.ok && avatarState.bookedAt) {
             setAvatarOpen(false);
@@ -83,16 +112,35 @@ export const ProfileView = ({
         [avatarPreview]
     );
 
-    const currentWeight = measurements.at(-1)?.weightKg ?? null;
     const currentBmi = calculateBmi(currentWeight, profile?.heightCm ?? null);
+    const chartMeasurements = measurements.slice(-12);
     const chartValues = [
-        ...measurements.map((measurement) => measurement.weightKg),
+        ...chartMeasurements.map((measurement) => measurement.weightKg),
         profile?.targetWeightKg,
     ].filter((value): value is number => value !== null && value !== undefined);
-    const chartMin = chartValues.length > 0 ? Math.min(...chartValues) - 3 : 0;
-    const chartMax = chartValues.length > 0 ? Math.max(...chartValues) + 3 : 1;
-    const chartPosition = (weight: number) =>
-        Math.max(0, Math.min(100, ((weight - chartMin) / (chartMax - chartMin)) * 100));
+    const chartSpread = chartValues.length > 0 ? Math.max(...chartValues) - Math.min(...chartValues) : 0;
+    const chartPadding = Math.max(chartSpread * 0.2, 1);
+    const chartMin = chartValues.length > 0 ? Math.min(...chartValues) - chartPadding : 0;
+    const chartMax = chartValues.length > 0 ? Math.max(...chartValues) + chartPadding : 1;
+    const chartRange = chartMax - chartMin;
+    const chartPlotWidth = CHART_WIDTH - CHART_LEFT - CHART_RIGHT;
+    const chartPlotHeight = CHART_HEIGHT - CHART_TOP - CHART_BOTTOM;
+    const chartX = (index: number) =>
+        chartMeasurements.length === 1
+            ? CHART_LEFT + chartPlotWidth / 2
+            : CHART_LEFT + (index / (chartMeasurements.length - 1)) * chartPlotWidth;
+    const chartY = (weight: number) =>
+        CHART_TOP + ((chartMax - weight) / chartRange) * chartPlotHeight;
+    const chartPoints = chartMeasurements
+        .map((measurement, index) => `${chartX(index)},${chartY(measurement.weightKg)}`)
+        .join(' ');
+    const chartTicks = [chartMax, (chartMax + chartMin) / 2, chartMin];
+    const chartLabel = `Monthly weight trend. ${chartMeasurements
+        .map(
+            (measurement) =>
+                `${monthLabel.format(new Date(`${measurement.month}T12:00:00`))}: ${measurement.weightKg.toFixed(1)} kilograms`
+        )
+        .join('; ')}`;
 
     const signOut = () =>
         startSignOut(async () => {
@@ -138,6 +186,32 @@ export const ProfileView = ({
         currentWeight !== null && profile.targetWeightKg !== null
             ? Math.abs(currentWeight - profile.targetWeightKg)
             : null;
+
+    const changeCurrentWeight = (value: string) => {
+        setCurrentWeightDraft(value);
+        setCurrentWeightChanged(true);
+        if (weightMonth === currentMonth) {
+            setMonthlyWeightDraft(value);
+        }
+    };
+
+    const changeWeightMonth = (month: string) => {
+        setWeightMonth(month);
+        const measurement = measurements.find((item) => item.month.startsWith(month));
+        setMonthlyWeightDraft(
+            month === currentMonth
+                ? currentWeightDraft
+                : String(measurement?.weightKg ?? '')
+        );
+    };
+
+    const changeMonthlyWeight = (value: string) => {
+        setMonthlyWeightDraft(value);
+        if (weightMonth === currentMonth) {
+            setCurrentWeightDraft(value);
+            setCurrentWeightChanged(true);
+        }
+    };
 
     return (
         <div className={styles.profile} style={{ '--profile-accent': accent } as CSSProperties}>
@@ -231,9 +305,8 @@ export const ProfileView = ({
                                     aria-label="Uploaded photo"
                                     checked={selectedAvatar === 'upload'}
                                     onChange={() => {
-                                        if (uploadedAvatar || avatarPreview) {
-                                            setSelectedAvatar('upload');
-                                        } else {
+                                        setSelectedAvatar('upload');
+                                        if (!uploadedAvatar && !avatarPreview) {
                                             avatarFileRef.current?.click();
                                         }
                                     }}
@@ -263,6 +336,7 @@ export const ProfileView = ({
                                     type="file"
                                     name="avatarFile"
                                     accept={avatarUploadTypes.join(',')}
+                                    onClick={() => setSelectedAvatar('upload')}
                                     onChange={(event) => {
                                         const file = event.currentTarget.files?.[0];
                                         setAvatarPreview(file ? URL.createObjectURL(file) : null);
@@ -275,7 +349,13 @@ export const ProfileView = ({
                         </div>
                     </fieldset>
                     <div className={styles.avatarActions}>
-                        <button type="submit" disabled={avatarPending}>
+                        <button
+                            type="submit"
+                            disabled={
+                                avatarPending ||
+                                (selectedAvatar === 'upload' && !avatarPreview && !uploadedAvatar)
+                            }
+                        >
                             {avatarPending ? 'Saving…' : 'Save picture'}
                         </button>
                         {(avatarState.error || avatarState.message) && (
@@ -317,28 +397,77 @@ export const ProfileView = ({
                 </div>
 
                 {measurements.length > 0 ? (
-                    <ol className={styles.history}>
-                        {measurements.slice(-12).map((measurement) => (
-                            <li key={measurement.month}>
-                                <time dateTime={measurement.month}>
-                                    {monthLabel.format(new Date(`${measurement.month}T12:00:00`))}
-                                </time>
-                                <div className={styles.track}>
-                                    <span
-                                        className={styles.weightMark}
-                                        style={{ left: `${chartPosition(measurement.weightKg)}%` }}
+                    <div className={styles.weightChart}>
+                        <svg
+                            viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
+                            role="img"
+                            aria-label={chartLabel}
+                            preserveAspectRatio="none"
+                        >
+                            {chartTicks.map((tick) => (
+                                <g key={tick}>
+                                    <line
+                                        className={styles.chartGrid}
+                                        x1={CHART_LEFT}
+                                        x2={CHART_WIDTH - CHART_RIGHT}
+                                        y1={chartY(tick)}
+                                        y2={chartY(tick)}
                                     />
-                                    {profile.targetWeightKg && (
-                                        <span
-                                            className={styles.goalMark}
-                                            style={{ left: `${chartPosition(profile.targetWeightKg)}%` }}
-                                        />
+                                    <text
+                                        className={styles.chartValue}
+                                        x={CHART_LEFT - 7}
+                                        y={chartY(tick)}
+                                    >
+                                        {tick.toFixed(1)}
+                                    </text>
+                                </g>
+                            ))}
+                            {profile.targetWeightKg && (
+                                <line
+                                    className={styles.chartGoal}
+                                    x1={CHART_LEFT}
+                                    x2={CHART_WIDTH - CHART_RIGHT}
+                                    y1={chartY(profile.targetWeightKg)}
+                                    y2={chartY(profile.targetWeightKg)}
+                                />
+                            )}
+                            {chartMeasurements.length > 1 && (
+                                <polyline className={styles.chartLine} points={chartPoints} />
+                            )}
+                            {chartMeasurements.map((measurement, index) => (
+                                <circle
+                                    className={styles.chartPoint}
+                                    key={measurement.month}
+                                    cx={chartX(index)}
+                                    cy={chartY(measurement.weightKg)}
+                                    r="5"
+                                />
+                            ))}
+                            <text className={styles.chartMonth} x={chartX(0)} y={CHART_HEIGHT - 8}>
+                                {monthLabel.format(
+                                    new Date(`${chartMeasurements[0].month}T12:00:00`)
+                                )}
+                            </text>
+                            {chartMeasurements.length > 1 && (
+                                <text
+                                    className={styles.chartMonth}
+                                    data-last
+                                    x={chartX(chartMeasurements.length - 1)}
+                                    y={CHART_HEIGHT - 8}
+                                >
+                                    {monthLabel.format(
+                                        new Date(
+                                            `${chartMeasurements[chartMeasurements.length - 1].month}T12:00:00`
+                                        )
                                     )}
-                                </div>
-                                <strong>{measurement.weightKg.toFixed(1)} kg</strong>
-                            </li>
-                        ))}
-                    </ol>
+                                </text>
+                            )}
+                        </svg>
+                        <div className={styles.chartLegend}>
+                            <span><i />Monthly weight</span>
+                            {profile.targetWeightKg && <span data-goal><i />Goal</span>}
+                        </div>
+                    </div>
                 ) : (
                     <p className={styles.empty}>Add this month’s weight to begin tracking.</p>
                 )}
@@ -347,7 +476,15 @@ export const ProfileView = ({
                     <input type="hidden" name="memberId" value={member.id} />
                     <label htmlFor="profile-month">
                         <span>Month</span>
-                        <input id="profile-month" type="month" name="month" defaultValue={currentMonth} required />
+                        <input
+                            id="profile-month"
+                            type="month"
+                            name="month"
+                            max={currentMonth}
+                            value={weightMonth}
+                            onChange={(event) => changeWeightMonth(event.target.value)}
+                            required
+                        />
                     </label>
                     <label htmlFor="profile-weight">
                         <span>Weight</span>
@@ -359,7 +496,8 @@ export const ProfileView = ({
                                 min={25}
                                 max={500}
                                 step={0.1}
-                                defaultValue={measurements.find((item) => item.month.startsWith(currentMonth))?.weightKg}
+                                value={monthlyWeightDraft}
+                                onChange={(event) => changeMonthlyWeight(event.target.value)}
                                 required
                             />
                             <span>kg</span>
@@ -386,6 +524,12 @@ export const ProfileView = ({
 
                 <form className={styles.detailsForm} action={profileAction}>
                     <input type="hidden" name="memberId" value={member.id} />
+                    <input type="hidden" name="currentMonth" value={currentMonth} />
+                    <input
+                        type="hidden"
+                        name="saveCurrentWeight"
+                        value={String(currentWeightChanged)}
+                    />
                     <fieldset className={styles.detailGroup}>
                         <legend>Personal info</legend>
                         <div className={styles.detailFields}>
@@ -399,7 +543,7 @@ export const ProfileView = ({
                             </label>
                             <label htmlFor="profile-age">
                                 <span>Age</span>
-                                <input id="profile-age" type="number" name="age" min={13} max={120} defaultValue={profile.age ?? ''} />
+                                <input id="profile-age" type="number" name="age" min={13} max={120} step={1} defaultValue={profile.age ?? ''} />
                             </label>
                         </div>
                     </fieldset>
@@ -419,15 +563,19 @@ export const ProfileView = ({
                                     <input
                                         id="profile-current-weight"
                                         type="number"
-                                        value={currentWeight ?? ''}
-                                        readOnly
+                                        name="currentWeightKg"
+                                        min={25}
+                                        max={500}
+                                        step={0.1}
+                                        value={currentWeightDraft}
+                                        onChange={(event) => changeCurrentWeight(event.target.value)}
                                         aria-label="Current weight"
                                         aria-describedby="profile-current-weight-note"
                                     />
                                     <span>kg</span>
                                 </span>
                                 <small id="profile-current-weight-note" className={styles.fieldNote}>
-                                    Updated in Monthly weight
+                                    Saves to this month’s weight progress
                                 </small>
                             </label>
                         </div>

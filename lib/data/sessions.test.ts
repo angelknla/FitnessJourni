@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { TrainingSession } from '@/types/fitness';
-import { hasUnreadSessions, mapSession, nextSession, type SessionRow } from './sessions';
+import {
+  hasUnreadSessions,
+  mapSession,
+  nextSession,
+  type SessionRow,
+  upcomingSessions,
+} from './sessions';
 
 const session = (id: string, date: string, time: string): TrainingSession => ({
   id,
@@ -61,7 +67,7 @@ describe('nextSession', () => {
     expect(found?.id).toBe('a');
   });
 
-  it('skips a session that already happened today', () => {
+  it('skips a session more than 30 minutes after it started', () => {
     const found = nextSession([session('a', today, '07:00')], today, now);
 
     expect(found).toBeNull();
@@ -69,6 +75,11 @@ describe('nextSession', () => {
 
   it('includes one starting right now', () => {
     expect(nextSession([session('a', today, '14:00')], today, now)?.id).toBe('a');
+  });
+
+  it('keeps a started session for 29 minutes, then removes it at 30', () => {
+    expect(upcomingSessions([session('a', today, '13:31')], today, now)).toHaveLength(1);
+    expect(upcomingSessions([session('a', today, '13:30')], today, now)).toHaveLength(0);
   });
 
   it('falls through to a later day once today is done', () => {

@@ -69,6 +69,12 @@ export const IdentityDialog = ({
   const [pickerOpen, setPickerOpen] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
 
+  const closeNativeDialog = useCallback(() => {
+    if (dialogRef.current?.open) {
+      dialogRef.current.close();
+    }
+  }, []);
+
   const handleMemberAdded = useCallback((member: MemberCreateOption) => {
     setCreated(member);
     setPicked(member.id);
@@ -101,13 +107,16 @@ export const IdentityDialog = ({
     }
   }, [open, presetId, viewerId]);
 
+  useEffect(() => closeNativeDialog, [closeNativeDialog]);
+
   useEffect(() => {
     if (state.ok) {
+      closeNativeDialog();
       closeDialog();
       window.scrollTo({ top: 0, behavior: 'instant' });
       router.refresh();
     }
-  }, [state.ok, closeDialog, router]);
+  }, [state.ok, closeDialog, closeNativeDialog, router]);
 
   useEffect(() => {
     if (!pickerOpen) {

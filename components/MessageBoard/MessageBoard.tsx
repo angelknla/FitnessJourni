@@ -1,18 +1,27 @@
 'use client';
 
-import { BinIcon, MoreIcon, PencilIcon } from '@components/Icons/Icons';
+import { BinIcon, MoreIcon, PencilIcon, ReactionIcon } from '@components/Icons/Icons';
 import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
 import { accentHex } from '@data/fitnessData';
 import { useRouter } from 'next/navigation';
-import { type CSSProperties, Fragment, useActionState, useEffect, useRef, useState } from 'react';
+import {
+    type CSSProperties,
+    Fragment,
+    type PointerEvent as ReactPointerEvent,
+    useActionState,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 import {
     type ActionState,
     deleteMessage,
     editMessage,
     markMessagesRead,
     postMessage,
+    reactToMessage,
 } from '@/app/actions';
-import type { Member, MessagePost } from '@/types/fitness';
+import type { Member, MessagePost, MessageReactionType } from '@/types/fitness';
 
 import styles from './MessageBoard.module.css';
 
@@ -33,6 +42,12 @@ const dayLabel = new Intl.DateTimeFormat('en-GB', {
     month: 'long',
     year: 'numeric',
 });
+const reactionOptions: Array<{ type: MessageReactionType; emoji: string; label: string }> = [
+    { type: 'heart', emoji: '❤️', label: 'Heart' },
+    { type: 'smile', emoji: '😊', label: 'Smile' },
+    { type: 'shocked', emoji: '😮', label: 'Shocked' },
+    { type: 'angry', emoji: '😠', label: 'Angry' },
+];
 
 const localDateKey = (value: string): string => {
     const date = new Date(value);
@@ -46,15 +61,97 @@ const MessageBubble = ({
     message,
     author,
     own,
+    viewerId,
 }: {
     message: MessagePost;
     author?: Member;
     own: boolean;
+    viewerId: string | null;
 }) => {
     const [editing, setEditing] = useState(false);
     const [optionsOpen, setOptionsOpen] = useState(false);
     const [editState, editAction, isEditing] = useActionState(editMessage, initial);
     const [deleteState, deleteAction, isDeleting] = useActionState(deleteMessage, initial);
+    const [reactionState, reactionAction, isReacting] = useActionState(reactToMessage, initial);
+    const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
+    const optionsRef = useRef<HTMLSpanElement>(null);
+    const reactionFormRef = useRef<HTMLFormElement>(null);
+    const reactionInputRef = useRef<HTMLInputElement>(null);
+    const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const longPressTriggeredRef = useRef(false);
+    const lastTapRef = useRef(0);
+    const touchStartRef = useRef({ x: 0, y: 0 });
+    const lastPointerTypeRef = useRef('');
+    const viewerReaction = message.reactions.find(
+        (reaction) => reaction.memberId === viewerId
+    )?.type;
+    const reactionCounts = reactionOptions
+        .map((option) => ({
+            ...option,
+            count: message.reactions.filter((reaction) => reaction.type === option.type).length,
+        }))
+        .filter((option) => option.count > 0);
+
+    const clearLongPress = () => {
+        if (longPressTimerRef.current) {
+            clearTimeout(longPressTimerRef.current);
+            longPressTimerRef.current = null;
+        }
+    };
+
+    const submitReaction = (reaction: MessageReactionType) => {
+        if (!viewerId || isReacting || !reactionInputRef.current) return;
+        reactionInputRef.current.value = reaction;
+        reactionFormRef.current?.requestSubmit();
+        setReactionPickerOpen(false);
+    };
+
+    const isInteractive = (target: EventTarget | null) =>
+        target instanceof Element &&
+        Boolean(target.closest('button, a, input, textarea, select, label, [contenteditable]'));
+
+    const handlePointerDown = (event: ReactPointerEvent<HTMLElement>) => {
+        lastPointerTypeRef.current = event.pointerType;
+        if (event.pointerType !== 'touch' || !viewerId || isInteractive(event.target)) return;
+
+        clearLongPress();
+        longPressTriggeredRef.current = false;
+        touchStartRef.current = { x: event.clientX, y: event.clientY };
+        longPressTimerRef.current = setTimeout(() => {
+            longPressTriggeredRef.current = true;
+            setReactionPickerOpen(true);
+        }, 500);
+    };
+
+    const handlePointerMove = (event: ReactPointerEvent<HTMLElement>) => {
+        if (
+            Math.abs(event.clientX - touchStartRef.current.x) > 10 ||
+            Math.abs(event.clientY - touchStartRef.current.y) > 10
+        ) {
+            clearLongPress();
+        }
+    };
+
+    const handlePointerUp = (event: ReactPointerEvent<HTMLElement>) => {
+        clearLongPress();
+        if (
+            event.pointerType !== 'touch' ||
+            !viewerId ||
+            isInteractive(event.target) ||
+            longPressTriggeredRef.current
+        ) {
+            longPressTriggeredRef.current = false;
+            return;
+        }
+
+        const now = Date.now();
+        if (now - lastTapRef.current < 320) {
+            lastTapRef.current = 0;
+            submitReaction('heart');
+        } else {
+            lastTapRef.current = now;
+        }
+    };
 
     useEffect(() => {
         if (editState.ok && editState.bookedAt) {
@@ -62,8 +159,39 @@ const MessageBubble = ({
         }
     }, [editState.ok, editState.bookedAt]);
 
+    useEffect(() => {
+        if (!optionsOpen && !reactionPickerOpen) return;
+
+        const handleOutsidePointer = (event: PointerEvent) => {
+            const target = event.target as Node;
+            if (optionsOpen && !optionsRef.current?.contains(target)) setOptionsOpen(false);
+            if (reactionPickerOpen && !reactionFormRef.current?.contains(target)) {
+                setReactionPickerOpen(false);
+            }
+        };
+
+        document.addEventListener('pointerdown', handleOutsidePointer);
+        return () => document.removeEventListener('pointerdown', handleOutsidePointer);
+    }, [optionsOpen, reactionPickerOpen]);
+
+    useEffect(
+        () => () => {
+            if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+        },
+        []
+    );
+
     return (
-        <article className={styles.bubble}>
+        <article
+            className={styles.bubble}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={clearLongPress}
+            onContextMenu={(event) => {
+                if (lastPointerTypeRef.current === 'touch') event.preventDefault();
+            }}
+        >
             <header className={styles.meta}>
                 <span className={styles.author}>
                     {author ? (
@@ -80,7 +208,7 @@ const MessageBubble = ({
                         {messageTime.format(new Date(message.createdAt))}
                     </time>
                     {own && (
-                        <span className={styles.options}>
+                        <span ref={optionsRef} className={styles.options}>
                             <button
                                 type="button"
                                 className={styles.optionsToggle}
@@ -148,9 +276,59 @@ const MessageBubble = ({
             ) : (
                 <p>{message.content}</p>
             )}
-            {(editState.error || deleteState.error) && (
+            {(viewerId || reactionCounts.length > 0) && (
+                <div className={styles.reactions}>
+                    {viewerId && (
+                        <form ref={reactionFormRef} action={reactionAction} className={styles.reactionControl}>
+                            <input type="hidden" name="messageId" value={message.id} />
+                            <input ref={reactionInputRef} type="hidden" name="reaction" defaultValue="heart" />
+                            <button
+                                type="button"
+                                className={styles.reactionToggle}
+                                aria-label="React to message"
+                                aria-expanded={reactionPickerOpen}
+                                disabled={isReacting}
+                                onClick={() => setReactionPickerOpen((open) => !open)}
+                            >
+                                <ReactionIcon size={14} />
+                            </button>
+                            {reactionPickerOpen && (
+                                <fieldset className={styles.reactionPicker}>
+                                    <legend className="sr-only">Choose reaction</legend>
+                                    {reactionOptions.map((option) => (
+                                        <button
+                                            type="button"
+                                            key={option.type}
+                                            aria-label={`${option.label} reaction`}
+                                            aria-pressed={viewerReaction === option.type}
+                                            onClick={() => submitReaction(option.type)}
+                                        >
+                                            {option.emoji}
+                                        </button>
+                                    ))}
+                                </fieldset>
+                            )}
+                        </form>
+                    )}
+                    {reactionCounts.map((reaction) => (
+                        <button
+                            type="button"
+                            className={styles.reactionCount}
+                            key={reaction.type}
+                            aria-label={`${reaction.label}, ${reaction.count} ${reaction.count === 1 ? 'reaction' : 'reactions'}`}
+                            aria-pressed={viewerReaction === reaction.type}
+                            disabled={!viewerId || isReacting}
+                            onClick={() => submitReaction(reaction.type)}
+                        >
+                            <span aria-hidden="true">{reaction.emoji}</span>
+                            <span>{reaction.count}</span>
+                        </button>
+                    ))}
+                </div>
+            )}
+            {(editState.error || deleteState.error || reactionState.error) && (
                 <span className={styles.messageError} role="alert">
-                    {editState.error ?? deleteState.error}
+                    {editState.error ?? deleteState.error ?? reactionState.error}
                 </span>
             )}
         </article>
@@ -237,7 +415,12 @@ export const MessageBoard = ({ members, messages, viewerId }: MessageBoardProps)
                                         className={`${styles.message} ${own ? styles.own : ''}`}
                                         style={{ '--message-accent': accent } as CSSProperties}
                                     >
-                                        <MessageBubble message={message} author={author} own={own} />
+                                        <MessageBubble
+                                            message={message}
+                                            author={author}
+                                            own={own}
+                                            viewerId={viewerId}
+                                        />
                                     </li>
                                 </Fragment>
                             );

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { Member, TrainingSession } from '@/types/fitness';
 
@@ -57,16 +57,17 @@ const sessions: TrainingSession[] = [
     rsvps: [],
   },
 ];
+const initialNow = new Date('2026-09-26T07:00:00').getTime();
 
 describe('SessionList', () => {
   it('invites a first booking when empty', () => {
-    render(<SessionList sessions={[]} members={members} viewerId="m1" />);
+    render(<SessionList sessions={[]} members={members} viewerId="m1" initialNow={initialNow} />);
 
     expect(screen.getByText(/Nothing booked yet/)).toBeInTheDocument();
   });
 
   it('groups sessions under one heading per day', () => {
-    render(<SessionList sessions={sessions} members={members} viewerId="m1" />);
+    render(<SessionList sessions={sessions} members={members} viewerId="m1" initialNow={initialNow} />);
 
     expect(screen.getByRole('heading', { name: 'Saturday 26 September' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Sunday 27 September' })).toBeInTheDocument();
@@ -74,7 +75,7 @@ describe('SessionList', () => {
   });
 
   it('shows the time, activity and note', () => {
-    render(<SessionList sessions={sessions} members={members} viewerId="m1" />);
+    render(<SessionList sessions={sessions} members={members} viewerId="m1" initialNow={initialNow} />);
 
     expect(screen.getByText('07:30')).toBeInTheDocument();
     expect(screen.getByText('Run')).toBeInTheDocument();
@@ -82,21 +83,21 @@ describe('SessionList', () => {
   });
 
   it('names who booked it, and stays quiet when nobody claimed it', () => {
-    render(<SessionList sessions={sessions} members={members} viewerId="m1" />);
+    render(<SessionList sessions={sessions} members={members} viewerId="m1" initialNow={initialNow} />);
 
     expect(screen.getAllByText('Booked by Dillon')).toHaveLength(2);
     expect(screen.queryByText(/Booked by null/)).not.toBeInTheDocument();
   });
 
   it('gives each row a distinctly labelled remove button', () => {
-    render(<SessionList sessions={sessions} members={members} viewerId="m1" />);
+    render(<SessionList sessions={sessions} members={members} viewerId="m1" initialNow={initialNow} />);
 
     expect(screen.getByRole('button', { name: 'Remove Run at 07:30' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Remove Swim at 18:00' })).toBeInTheDocument();
   });
 
   it('shows responses and marks the current member response', () => {
-    render(<SessionList sessions={sessions} members={members} viewerId="m1" />);
+    render(<SessionList sessions={sessions} members={members} viewerId="m1" initialNow={initialNow} />);
 
     expect(screen.getByLabelText('Going: Dillon')).toBeInTheDocument();
     expect(screen.getByLabelText("Can't go: Angel")).toBeInTheDocument();
@@ -107,8 +108,27 @@ describe('SessionList', () => {
   });
 
   it('does not offer RSVP controls to a visitor', () => {
-    render(<SessionList sessions={sessions} members={members} viewerId={null} />);
+    render(<SessionList sessions={sessions} members={members} viewerId={null} initialNow={initialNow} />);
 
     expect(screen.queryByRole('form', { name: 'RSVP' })).not.toBeInTheDocument();
+  });
+
+  it('automatically removes a session 30 minutes after its start time', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-26T07:59:00'));
+    render(
+      <SessionList
+        sessions={[sessions[0]]}
+        members={members}
+        viewerId="m1"
+        initialNow={Date.now()}
+      />
+    );
+
+    expect(screen.getByText('07:30')).toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(60_050));
+    expect(screen.queryByText('07:30')).not.toBeInTheDocument();
+    expect(screen.getByText(/Nothing booked yet/)).toBeInTheDocument();
+    vi.useRealTimers();
   });
 });

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { Member, MemberTargets } from '@/types/fitness';
@@ -7,12 +7,14 @@ vi.mock('@/app/actions', () => ({
     postMessage: vi.fn(async () => ({ ok: true })),
     editMessage: vi.fn(async () => ({ ok: true })),
     deleteMessage: vi.fn(async () => ({ ok: true })),
+    reactToMessage: vi.fn(async () => ({ ok: true })),
     markMessagesRead: vi.fn(async () => undefined),
 }));
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ refresh: vi.fn() }),
 }));
 
+import { reactToMessage } from '@/app/actions';
 import { MessageBoard } from './MessageBoard';
 
 const targets: MemberTargets = {
@@ -46,6 +48,7 @@ describe('MessageBoard', () => {
                         memberId: 'm1',
                         content: 'Keep showing up.',
                         createdAt: '2026-09-25T08:30:00.000Z',
+                        reactions: [],
                     },
                 ]}
             />
@@ -70,6 +73,9 @@ describe('MessageBoard', () => {
         expect(screen.getByText('Friday, 25 September 2026')).toBeInTheDocument();
         await user.click(screen.getByRole('button', { name: 'Message options' }));
         expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
+        fireEvent.pointerDown(document.body);
+        expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
+        await user.click(screen.getByRole('button', { name: 'Message options' }));
         await user.click(screen.getByRole('button', { name: 'Edit' }));
         expect(screen.getByLabelText('Edit message')).toHaveValue('Keep showing up.');
         expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
@@ -86,6 +92,7 @@ describe('MessageBoard', () => {
                         memberId: 'm1',
                         content: 'Keep showing up.',
                         createdAt: '2026-09-25T08:30:00.000Z',
+                        reactions: [],
                     },
                 ]}
             />
@@ -101,8 +108,8 @@ describe('MessageBoard', () => {
                 members={[member]}
                 viewerId="m1"
                 messages={[
-                    { id: 'sep', memberId: 'm1', content: 'September', createdAt: '2026-09-25T08:30:00' },
-                    { id: 'aug', memberId: 'm1', content: 'August', createdAt: '2026-08-25T08:30:00' },
+                    { id: 'sep', memberId: 'm1', content: 'September', createdAt: '2026-09-25T08:30:00', reactions: [] },
+                    { id: 'aug', memberId: 'm1', content: 'August', createdAt: '2026-08-25T08:30:00', reactions: [] },
                 ]}
             />
         );
@@ -119,5 +126,110 @@ describe('MessageBoard', () => {
 
         expect(screen.queryByRole('button', { name: 'Share' })).not.toBeInTheDocument();
         expect(screen.getByText(/Choose who you are/)).toBeInTheDocument();
+    });
+
+    it('shows reaction counts and offers all four reactions', async () => {
+        const user = userEvent.setup();
+        render(
+            <MessageBoard
+                members={[member]}
+                viewerId="m1"
+                messages={[
+                    {
+                        id: 'post-1',
+                        memberId: 'm1',
+                        content: 'Keep showing up.',
+                        createdAt: '2026-09-25T08:30:00.000Z',
+                        reactions: [
+                            { memberId: 'm1', type: 'heart' },
+                            { memberId: 'm2', type: 'heart' },
+                            { memberId: 'm3', type: 'heart' },
+                        ],
+                    },
+                ]}
+            />
+        );
+
+        expect(screen.getByRole('button', { name: 'Heart, 3 reactions' })).toHaveAttribute(
+            'aria-pressed',
+            'true'
+        );
+        await user.click(screen.getByRole('button', { name: 'React to message' }));
+        for (const label of ['Heart', 'Smile', 'Shocked', 'Angry']) {
+            expect(screen.getByRole('button', { name: `${label} reaction` })).toBeInTheDocument();
+        }
+        fireEvent.pointerDown(document.body);
+        expect(screen.queryByRole('button', { name: 'Heart reaction' })).not.toBeInTheDocument();
+    });
+
+    it('opens the reaction picker after holding a message on touch', () => {
+        vi.useFakeTimers();
+        render(
+            <MessageBoard
+                members={[member]}
+                viewerId="m1"
+                messages={[
+                    {
+                        id: 'post-1',
+                        memberId: 'm1',
+                        content: 'Hold this message.',
+                        createdAt: '2026-09-25T08:30:00.000Z',
+                        reactions: [],
+                    },
+                ]}
+            />
+        );
+
+        const bubble = screen.getByText('Hold this message.').closest('article');
+        const pointerDown = new Event('pointerdown', { bubbles: true });
+        Object.defineProperties(pointerDown, {
+            pointerType: { value: 'touch' },
+            clientX: { value: 20 },
+            clientY: { value: 20 },
+        });
+        fireEvent(bubble!, pointerDown);
+        act(() => vi.advanceTimersByTime(500));
+
+        expect(screen.getByRole('group', { name: 'Choose reaction' })).toBeInTheDocument();
+        vi.useRealTimers();
+    });
+
+    it('reacts with a heart after double-tapping a message on touch', async () => {
+        render(
+            <MessageBoard
+                members={[member]}
+                viewerId="m1"
+                messages={[
+                    {
+                        id: 'post-1',
+                        memberId: 'm1',
+                        content: 'Double tap this message.',
+                        createdAt: '2026-09-25T08:30:00.000Z',
+                        reactions: [],
+                    },
+                ]}
+            />
+        );
+
+        const bubble = screen.getByText('Double tap this message.').closest('article');
+        const fireTouchPointer = (type: 'pointerdown' | 'pointerup') => {
+            const event = new Event(type, { bubbles: true });
+            Object.defineProperties(event, {
+                pointerType: { value: 'touch' },
+                clientX: { value: 20 },
+                clientY: { value: 20 },
+            });
+            fireEvent(bubble!, event);
+        };
+
+        fireTouchPointer('pointerdown');
+        fireTouchPointer('pointerup');
+        fireTouchPointer('pointerdown');
+        fireTouchPointer('pointerup');
+
+        await waitFor(() => expect(reactToMessage).toHaveBeenCalled());
+        const submittedData = vi.mocked(reactToMessage).mock.calls.at(-1)?.[1];
+        expect(submittedData?.get('messageId')).toBe('post-1');
+        expect(submittedData?.get('reaction')).toBe('heart');
     });
 });

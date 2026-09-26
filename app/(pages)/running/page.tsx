@@ -6,7 +6,7 @@ import { SetupNotice } from '@components/SetupNotice/SetupNotice';
 import { earlier, startOfMonth, startOfWeek, toISODate } from '@utils/date';
 import type { Metadata } from 'next';
 import { getMembers } from '@/lib/data/members';
-import { getRunsSince, tallyRuns } from '@/lib/data/runs';
+import { getLatestRuns, getRunsSince, tallyRuns } from '@/lib/data/runs';
 import { viewerFirst } from '@/lib/ownership';
 import { isUnlocked, readViewer } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
@@ -28,9 +28,10 @@ const RunningPage = async () => {
     }
 
     const today = toISODate(new Date());
-    const [members, runs, viewer] = await Promise.all([
+    const [members, runs, latestRuns, viewer] = await Promise.all([
         getMembers(),
         getRunsSince(earlier(startOfWeek(today), startOfMonth(today))),
+        getLatestRuns(),
         readViewer(),
     ]);
 
@@ -41,6 +42,7 @@ const RunningPage = async () => {
             <RunningDashboard
                 members={viewerFirst(members, viewer.memberId)}
                 runs={runs}
+                latestRuns={latestRuns}
                 tallies={tallyRuns(runs, today)}
                 viewerId={viewer.memberId}
                 today={today}

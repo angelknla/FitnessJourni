@@ -69,6 +69,7 @@ describe('mapLog', () => {
       protein_g: 150,
       carbs_g: 300,
       fat_g: 65,
+      sleep_hours: 7.5,
     };
 
     expect(mapLog(row)).toEqual({
@@ -80,7 +81,23 @@ describe('mapLog', () => {
       proteinG: 150,
       carbsG: 300,
       fatG: 65,
+      sleepHours: 7.5,
     });
+  });
+
+  it('treats a not-yet-migrated sleep column as not logged', () => {
+    const row: DailyLogRow = {
+      member_id: 'm1',
+      log_date: '2026-09-25',
+      steps: 9120,
+      water_ml: 2000,
+      calories: 2430,
+      protein_g: 150,
+      carbs_g: 300,
+      fat_g: 65,
+    };
+
+    expect(mapLog(row).sleepHours).toBeNull();
   });
 });
 
@@ -95,6 +112,7 @@ describe('emptyLog', () => {
       proteinG: 0,
       carbsG: 0,
       fatG: 0,
+      sleepHours: null,
     });
   });
 });

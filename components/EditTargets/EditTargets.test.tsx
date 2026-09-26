@@ -68,6 +68,18 @@ describe('EditTargets', () => {
     expect(screen.getByLabelText(/Calories/)).toHaveValue(2673);
   });
 
+  it('keeps gram inputs blank while replacing a value', async () => {
+    const user = userEvent.setup();
+    setup();
+
+    const protein = screen.getByLabelText('Protein in grams');
+    await user.clear(protein);
+    expect(protein).toHaveValue(null);
+
+    await user.type(protein, '40');
+    expect(protein).toHaveValue(40);
+  });
+
   it('rescales the grams when calories are typed in grams mode', async () => {
     const user = userEvent.setup();
     const { container } = setup();
@@ -154,6 +166,19 @@ describe('EditTargets', () => {
 
     expect(screen.getByText(/it needs to be 100%/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save targets' })).toBeDisabled();
+  });
+
+  it('keeps percentage inputs blank while replacing a value', async () => {
+    const user = userEvent.setup();
+    setup();
+    await user.click(screen.getByRole('button', { name: 'Percent' }));
+
+    const protein = screen.getByLabelText('Protein as a percentage');
+    await user.clear(protein);
+    expect(protein).toHaveValue(null);
+
+    await user.type(protein, '40');
+    expect(protein).toHaveValue(40);
   });
 
   it('carries the numbers across when switching mode', async () => {

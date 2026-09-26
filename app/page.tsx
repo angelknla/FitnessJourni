@@ -12,7 +12,7 @@ import { isSupabaseConfigured } from '@/lib/supabase/server';
 
 export const metadata: Metadata = {
   title: 'Home — FitnessJourni',
-  description: 'Shared daily steps, water, calories, macros and workouts',
+  description: 'Shared daily steps, water, nutrition, workouts and sleep',
 };
 
 /** Always render fresh: the whole point is seeing what the others just logged. */
@@ -26,9 +26,9 @@ const resolveHomeDate = (requestedDate?: string) => {
   const today = toISODate(new Date());
   const date =
     requestedDate &&
-    /^\d{4}-\d{2}-\d{2}$/.test(requestedDate) &&
-    toISODate(fromISODate(requestedDate)) === requestedDate &&
-    requestedDate <= today
+      /^\d{4}-\d{2}-\d{2}$/.test(requestedDate) &&
+      toISODate(fromISODate(requestedDate)) === requestedDate &&
+      requestedDate <= today
       ? requestedDate
       : today;
   const dateLabel = new Intl.DateTimeFormat('en-GB', {

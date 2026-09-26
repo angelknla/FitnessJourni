@@ -47,7 +47,19 @@ export const RemoveMemberDialog = ({
   }, [canRemoveOthers, open, viewerId]);
 
   useEffect(() => {
+    const dialog = dialogRef.current;
+    return () => {
+      if (dialog?.open) {
+        dialog.close();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (state.ok) {
+      if (dialogRef.current?.open) {
+        dialogRef.current.close();
+      }
       onClose();
     }
   }, [state.ok, onClose]);

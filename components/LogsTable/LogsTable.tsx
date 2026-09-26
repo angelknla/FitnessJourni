@@ -10,6 +10,7 @@ import styles from './LogsTable.module.css';
 interface LogsTableProps {
   members: Member[];
   summaries: Record<string, LogSummary>;
+  workoutCounts: Record<string, number>;
   leaders: Record<RankedMetric, string[]>;
   /** Hidden on the "today" view, where a per-day average is the same number. */
   showAverages: boolean;
@@ -17,13 +18,16 @@ interface LogsTableProps {
 }
 
 interface Column {
-  key: RankedMetric | 'avgCalories';
+  key: RankedMetric | 'avgCalories' | 'avgSleepHours';
   label: string;
   title: string;
   format: (summary: LogSummary) => string;
   ranked: boolean;
   averageOnly?: boolean;
 }
+
+const hoursFormat = new Intl.NumberFormat('en-GB', { maximumFractionDigits: 2 });
+const formatHours = (hours: number) => `${hoursFormat.format(hours)} h`;
 
 const columns: Column[] = [
   {
@@ -69,11 +73,19 @@ const columns: Column[] = [
     format: (s) => formatCount(s.avgCalories),
     ranked: false,
   },
+  {
+    key: 'avgSleepHours',
+    label: 'Sleep/day',
+    title: 'Average sleep per day with sleep logged',
+    format: (s) => (s.sleepDaysLogged > 0 ? formatHours(s.avgSleepHours) : '—'),
+    ranked: false,
+  },
 ];
 
 export const LogsTable = ({
   members,
   summaries,
+  workoutCounts,
   leaders,
   showAverages,
   caption,
@@ -122,6 +134,10 @@ export const LogsTable = ({
               </div>
 
               <dl className={styles.metrics}>
+                <div className={styles.metric}>
+                  <dt>Workouts</dt>
+                  <dd>{workoutCounts[member.id] ?? 0}</dd>
+                </div>
                 {shown
                   .filter((column) => column.key !== 'daysLogged' && column.key !== 'totalSteps')
                   .map((column) => {
@@ -132,7 +148,11 @@ export const LogsTable = ({
                     return (
                       <div className={styles.metric} key={column.key}>
                         <dt>
-                          <abbr title={column.title}>{column.label}</abbr>
+                          <abbr title={column.title}>
+                            {!showAverages && column.key === 'avgSleepHours'
+                              ? 'Sleep'
+                              : column.label}
+                          </abbr>
                         </dt>
                         <dd data-leader={isLeader}>
                           {column.format(summary)}

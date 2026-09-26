@@ -42,6 +42,22 @@ export const getWorkoutsSince = async (fromDate: string): Promise<Workout[]> => 
   return (data as WorkoutRow[]).map(mapWorkout);
 };
 
+export const countWorkouts = (
+  workouts: Workout[],
+  from: string,
+  to: string
+): Record<string, number> => {
+  const counts: Record<string, number> = {};
+
+  for (const workout of workouts) {
+    if (workout.date >= from && workout.date <= to) {
+      counts[workout.memberId] = (counts[workout.memberId] ?? 0) + 1;
+    }
+  }
+
+  return counts;
+};
+
 const emptyTally = (): WorkoutTally => ({ today: 0, week: 0, month: 0 });
 
 /**

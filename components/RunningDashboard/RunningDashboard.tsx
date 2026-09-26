@@ -15,6 +15,7 @@ import styles from './RunningDashboard.module.css';
 interface RunningDashboardProps {
     members: Member[];
     runs: GroupRun[];
+    latestRuns: GroupRun[];
     tallies: Record<string, RunTally>;
     viewerId: string | null;
     today: string;
@@ -96,8 +97,9 @@ const RunForm = ({
                             type="number"
                             name="minutes"
                             min={0}
-                            max={59}
-                            inputMode="numeric"
+                            max={59.9}
+                            step={0.1}
+                            inputMode="decimal"
                             value={minutes}
                             onChange={(event) => setMinutes(event.target.value)}
                         />
@@ -317,19 +319,32 @@ const RunCard = ({
 export const RunningDashboard = ({
     members,
     runs,
+    latestRuns,
     tallies,
     viewerId,
     today,
 }: RunningDashboardProps) => {
     const [runFormOpen, setRunFormOpen] = useState(false);
+    const [runFilter, setRunFilter] = useState<'latest' | 'week' | 'month'>('latest');
     const orderedMembers = viewerFirst(members, viewerId);
     const monthStart = startOfMonth(today);
     const weekStart = startOfWeek(today);
     const monthRuns = runs.filter((run) => run.date >= monthStart && run.date <= today);
     const weekRuns = runs.filter((run) => run.date >= weekStart && run.date <= today);
+    const todayRuns = runs.filter((run) => run.date === today);
     const monthDistance = monthRuns.reduce((total, run) => total + run.distanceKm, 0);
     const weekDistance = weekRuns.reduce((total, run) => total + run.distanceKm, 0);
-    const monthAttendances = monthRuns.reduce((total, run) => total + run.attendeeIds.length, 0);
+    const todayRunnerCount = new Set(todayRuns.flatMap((run) => run.attendeeIds)).size;
+    const todayDistance = todayRuns.reduce((total, run) => total + run.distanceKm, 0);
+    const todayDuration = todayRuns.reduce((total, run) => total + run.durationMinutes, 0);
+    const visibleRuns = runFilter === 'latest'
+        ? latestRuns.slice(0, 3)
+        : runFilter === 'week'
+            ? weekRuns
+            : monthRuns;
+    const emptyRunMessage = runFilter === 'latest'
+        ? 'No runs logged yet.'
+        : `No runs logged this ${runFilter} yet.`;
     const maxWeek = Math.max(1, ...members.map((member) => tallies[member.id]?.week ?? 0));
     const maxMonth = Math.max(1, ...members.map((member) => tallies[member.id]?.month ?? 0));
 
@@ -346,8 +361,9 @@ export const RunningDashboard = ({
                     <span>this week · {weekRuns.length} runs</span>
                 </div>
                 <div className={styles.miniHighlight}>
-                    <strong>{monthAttendances}</strong>
-                    <span>people showed up</span>
+                    <strong>{todayRunnerCount}</strong>
+                    <span>{todayRunnerCount === 1 ? 'person showed up today' : 'people showed up today'}</span>
+                    <span>{todayDistance.toFixed(1)} km · {formatRunDuration(todayDuration)}</span>
                 </div>
             </section>
 
@@ -421,18 +437,32 @@ export const RunningDashboard = ({
             )}
 
             <section className={styles.section} aria-labelledby="recent-runs-heading">
-                <div className={styles.sectionHead}>
+                <div className={`${styles.sectionHead} ${styles.recentHeader}`}>
                     <div>
                         <p className={styles.kicker}>The route behind you</p>
                         <h2 id="recent-runs-heading">Recent runs</h2>
                     </div>
+                    <fieldset className={styles.runFilters}>
+                        <legend className={styles.visuallyHidden}>Filter recent runs</legend>
+                        {(['latest', 'week', 'month'] as const).map((filter) => (
+                            <button
+                                type="button"
+                                className={styles.runFilter}
+                                aria-pressed={runFilter === filter}
+                                onClick={() => setRunFilter(filter)}
+                                key={filter}
+                            >
+                                {filter === 'latest' ? 'Latest' : `This ${filter}`}
+                            </button>
+                        ))}
+                    </fieldset>
                 </div>
 
-                {runs.length === 0 ? (
-                    <p className={styles.empty}>No runs logged this month yet.</p>
+                {visibleRuns.length === 0 ? (
+                    <p className={styles.empty}>{emptyRunMessage}</p>
                 ) : (
                     <ul className={styles.runList}>
-                        {runs.map((run) => (
+                        {visibleRuns.map((run) => (
                             <RunCard
                                 run={run}
                                 members={orderedMembers}

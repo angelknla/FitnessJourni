@@ -5,7 +5,7 @@ import type { GroupRun, RunTally } from '@/types/fitness';
 export interface RunRow {
   id: string;
   run_date: string;
-  duration_minutes: number;
+  duration_minutes: number | string;
   distance_km: number | string;
   pace_seconds_per_km: number | null;
   created_by: string | null;
@@ -15,7 +15,7 @@ export interface RunRow {
 export const mapRun = (row: RunRow): GroupRun => ({
   id: row.id,
   date: row.run_date,
-  durationMinutes: row.duration_minutes,
+  durationMinutes: Number(row.duration_minutes),
   distanceKm: Number(row.distance_km),
   paceSecondsPerKm: row.pace_seconds_per_km,
   createdBy: row.created_by,
@@ -37,6 +37,27 @@ export const getRunsSince = async (fromDate: string): Promise<GroupRun[]> => {
 
   if (error) {
     console.error('[runs] read failed:', error.message);
+    return [];
+  }
+
+  return (data as RunRow[]).map(mapRun);
+};
+
+export const getLatestRuns = async (limit = 3): Promise<GroupRun[]> => {
+  const supabase = getSupabase();
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from('runs')
+    .select('*, run_attendees(member_id)')
+    .order('run_date', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error('[runs] latest read failed:', error.message);
     return [];
   }
 
@@ -70,8 +91,13 @@ export const tallyRuns = (runs: GroupRun[], today: string): Record<string, RunTa
 
 export const formatRunDuration = (minutes: number): string => {
   const hours = Math.floor(minutes / 60);
-  const remainder = minutes % 60;
-  return hours > 0 ? `${hours}h ${String(remainder).padStart(2, '0')}m` : `${remainder}m`;
+  const remainder = Math.round((minutes % 60) * 10) / 10;
+  const remainderText = new Intl.NumberFormat('en-GB', { maximumFractionDigits: 1 }).format(
+    remainder
+  );
+  return hours > 0
+    ? `${hours}h ${remainder < 10 ? '0' : ''}${remainderText}m`
+    : `${remainderText}m`;
 };
 
 export const formatRunPace = (

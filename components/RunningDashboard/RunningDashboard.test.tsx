@@ -53,6 +53,7 @@ const setup = (viewerId: string | null = 'm1') =>
         <RunningDashboard
             members={members}
             runs={runs}
+            latestRuns={runs.slice(0, 3)}
             tallies={{
                 m1: { week: 2, month: 2 },
                 m2: { week: 1, month: 1 },
@@ -69,6 +70,8 @@ describe('RunningDashboard', () => {
         const highlights = screen.getByRole('region', { name: 'Running highlights' });
         expect(highlights).toHaveTextContent('15.0 km');
         expect(within(highlights).getByText('this week · 2 runs').previousElementSibling).toHaveTextContent('15.0 km');
+        expect(within(highlights).getByText('people showed up today').previousElementSibling).toHaveTextContent('2');
+        expect(within(highlights).getByText('5.0 km · 31m')).toBeInTheDocument();
 
         const tallies = screen.getByRole('region', { name: 'Runs by person' });
         expect(within(tallies).getAllByRole('listitem')).toHaveLength(2);
@@ -82,6 +85,35 @@ describe('RunningDashboard', () => {
         expect(screen.getByText('5:45 /km')).toBeInTheDocument();
         expect(screen.getByText('31m')).toBeInTheDocument();
         expect(screen.getAllByText('Angel').length).toBeGreaterThan(0);
+    });
+
+    it('defaults to the latest three runs and filters by week or month', async () => {
+        const user = userEvent.setup();
+        const olderRuns: GroupRun[] = [
+            { ...runs[1], id: 'r3', date: '2026-09-10', distanceKm: 8 },
+            { ...runs[1], id: 'r4', date: '2026-09-02', distanceKm: 12 },
+        ];
+        const periodRuns = [...runs, ...olderRuns];
+        render(
+            <RunningDashboard
+                members={members}
+                runs={periodRuns}
+                latestRuns={periodRuns.slice(0, 3)}
+                tallies={{ m1: { week: 2, month: 4 }, m2: { week: 1, month: 1 } }}
+                viewerId="m1"
+                today="2026-09-25"
+            />
+        );
+        const recentRuns = screen.getByRole('region', { name: 'Recent runs' });
+
+        expect(within(recentRuns).getAllByRole('listitem')).toHaveLength(3);
+        expect(screen.getByRole('button', { name: 'Latest' })).toHaveAttribute('aria-pressed', 'true');
+
+        await user.click(screen.getByRole('button', { name: 'This week' }));
+        expect(within(recentRuns).getAllByRole('listitem')).toHaveLength(2);
+
+        await user.click(screen.getByRole('button', { name: 'This month' }));
+        expect(within(recentRuns).getAllByRole('listitem')).toHaveLength(4);
     });
 
     it('keeps the run form collapsed until its heading is opened', async () => {
@@ -104,9 +136,10 @@ describe('RunningDashboard', () => {
 
         expect(screen.getByText('6:00 /km')).toBeInTheDocument();
         const minutes = screen.getByRole('spinbutton', { name: 'min' });
+        expect(minutes).toHaveAttribute('step', '0.1');
         await user.clear(minutes);
-        await user.type(minutes, '25');
-        expect(screen.getByText('5:00 /km')).toBeInTheDocument();
+        await user.type(minutes, '25.5');
+        expect(screen.getByText('5:06 /km')).toBeInTheDocument();
     });
 
     it('uses an optional manual pace in the preview', async () => {

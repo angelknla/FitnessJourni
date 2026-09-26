@@ -7,12 +7,14 @@ import {
   CalendarIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  CrossIcon,
   PencilIcon,
 } from '@components/Icons/Icons';
 import { MacroBars } from '@components/MacroBars/MacroBars';
 import { MemberTabs } from '@components/MemberTabs/MemberTabs';
 import { ProgressRing } from '@components/ProgressRing/ProgressRing';
 import { QuickEntry } from '@components/QuickEntry/QuickEntry';
+import { SleepLogger } from '@components/SleepLogger/SleepLogger';
 import { WorkoutLogger } from '@components/WorkoutLogger/WorkoutLogger';
 import { accentHex } from '@data/fitnessData';
 import { fromISODate, toISODate } from '@utils/date';
@@ -323,7 +325,7 @@ export const Home = ({
                       : `Edit ${active.name}'s macro targets`
                   }
                 >
-                  <PencilIcon />
+                  {editingTargets ? <CrossIcon /> : <PencilIcon />}
                 </button>
               )}
             </div>
@@ -366,6 +368,23 @@ export const Home = ({
             date={date}
             logged={todaysWorkouts}
             weekCount={tally.week}
+            canEdit={canEdit}
+            isToday={isToday}
+          />
+        </section>
+
+        <section className={styles.panel}>
+          <div className={styles.workoutsHead}>
+            <h2 className={styles.sectionHeading}>Sleep</h2>
+            <Link href="/logs?period=week" className={styles.planLink}>
+              See sleep logs
+            </Link>
+          </div>
+          <SleepLogger
+            key={`${active.id}-${date}`}
+            member={active}
+            date={date}
+            sleepHours={log.sleepHours}
             canEdit={canEdit}
             isToday={isToday}
           />

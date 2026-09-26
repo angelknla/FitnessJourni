@@ -24,6 +24,7 @@ interface EditTargetsProps {
 }
 
 type Mode = 'grams' | 'percent';
+type MacroDraft = Record<MacroKey, string>;
 
 /** Deliberately not { ok: true }, so state.ok only becomes true after a real save. */
 const initial: ActionState = { ok: false };
@@ -39,6 +40,18 @@ const toNumber = (value: string) => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
 };
 
+const toDraft = (values: MacroGrams | MacroPercents): MacroDraft => ({
+  protein: String(values.protein),
+  carbs: String(values.carbs),
+  fat: String(values.fat),
+});
+
+const toNumbers = (draft: MacroDraft): MacroGrams => ({
+  protein: toNumber(draft.protein),
+  carbs: toNumber(draft.carbs),
+  fat: toNumber(draft.fat),
+});
+
 export const EditTargets = ({ member, id, onSaved }: EditTargetsProps) => {
   const [state, formAction, isPending] = useActionState(updateTargets, initial);
   const [mode, setMode] = useState<Mode>('grams');
@@ -52,9 +65,11 @@ export const EditTargets = ({ member, id, onSaved }: EditTargetsProps) => {
   // Grams are what you type in gram mode; calories + percents are what you type
   // in percent mode. Whichever side is not being edited is derived, so the two
   // can never drift apart on screen.
-  const [grams, setGrams] = useState<MacroGrams>(startingGrams);
+  const [grams, setGrams] = useState<MacroDraft>(toDraft(startingGrams));
   const [calories, setCalories] = useState(String(member.targets.calories));
-  const [percents, setPercents] = useState<MacroPercents>(percentsFromGrams(startingGrams));
+  const [percents, setPercents] = useState<MacroDraft>(
+    toDraft(percentsFromGrams(startingGrams))
+  );
 
   useEffect(() => {
     if (state.ok) {
@@ -63,11 +78,18 @@ export const EditTargets = ({ member, id, onSaved }: EditTargetsProps) => {
   }, [state.ok, onSaved]);
 
   const caloriesNumber = toNumber(calories);
+  const gramsNumbers = toNumbers(grams);
+  const percentNumbers = toNumbers(percents);
 
-  const effectiveGrams = mode === 'percent' ? gramsFromPercents(caloriesNumber, percents) : grams;
+  const effectiveGrams =
+    mode === 'percent' ? gramsFromPercents(caloriesNumber, percentNumbers) : gramsNumbers;
   const effectiveCalories = caloriesNumber;
   const effectivePercents =
-    mode === 'percent' ? percents : kcalFromGrams(grams) > 0 ? percentsFromGrams(grams) : percents;
+    mode === 'percent'
+      ? percentNumbers
+      : kcalFromGrams(gramsNumbers) > 0
+        ? percentsFromGrams(gramsNumbers)
+        : percentNumbers;
 
   /** What those grams add up to — may differ from the typed figure by rounding. */
   const gramsKcal = kcalFromGrams(effectiveGrams);
@@ -86,22 +108,23 @@ export const EditTargets = ({ member, id, onSaved }: EditTargetsProps) => {
     setCalories(value);
 
     if (mode === 'grams') {
-      setGrams(gramsFromPercents(toNumber(value), percents));
+      setGrams(toDraft(gramsFromPercents(toNumber(value), percentNumbers)));
     }
   };
 
   const changeGram = (key: MacroKey, value: string) => {
-    const next = { ...grams, [key]: toNumber(value) };
+    const next = { ...grams, [key]: value };
+    const nextNumbers = toNumbers(next);
     setGrams(next);
-    setCalories(String(kcalFromGrams(next)));
+    setCalories(String(kcalFromGrams(nextNumbers)));
 
     // Only a non-empty set of grams describes a meaningful split.
-    if (kcalFromGrams(next) > 0) {
-      setPercents(percentsFromGrams(next));
+    if (kcalFromGrams(nextNumbers) > 0) {
+      setPercents(toDraft(percentsFromGrams(nextNumbers)));
     }
   };
 
-  const split = percentTotal(percents);
+  const split = percentTotal(percentNumbers);
   const splitOff = mode === 'percent' && split !== 100;
 
   // Switching mode carries the current numbers across rather than resetting.
@@ -111,10 +134,10 @@ export const EditTargets = ({ member, id, onSaved }: EditTargetsProps) => {
     }
 
     if (next === 'percent') {
-      setPercents(percentsFromGrams(grams));
-      setCalories(String(kcalFromGrams(grams)));
+      setPercents(toDraft(percentsFromGrams(gramsNumbers)));
+      setCalories(String(kcalFromGrams(gramsNumbers)));
     } else {
-      setGrams(gramsFromPercents(caloriesNumber, percents));
+      setGrams(toDraft(gramsFromPercents(caloriesNumber, percentNumbers)));
     }
 
     setMode(next);
@@ -205,7 +228,7 @@ export const EditTargets = ({ member, id, onSaved }: EditTargetsProps) => {
                       onChange={(event) =>
                         setPercents((current) => ({
                           ...current,
-                          [key]: toNumber(event.target.value),
+                          [key]: event.target.value,
                         }))
                       }
                     />

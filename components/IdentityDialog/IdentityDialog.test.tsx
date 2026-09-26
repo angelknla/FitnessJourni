@@ -15,7 +15,8 @@ vi.mock('@/app/actions', () => ({
     newMemberAccent: String(formData.get('accent')),
   })),
 }));
-vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+const refresh = vi.fn();
+vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh }) }));
 
 import { IdentityDialog, type IdentityOption } from './IdentityDialog';
 
@@ -58,6 +59,22 @@ describe('IdentityDialog', () => {
     await user.click(screen.getByRole('button', { name: 'Continue' }));
 
     expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'instant' });
+    scrollTo.mockRestore();
+  });
+
+  it('closes the native modal before refreshing after an identity change', async () => {
+    refresh.mockClear();
+    vi.mocked((await import('@/app/auth-actions')).signInAs).mockResolvedValueOnce({ ok: true });
+    const dialogClose = vi.spyOn(HTMLDialogElement.prototype, 'close');
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    const user = userEvent.setup();
+    setup();
+
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+
+    expect(dialogClose).toHaveBeenCalled();
+    expect(dialogClose.mock.invocationCallOrder[0]).toBeLessThan(refresh.mock.invocationCallOrder[0]);
+    dialogClose.mockRestore();
     scrollTo.mockRestore();
   });
 

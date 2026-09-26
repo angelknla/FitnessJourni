@@ -6,6 +6,7 @@ import type { DailyLog, Member, MemberTargets } from '@/types/fitness';
 // Mocked so the real modules (and next/cache with them) stay out of jsdom.
 vi.mock('@/app/actions', () => ({
   saveDailyLog: vi.fn(async () => ({ ok: true })),
+  saveSleep: vi.fn(async () => ({ ok: true })),
   updateTargets: vi.fn(async () => ({ ok: false })),
   logWorkout: vi.fn(async () => ({ ok: false })),
   deleteWorkout: vi.fn(async () => ({ ok: false })),
@@ -49,6 +50,7 @@ const log = (memberId: string): DailyLog => ({
   proteinG: 150,
   carbsG: 300,
   fatG: 60,
+  sleepHours: null,
 });
 
 const props = (viewerId: string | null) => ({
@@ -168,6 +170,24 @@ describe('Home', () => {
 
     expect(quickEntry()).toBeInTheDocument();
     expect(screen.getByRole('button', { name: "Edit Dillon's macro targets" })).toBeInTheDocument();
+  });
+
+  it('swaps the targets pencil for a close icon while editing', async () => {
+    const user = userEvent.setup();
+    setup('m1');
+
+    const edit = screen.getByRole('button', { name: "Edit Dillon's macro targets" });
+    expect(edit.querySelector('path')).toHaveAttribute('d', 'M11.1 2.4l2.5 2.5-7.4 7.4-3.1.6.6-3.1z');
+
+    await user.click(edit);
+
+    const close = screen.getByRole('button', { name: 'Stop editing macro targets' });
+    expect(close.querySelector('path')).toHaveAttribute('d', 'M4.4 4.4l7.2 7.2M11.6 4.4l-7.2 7.2');
+
+    await user.click(close);
+
+    expect(screen.getByRole('button', { name: "Edit Dillon's macro targets" }).querySelector('path'))
+      .toHaveAttribute('d', 'M11.1 2.4l2.5 2.5-7.4 7.4-3.1.6.6-3.1z');
   });
 
   it('keeps daily inputs collapsed until its title is opened', async () => {
@@ -320,6 +340,18 @@ describe('Home', () => {
 
     const strip = screen.getByRole('region', { name: 'Everyone today' });
     expect(strip.textContent).toMatch(/Dillon[\s\S]*Angel[\s\S]*Bradley/);
+  });
+
+  it('places sleep after workouts and before Everyone today', () => {
+    setup('m1');
+
+    const pageText = document.body.textContent ?? '';
+    expect(pageText.indexOf('Workouts')).toBeLessThan(pageText.indexOf('Sleep'));
+    expect(pageText.indexOf('Sleep')).toBeLessThan(pageText.indexOf('Everyone today'));
+    expect(screen.getByRole('link', { name: 'See sleep logs' })).toHaveAttribute(
+      'href',
+      '/logs?period=week'
+    );
   });
 
   it('reorders as soon as the identity changes, without a remount', () => {

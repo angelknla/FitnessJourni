@@ -170,7 +170,10 @@ export const MemberCreateForm = ({
                             value=""
                             aria-label="Uploaded photo"
                             checked={avatarPath === 'upload'}
-                            onChange={() => avatarFileRef.current?.click()}
+                            onChange={() => {
+                                setAvatarPath('upload');
+                                avatarFileRef.current?.click();
+                            }}
                         />
                         <label htmlFor="new-member-avatar" className={styles.uploadLabel}>
                             {avatarPreview ? (
@@ -195,6 +198,7 @@ export const MemberCreateForm = ({
                             type="file"
                             name="avatarFile"
                             accept={avatarUploadTypes.join(',')}
+                            onClick={() => setAvatarPath('upload')}
                             onChange={(event) => {
                                 const file = event.currentTarget.files?.[0];
                                 setAvatarPreview(file ? URL.createObjectURL(file) : null);

@@ -69,6 +69,7 @@ export interface DailyLog {
   proteinG: number;
   carbsG: number;
   fatG: number;
+  sleepHours: number | null;
 }
 
 export type RsvpStatus = 'going' | 'not_going';
@@ -127,4 +128,12 @@ export interface MessagePost {
   memberId: string;
   content: string;
   createdAt: string;
+  reactions: MessageReaction[];
+}
+
+export type MessageReactionType = 'heart' | 'smile' | 'shocked' | 'angry';
+
+export interface MessageReaction {
+  memberId: string;
+  type: MessageReactionType;
 }

@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { leaders, type Period, summarise } from '@/lib/aggregate';
 import { getLogsSince } from '@/lib/data/logs';
 import { getMembers } from '@/lib/data/members';
+import { countWorkouts, getWorkoutsSince } from '@/lib/data/workouts';
 import { viewerFirst } from '@/lib/ownership';
 import { isUnlocked, readViewer } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
@@ -17,7 +18,7 @@ import styles from './page.module.css';
 
 export const metadata: Metadata = {
   title: 'Logs — FitnessJourni',
-  description: 'Compare steps, water, calories and protein across the group',
+  description: 'Compare steps, water, nutrition and sleep across the group',
 };
 
 export const dynamic = 'force-dynamic';
@@ -53,20 +54,22 @@ const LogsPage = async ({ searchParams }: LogsPageProps) => {
   const from =
     period === 'today' ? today : period === 'week' ? startOfWeek(today) : startOfMonth(today);
 
-  const [members, logs, viewer] = await Promise.all([
+  const [members, logs, workouts, viewer] = await Promise.all([
     getMembers(),
     getLogsSince(from),
+    getWorkoutsSince(from),
     readViewer(),
   ]);
 
   const summaries = summarise(logs, from, today);
+  const workoutCounts = countWorkouts(workouts, from, today);
 
   const caption =
     period === 'today'
       ? `${dayMonth.format(now)}. Averages are hidden — over a single day they just repeat the total.`
       : period === 'week'
-        ? `${dayMonth.format(fromISODate(from))} to ${dayMonth.format(now)}, a Sunday-start week. Averages are per day logged, which is why Days sits beside them.`
-        : `${monthYear.format(now)} so far. Averages are per day logged, which is why Days sits beside them.`;
+        ? `${dayMonth.format(fromISODate(from))} to ${dayMonth.format(now)}, a Sunday-start week. Averages are per day logged; sleep uses only days with sleep entered.`
+        : `${monthYear.format(now)} so far. Averages are per day logged; sleep uses only days with sleep entered.`;
 
   return (
     <PageLayout>
@@ -89,6 +92,7 @@ const LogsPage = async ({ searchParams }: LogsPageProps) => {
       <LogsTable
         members={viewerFirst(members, viewer.memberId)}
         summaries={summaries}
+        workoutCounts={workoutCounts}
         leaders={leaders(summaries)}
         showAverages={period !== 'today'}
         caption={caption}

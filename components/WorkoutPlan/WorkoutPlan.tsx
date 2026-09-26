@@ -8,11 +8,11 @@ import styles from './WorkoutPlan.module.css';
  */
 export const WorkoutPlan = () => (
   <div className={styles.plan}>
-    {workoutBundles.map((bundle) => (
+    {workoutBundles.map((bundle, index) => (
       <details className={styles.bundle} key={bundle.focus}>
         <summary className={styles.summary}>
           <span className={styles.summaryMain}>
-            <span className={styles.day}>{bundle.day}</span>
+            <span className={styles.day}>Session {index + 1}</span>
             <span className={styles.title}>{bundle.title}</span>
           </span>
           <span className={styles.count}>{bundle.exercises.length} exercises</span>

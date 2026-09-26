@@ -4,7 +4,7 @@ import { BinIcon } from '@components/Icons/Icons';
 import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
 import { activityLabels } from '@data/fitnessData';
 import { fromISODate } from '@utils/date';
-import { useActionState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { type ActionState, deleteSession, respondToSession } from '@/app/actions';
 import type { Member, RsvpStatus, TrainingSession } from '@/types/fitness';
 
@@ -14,6 +14,7 @@ interface SessionListProps {
   sessions: TrainingSession[];
   members: Member[];
   viewerId: string | null;
+  initialNow: number;
 }
 
 const initial: ActionState = { ok: true };
@@ -144,8 +145,25 @@ const SessionRow = ({
   );
 };
 
-export const SessionList = ({ sessions, members, viewerId }: SessionListProps) => {
-  if (sessions.length === 0) {
+const expiresAt = (session: TrainingSession) =>
+  new Date(`${session.date}T${session.time}:00`).getTime() + 30 * 60 * 1000;
+
+export const SessionList = ({ sessions, members, viewerId, initialNow }: SessionListProps) => {
+  const [now, setNow] = useState(initialNow);
+  const visibleSessions = sessions.filter((session) => expiresAt(session) > now);
+
+  useEffect(() => {
+    const current = Math.max(now, Date.now());
+    const nextExpiry = Math.min(
+      ...sessions.map(expiresAt).filter((expiry) => expiry > current)
+    );
+    if (!Number.isFinite(nextExpiry)) return;
+
+    const timeout = window.setTimeout(() => setNow(Date.now()), nextExpiry - current + 50);
+    return () => window.clearTimeout(timeout);
+  }, [sessions, now]);
+
+  if (visibleSessions.length === 0) {
     return <p className={styles.empty}>Nothing booked yet. Pick a day below and get one in.</p>;
   }
 
@@ -154,7 +172,7 @@ export const SessionList = ({ sessions, members, viewerId }: SessionListProps) =
 
   // Already ordered by the query; a Map keeps that order while grouping.
   const days = new Map<string, TrainingSession[]>();
-  for (const session of sessions) {
+  for (const session of visibleSessions) {
     const existing = days.get(session.date);
     if (existing) {
       existing.push(session);

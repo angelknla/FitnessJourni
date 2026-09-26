@@ -8,7 +8,7 @@ import { SetupNotice } from '@components/SetupNotice/SetupNotice';
 import { toISODate } from '@utils/date';
 import type { Metadata } from 'next';
 import { getMembers } from '@/lib/data/members';
-import { getUpcomingSessions } from '@/lib/data/sessions';
+import { getUpcomingSessions, upcomingSessions } from '@/lib/data/sessions';
 import { viewerFirst } from '@/lib/ownership';
 import { isUnlocked, readViewer } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
@@ -32,20 +32,31 @@ const SessionsPage = async () => {
     return <SetupNotice />;
   }
 
-  const today = toISODate(new Date());
+  const now = new Date();
+  const today = toISODate(now);
   const [members, sessions, viewer] = await Promise.all([
     getMembers(),
     getUpcomingSessions(today),
     readViewer(),
   ]);
   const orderedMembers = viewerFirst(members, viewer.memberId);
+  const visibleSessions = upcomingSessions(
+    sessions,
+    today,
+    now.getHours() * 60 + now.getMinutes()
+  );
 
   return (
     <PageLayout>
       <SessionsReadMarker />
       <PageHeader animatedBack eyebrow="Sessions" title="What's coming up" />
 
-      <SessionList sessions={sessions} members={orderedMembers} viewerId={viewer.memberId} />
+      <SessionList
+        sessions={visibleSessions}
+        members={orderedMembers}
+        viewerId={viewer.memberId}
+        initialNow={now.getTime()}
+      />
 
       <section className={styles.booking}>
         <h2 className={styles.sectionHeading}>Book one</h2>

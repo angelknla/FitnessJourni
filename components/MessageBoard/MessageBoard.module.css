@@ -150,6 +150,7 @@
   background: var(--c-surface-raised);
   border: 1px solid var(--c-border);
   border-radius: 0.25rem var(--r-md) var(--r-md) var(--r-md);
+  touch-action: manipulation;
 }
 
 .own .bubble {
@@ -296,6 +297,82 @@
   white-space: pre-wrap;
 }
 
+.reactions {
+  min-height: 1.75rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+
+.reactionControl {
+  position: relative;
+  display: flex;
+}
+
+.reactionToggle,
+.reactionCount {
+  min-height: 1.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.72rem;
+  color: var(--c-ink-muted);
+  background: transparent;
+  border-color: var(--c-border);
+  border-radius: 999px;
+}
+
+.reactionToggle:hover:not(:disabled),
+.reactionToggle[aria-expanded="true"],
+.reactionCount:hover:not(:disabled),
+.reactionCount[aria-pressed="true"] {
+  color: var(--c-ink);
+  background: var(--c-surface-soft);
+  border-color: var(--c-border-strong);
+}
+
+.reactionCount[aria-pressed="true"] {
+  color: var(--c-serious);
+}
+
+.reactionPicker {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  bottom: calc(100% + 0.4rem);
+  display: flex;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0.35rem;
+  background: var(--c-surface-raised);
+  border: 1px solid var(--c-border-strong);
+  border-radius: 999px;
+  box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 18%);
+}
+
+.reactionPicker button {
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  font-size: 1rem;
+  line-height: 1;
+  background: transparent;
+  border-color: transparent;
+  border-radius: 50%;
+}
+
+.reactionPicker button:hover:not(:disabled),
+.reactionPicker button[aria-pressed="true"] {
+  background: var(--c-surface-soft);
+  border-color: var(--c-border-strong);
+}
+
 .empty {
   display: flex;
   flex-direction: column;
@@ -308,6 +385,10 @@
 }
 
 @media (max-width: 520px) {
+  .board {
+    gap: 0.65rem;
+  }
+
   .composer {
     gap: 0.45rem;
     padding: 0.7rem;
@@ -323,15 +404,61 @@
   }
 
   .filters {
-    align-items: stretch;
+    align-items: center;
+    gap: 0.4rem;
   }
 
   .filters label {
     min-width: 0;
     flex: 1;
+    position: relative;
+    gap: 0;
+  }
+
+  .filters label:first-child {
+    flex: 0 0 8.5rem;
+  }
+
+  .filters label span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .filters select,
+  .filters input {
+    height: 2.15rem;
+    min-height: 0;
+    padding: 0.3rem 0.55rem;
+    font-size: 0.78rem;
   }
 
   .bubble {
     max-width: 82%;
+    padding: 0.55rem 0.7rem;
+  }
+
+  .bubble p {
+    margin-top: 0.25rem;
+    font-size: 0.84rem;
+    line-height: 1.4;
+  }
+
+  .meta strong {
+    font-size: 0.8rem;
+  }
+
+  .meta time {
+    font-size: 0.65rem;
+  }
+
+  .message {
+    gap: 0.5rem;
   }
 }

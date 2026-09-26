@@ -93,6 +93,9 @@ describe('AddMemberForm', () => {
     render(<AddMemberForm members={members} viewerId="m1" />);
 
     const upload = screen.getByLabelText('Upload photo');
+    await user.click(screen.getByText('Upload photo'));
+    expect(screen.getByRole('radio', { name: 'Uploaded photo' })).toBeChecked();
+
     await user.upload(upload, new File(['photo'], 'profile.png', { type: 'image/png' }));
 
     expect((upload as HTMLInputElement).files).toHaveLength(1);

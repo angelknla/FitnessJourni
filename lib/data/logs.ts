@@ -10,6 +10,7 @@ export interface DailyLogRow {
   protein_g: number;
   carbs_g: number;
   fat_g: number;
+  sleep_hours?: number | null;
 }
 
 export const mapLog = (row: DailyLogRow): DailyLog => ({
@@ -21,6 +22,7 @@ export const mapLog = (row: DailyLogRow): DailyLog => ({
   proteinG: row.protein_g,
   carbsG: row.carbs_g,
   fatG: row.fat_g,
+  sleepHours: row.sleep_hours == null ? null : Number(row.sleep_hours),
 });
 
 /** An untouched day is a real state, not missing data — render it as zeroes. */
@@ -33,6 +35,7 @@ export const emptyLog = (memberId: string, date: string): DailyLog => ({
   proteinG: 0,
   carbsG: 0,
   fatG: 0,
+  sleepHours: null,
 });
 
 /** Every member's log for one day, keyed by member id for O(1) lookup. */

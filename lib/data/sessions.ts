@@ -82,25 +82,29 @@ export const getUpcomingSessions = cache(async (fromDate: string): Promise<Train
   return (data as SessionRow[]).map(mapSession);
 });
 
-/**
- * The soonest session that has not already happened. getUpcomingSessions filters
- * by date only, so a 07:00 run is still "upcoming" at 18:00 — the time has to be
- * compared too, or the banner advertises a session people already missed.
- */
-export const nextSession = (
+/** Keep a session visible until 30 minutes after its booked start time. */
+export const upcomingSessions = (
   sessions: TrainingSession[],
   today: string,
   nowMinutes: number
-): TrainingSession | null => {
-  const ahead = sessions.filter((session) => {
+): TrainingSession[] =>
+  sessions.filter((session) => {
     if (session.date > today) {
       return true;
     }
     if (session.date < today) {
       return false;
     }
-    return minutesOfTime(session.time) >= nowMinutes;
+    return minutesOfTime(session.time) + 30 > nowMinutes;
   });
+
+/** The query is already ordered, so the first session inside the grace window is next. */
+export const nextSession = (
+  sessions: TrainingSession[],
+  today: string,
+  nowMinutes: number
+): TrainingSession | null => {
+  const ahead = upcomingSessions(sessions, today, nowMinutes);
 
   // The query already orders by date then time, and filtering preserves that.
   return ahead[0] ?? null;

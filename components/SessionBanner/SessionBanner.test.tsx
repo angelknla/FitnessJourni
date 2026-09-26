@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TrainingSession } from '@/types/fitness';
@@ -24,6 +24,7 @@ const setup = (over: Partial<TrainingSession> = {}, bookedBy?: string) =>
       session={{ ...session, ...over }}
       bookedBy={bookedBy}
       whenLabel="Saturday 26 at 18:30"
+      expiresAt={Date.now() + 60 * 60 * 1000}
     />
   );
 
@@ -60,6 +61,23 @@ describe('SessionBanner', () => {
     await user.click(screen.getByRole('button', { name: 'Dismiss' }));
 
     expect(screen.queryByRole('complementary')).not.toBeInTheDocument();
+  });
+
+  it('disappears automatically when the 30-minute grace window ends', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-26T18:59:00'));
+    render(
+      <SessionBanner
+        session={session}
+        whenLabel="Today at 18:30"
+        expiresAt={Date.now() + 60_000}
+      />
+    );
+
+    expect(screen.getByRole('complementary', { name: 'Next session' })).toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(screen.queryByRole('complementary')).not.toBeInTheDocument();
+    vi.useRealTimers();
   });
 
   it('stays dismissed on a later visit', async () => {

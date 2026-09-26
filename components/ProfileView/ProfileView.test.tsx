@@ -53,6 +53,11 @@ beforeAll(() => {
             this.open = true;
         };
     }
+    if (!HTMLDialogElement.prototype.close) {
+        HTMLDialogElement.prototype.close = function close() {
+            this.open = false;
+        };
+    }
 });
 
 describe('ProfileView', () => {
@@ -74,15 +79,21 @@ describe('ProfileView', () => {
         expect(screen.getByText('Aug 2026')).toBeInTheDocument();
         expect(screen.getByText('Sept 2026')).toBeInTheDocument();
         expect(screen.getByText('Goal 75.0 kg')).toBeInTheDocument();
+        const chart = screen.getByRole('img', {
+            name: /Monthly weight trend.*82.0 kilograms.*81.0 kilograms/,
+        });
+        expect(chart).toBeInTheDocument();
+        expect(chart.querySelector('polyline')).toHaveAttribute('points');
     });
 
-    it('offers editable measurements and goals', () => {
+    it('offers editable measurements and goals', async () => {
+        const user = userEvent.setup();
         render(
             <ProfileView
                 members={[member]}
                 member={member}
                 profile={profile}
-                measurements={[]}
+                measurements={[{ month: '2026-09-01', weightKg: 81 }]}
                 currentMonth="2026-09"
             />
         );
@@ -91,7 +102,20 @@ describe('ProfileView', () => {
         expect(screen.getByLabelText('First name')).toHaveValue('Dillon');
         expect(screen.getByLabelText('Surname')).toHaveValue('');
         expect(screen.getByLabelText(/^Height/)).toHaveValue(180);
-        expect(screen.getByLabelText('Current weight')).toHaveValue(null);
+        const currentWeight = screen.getByLabelText('Current weight');
+        const monthlyWeight = screen.getByLabelText(/^Weight/, { selector: '#profile-weight' });
+        expect(currentWeight).toHaveValue(81);
+        expect(currentWeight).not.toHaveAttribute('readonly');
+
+        await user.clear(currentWeight);
+        await user.type(currentWeight, '79.5');
+
+        expect(monthlyWeight).toHaveValue(79.5);
+        expect(currentWeight.closest('form')).toHaveFormValues({
+            currentWeightKg: 79.5,
+            currentMonth: '2026-09',
+            saveCurrentWeight: 'true',
+        });
         expect(screen.getByLabelText(/^Weight goal/)).toHaveValue(75);
         expect(screen.getByLabelText('BMI goal')).toHaveValue(23);
         expect(screen.getByRole('group', { name: 'Personal info' })).toBeInTheDocument();
@@ -175,10 +199,15 @@ describe('ProfileView', () => {
         expect(upload).toHaveAttribute('accept', 'image/jpeg,image/png,image/webp');
         expect(screen.getByRole('button', { name: 'Save picture' })).toBeInTheDocument();
 
+        await user.click(screen.getByText('Upload photo'));
+        expect(screen.getByRole('radio', { name: 'Uploaded photo' })).toBeChecked();
+        expect(screen.getByRole('button', { name: 'Save picture' })).toBeDisabled();
+
         const file = new File(['avatar'], 'avatar.png', { type: 'image/png' });
         await user.upload(upload, file);
         expect(screen.getByRole('radio', { name: 'Uploaded photo' })).toBeChecked();
         expect(screen.getByRole('radio', { name: 'Initial' })).not.toBeChecked();
+        expect(screen.getByRole('button', { name: 'Save picture' })).toBeEnabled();
 
         await user.click(screen.getByRole('button', { name: 'Close profile picture chooser' }));
         expect(screen.queryByRole('group', { name: 'Profile picture' })).not.toBeInTheDocument();

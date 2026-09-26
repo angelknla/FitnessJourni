@@ -35,7 +35,7 @@ const MessagesPage = async () => {
     ]);
 
     return (
-        <PageLayout className={styles.page}>
+        <PageLayout className={styles.page} data-page="chat">
             <PageHeader eyebrow="Chat" title="A little momentum goes a long way" />
 
             <MessageBoard

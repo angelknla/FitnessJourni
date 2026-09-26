@@ -18,7 +18,7 @@ describe('mapRun', () => {
       mapRun({
         id: 'r1',
         run_date: '2026-09-25',
-        duration_minutes: 31,
+        duration_minutes: '31.5',
         distance_km: '5.25',
         pace_seconds_per_km: 350,
         created_by: 'm1',
@@ -27,7 +27,7 @@ describe('mapRun', () => {
     ).toEqual({
       id: 'r1',
       date: '2026-09-25',
-      durationMinutes: 31,
+      durationMinutes: 31.5,
       distanceKm: 5.25,
       paceSecondsPerKm: 350,
       createdBy: 'm1',
@@ -60,6 +60,8 @@ describe('run formatting', () => {
   it('formats elapsed time and pace', () => {
     expect(formatRunDuration(65)).toBe('1h 05m');
     expect(formatRunDuration(42)).toBe('42m');
+    expect(formatRunDuration(31.5)).toBe('31.5m');
+    expect(formatRunDuration(65.5)).toBe('1h 05.5m');
     expect(formatRunPace(31, 5)).toBe('6:12 /km');
     expect(formatRunPace(31, 5, 345)).toBe('5:45 /km');
   });

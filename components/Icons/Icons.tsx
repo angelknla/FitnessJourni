@@ -150,6 +150,25 @@ export const MoreIcon = ({ size = 16 }: IconProps) => (
   </svg>
 );
 
+export const ReactionIcon = ({ size = 16 }: IconProps) => (
+  <svg
+    viewBox="0 0 16 16"
+    width={size}
+    height={size}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.4"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <circle cx="8" cy="8" r="6" />
+    <path d="M5.5 6.5h.01M10.5 6.5h.01M5.5 9.5c.7.9 1.5 1.3 2.5 1.3s1.8-.4 2.5-1.3" />
+    <path d="M13.5 2.5v3M12 4h3" />
+  </svg>
+);
+
 export const ArrowLeftIcon = ({ size = 15 }: IconProps) => (
   <svg
     viewBox="0 0 16 16"

@@ -106,9 +106,15 @@ create table if not exists public.daily_logs (
   protein_g  integer not null default 0 check (protein_g >= 0),
   carbs_g    integer not null default 0 check (carbs_g >= 0),
   fat_g      integer not null default 0 check (fat_g >= 0),
+  sleep_hours numeric(4, 2),
   updated_at timestamptz not null default now(),
   unique (member_id, log_date)
 );
+
+alter table public.daily_logs add column if not exists sleep_hours numeric(4, 2);
+alter table public.daily_logs drop constraint if exists daily_logs_sleep_hours_check;
+alter table public.daily_logs add constraint daily_logs_sleep_hours_check
+  check (sleep_hours is null or sleep_hours between 0 and 24);
 
 create index if not exists daily_logs_date_idx on public.daily_logs (log_date desc);
 
@@ -174,7 +180,7 @@ create index if not exists workouts_date_idx on public.workouts (workout_date de
 create table if not exists public.runs (
   id               uuid primary key default gen_random_uuid(),
   run_date         date not null,
-  duration_minutes integer not null check (duration_minutes > 0 and duration_minutes <= 1440),
+  duration_minutes numeric(6, 1) not null check (duration_minutes > 0 and duration_minutes <= 1440),
   distance_km      numeric(6, 2) not null check (distance_km > 0 and distance_km <= 1000),
   pace_seconds_per_km integer check (pace_seconds_per_km > 0 and pace_seconds_per_km <= 7200),
   created_by       uuid references public.members (id) on delete set null,
@@ -183,6 +189,12 @@ create table if not exists public.runs (
 
 alter table public.runs
   add column if not exists pace_seconds_per_km integer;
+
+alter table public.runs drop constraint if exists runs_duration_minutes_check;
+alter table public.runs alter column duration_minutes type numeric(6, 1)
+  using duration_minutes::numeric(6, 1);
+alter table public.runs add constraint runs_duration_minutes_check
+  check (duration_minutes > 0 and duration_minutes <= 1440);
 
 alter table public.runs drop constraint if exists runs_pace_seconds_per_km_check;
 alter table public.runs add constraint runs_pace_seconds_per_km_check
@@ -210,6 +222,17 @@ create table if not exists public.messages (
 
 create index if not exists messages_created_at_idx on public.messages (created_at desc);
 
+create table if not exists public.message_reactions (
+  message_id uuid not null references public.messages (id) on delete cascade,
+  member_id  uuid not null references public.members (id) on delete cascade,
+  reaction   text not null check (reaction in ('heart', 'smile', 'shocked', 'angry')),
+  created_at timestamptz not null default now(),
+  primary key (message_id, member_id)
+);
+
+create index if not exists message_reactions_member_idx
+  on public.message_reactions (member_id);
+
 create table if not exists public.message_reads (
   member_id   uuid primary key references public.members (id) on delete cascade,
   last_read_at timestamptz not null default now()
@@ -233,6 +256,7 @@ alter table public.runs       enable row level security;
 alter table public.run_attendees enable row level security;
 alter table public.weight_measurements enable row level security;
 alter table public.messages enable row level security;
+alter table public.message_reactions enable row level security;
 alter table public.message_reads enable row level security;
 
 drop policy if exists members_rw    on public.members;
@@ -245,6 +269,7 @@ drop policy if exists runs_rw       on public.runs;
 drop policy if exists run_attendees_rw on public.run_attendees;
 drop policy if exists weight_measurements_rw on public.weight_measurements;
 drop policy if exists messages_rw on public.messages;
+drop policy if exists message_reactions_rw on public.message_reactions;
 drop policy if exists message_reads_rw on public.message_reads;
 
 create policy members_rw    on public.members    for all to anon, authenticated using (true) with check (true);
@@ -257,6 +282,7 @@ create policy runs_rw       on public.runs       for all to anon, authenticated 
 create policy run_attendees_rw on public.run_attendees for all to anon, authenticated using (true) with check (true);
 create policy weight_measurements_rw on public.weight_measurements for all to anon, authenticated using (true) with check (true);
 create policy messages_rw on public.messages for all to anon, authenticated using (true) with check (true);
+create policy message_reactions_rw on public.message_reactions for all to anon, authenticated using (true) with check (true);
 create policy message_reads_rw on public.message_reads for all to anon, authenticated using (true) with check (true);
 
 -- ----------------------------------------------------------------------------

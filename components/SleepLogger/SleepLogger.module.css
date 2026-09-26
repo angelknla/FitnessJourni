@@ -1,0 +1,96 @@
+.wrapper,
+.disclosure,
+.form {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+
+.badge {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--c-ink-soft);
+  background: var(--c-surface-soft);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-pill);
+}
+
+.badge[data-done="true"] {
+  color: var(--c-good);
+  background: color-mix(in oklab, var(--c-good) 14%, var(--c-surface));
+  border-color: color-mix(in oklab, var(--c-good) 45%, var(--c-border-strong));
+}
+
+.duration {
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-ink);
+}
+
+.toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0;
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: var(--c-ink-soft);
+  background: transparent;
+  border: 0;
+}
+
+.toggle:hover:not(:disabled) {
+  color: var(--c-ink);
+  background: transparent;
+}
+
+.field {
+  max-width: 12rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  color: var(--c-ink-soft);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.submit {
+  padding: 0.45rem 1.05rem;
+  font-size: 0.88rem;
+  color: #fff;
+  background: var(--c-accent);
+  border-color: transparent;
+}
+
+.readOnly,
+.error {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.readOnly {
+  color: var(--c-ink-muted);
+}
+
+.error {
+  color: var(--c-critical);
+}
