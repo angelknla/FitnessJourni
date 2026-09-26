@@ -225,10 +225,14 @@ create index if not exists messages_created_at_idx on public.messages (created_a
 create table if not exists public.message_reactions (
   message_id uuid not null references public.messages (id) on delete cascade,
   member_id  uuid not null references public.members (id) on delete cascade,
-  reaction   text not null check (reaction in ('heart', 'smile', 'shocked', 'angry')),
+  reaction   text not null check (reaction in ('heart', 'thumbs_up', 'thumbs_down', 'smile', 'shocked', 'angry')),
   created_at timestamptz not null default now(),
   primary key (message_id, member_id)
 );
+
+alter table public.message_reactions drop constraint if exists message_reactions_reaction_check;
+alter table public.message_reactions add constraint message_reactions_reaction_check
+  check (reaction in ('heart', 'thumbs_up', 'thumbs_down', 'smile', 'shocked', 'angry'));
 
 create index if not exists message_reactions_member_idx
   on public.message_reactions (member_id);

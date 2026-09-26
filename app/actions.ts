@@ -1312,7 +1312,14 @@ export const deleteMessage = async (
   return ok;
 };
 
-const messageReactionTypes: MessageReactionType[] = ['heart', 'smile', 'shocked', 'angry'];
+const messageReactionTypes: MessageReactionType[] = [
+  'heart',
+  'thumbs_up',
+  'thumbs_down',
+  'smile',
+  'shocked',
+  'angry',
+];
 
 export const reactToMessage = async (
   _prev: ActionState,

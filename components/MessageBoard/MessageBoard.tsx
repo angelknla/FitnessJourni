@@ -49,6 +49,8 @@ const shortDateLabel = new Intl.DateTimeFormat('en-GB', {
 });
 const reactionOptions: Array<{ type: MessageReactionType; emoji: string; label: string }> = [
     { type: 'heart', emoji: '❤️', label: 'Heart' },
+    { type: 'thumbs_up', emoji: '👍', label: 'Thumbs up' },
+    { type: 'thumbs_down', emoji: '👎', label: 'Thumbs down' },
     { type: 'smile', emoji: '😊', label: 'Smile' },
     { type: 'shocked', emoji: '😮', label: 'Shocked' },
     { type: 'angry', emoji: '😠', label: 'Angry' },

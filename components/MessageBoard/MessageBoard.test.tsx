@@ -142,7 +142,7 @@ describe('MessageBoard', () => {
         expect(composer).toHaveStyle({ height: '72px' });
     });
 
-    it('shows reaction counts and offers all four reactions', async () => {
+    it('shows reaction counts and offers all six reactions', async () => {
         const user = userEvent.setup();
         render(
             <MessageBoard
@@ -169,7 +169,7 @@ describe('MessageBoard', () => {
         });
         expect(reactionTrigger).toHaveTextContent('❤️3');
         await user.click(reactionTrigger);
-        for (const label of ['Heart', 'Smile', 'Shocked', 'Angry']) {
+        for (const label of ['Heart', 'Thumbs up', 'Thumbs down', 'Smile', 'Shocked', 'Angry']) {
             expect(screen.getByRole('button', { name: `${label} reaction` })).toBeInTheDocument();
         }
         fireEvent.pointerDown(document.body);

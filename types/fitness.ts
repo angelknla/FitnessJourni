@@ -131,7 +131,13 @@ export interface MessagePost {
   reactions: MessageReaction[];
 }
 
-export type MessageReactionType = 'heart' | 'smile' | 'shocked' | 'angry';
+export type MessageReactionType =
+  | 'heart'
+  | 'smile'
+  | 'shocked'
+  | 'angry'
+  | 'thumbs_up'
+  | 'thumbs_down';
 
 export interface MessageReaction {
   memberId: string;
