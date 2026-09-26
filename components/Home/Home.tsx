@@ -395,7 +395,7 @@ export const Home = ({
         </section>
       </div>
 
-      <section className={styles.panel}>
+      <section className={`${styles.panel} ${styles.medalPanel}`}>
         <MedalLeaderboard members={tabOrder} boards={medalBoards} />
       </section>
 

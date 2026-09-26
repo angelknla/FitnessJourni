@@ -1,5 +1,6 @@
 .board,
 .shelf {
+  --medal-accent: var(--c-warning);
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -70,11 +71,30 @@
 }
 
 .period {
+  position: relative;
   min-width: 0;
+  overflow: clip;
   padding: 0.8rem;
-  background: var(--c-surface-soft);
-  border: 1px solid var(--c-border);
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in oklab, var(--medal-accent) 8%, transparent),
+      transparent 48%
+    ),
+    var(--c-surface-soft);
+  border: 1px solid color-mix(in oklab, var(--medal-accent) 24%, var(--c-border));
   border-radius: var(--r-md);
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--medal-accent) 22%, transparent);
+}
+
+.period::before {
+  content: "";
+  position: absolute;
+  inset: 0.05rem 12% auto;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--medal-accent), transparent);
+  opacity: 0.65;
 }
 
 .board .period {

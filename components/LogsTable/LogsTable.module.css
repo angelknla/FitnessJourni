@@ -104,16 +104,75 @@
 }
 
 .profile {
+  position: relative;
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
   padding: 1rem;
-  background: color-mix(in oklab, var(--member-accent) 4%, var(--c-surface));
-  border: 1px solid color-mix(in oklab, var(--member-accent) 22%, var(--c-border));
-  border-top: 3px solid var(--member-accent);
-  border-radius: var(--r-lg);
-  box-shadow: 0 6px 18px color-mix(in oklab, var(--member-accent) 6%, transparent);
+  overflow: clip;
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in oklab, var(--member-accent) 10%, transparent),
+      transparent 42%
+    ),
+    rgb(20 20 22 / 94%);
+  border: 1px solid color-mix(in oklab, var(--member-accent) 24%, var(--c-border));
+  border-radius: var(--r-xl);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--member-accent) 28%, transparent),
+    0 14px 34px rgb(0 0 0 / 28%),
+    0 0 24px color-mix(in oklab, var(--member-accent) 5%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: profile-arrive 0.55s var(--ease-flow) backwards;
+  transition:
+    border-color 0.3s var(--ease-flow),
+    box-shadow 0.3s var(--ease-flow),
+    transform 0.3s var(--ease-flow);
+}
+
+.profile::before {
+  content: "";
+  position: absolute;
+  inset: 0.05rem 12% auto;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--member-accent), transparent);
+  opacity: 0.65;
+}
+
+.profile:nth-child(2) {
+  animation-delay: 70ms;
+}
+
+.profile:nth-child(3) {
+  animation-delay: 140ms;
+}
+
+.profile:nth-child(4) {
+  animation-delay: 210ms;
+}
+
+@keyframes profile-arrive {
+  from {
+    opacity: 0;
+    translate: 0 0.65rem;
+    rotate: x -2deg;
+    scale: 0.985;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .profile:hover {
+    border-color: color-mix(in oklab, var(--member-accent) 48%, var(--c-border-strong));
+    box-shadow:
+      inset 0 1px 0 color-mix(in oklab, var(--member-accent) 38%, transparent),
+      0 20px 44px rgb(0 0 0 / 36%),
+      0 0 34px color-mix(in oklab, var(--member-accent) 9%, transparent);
+    transform: perspective(60rem) translateY(-4px) rotateX(0.7deg);
+  }
 }
 
 .profileHead {

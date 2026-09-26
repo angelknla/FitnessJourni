@@ -118,26 +118,74 @@
   flex-direction: column;
   gap: 1.3rem;
   padding: 1.1rem;
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
+  overflow: clip;
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in oklab, var(--member-accent) 10%, transparent),
+      transparent 42%
+    ),
+    rgb(20 20 22 / 94%);
+  border: 1px solid color-mix(in oklab, var(--member-accent) 24%, var(--c-border));
   border-radius: var(--r-xl);
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 3%),
-    0 8px 24px rgb(0 0 0 / 12%);
+    inset 0 1px 0 color-mix(in oklab, var(--member-accent) 28%, transparent),
+    0 14px 34px rgb(0 0 0 / 28%),
+    0 0 24px color-mix(in oklab, var(--member-accent) 5%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   transform: translateZ(0);
+  animation: panel-arrive 0.65s var(--ease-flow) backwards;
   transition:
-    background-color 0.3s var(--ease-flow),
     border-color 0.3s var(--ease-flow),
     box-shadow 0.3s var(--ease-flow),
     transform 0.3s var(--ease-flow);
 }
 
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: 0.05rem 12% auto;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--member-accent), transparent);
+  opacity: 0.65;
+}
+
+.panels > .panel:nth-child(2) {
+  animation-delay: 80ms;
+}
+
+.panels > .panel:nth-child(3) {
+  animation-delay: 160ms;
+}
+
+.home > .panel {
+  animation-delay: 240ms;
+}
+
+.medalPanel {
+  --member-accent: var(--c-warning);
+}
+
+@keyframes panel-arrive {
+  from {
+    opacity: 0;
+    filter: blur(3px);
+    translate: 0 0.85rem;
+    rotate: x -2deg;
+    scale: 0.985;
+  }
+}
+
 @media (hover: hover) and (pointer: fine) {
   .panel:hover {
-    background: color-mix(in oklab, var(--c-surface) 94%, var(--c-surface-raised));
-    border-color: var(--c-border-strong);
-    box-shadow: var(--shadow-float);
-    transform: perspective(60rem) translateY(-2px) rotateX(0.35deg);
+    border-color: color-mix(in oklab, var(--member-accent) 48%, var(--c-border-strong));
+    box-shadow:
+      inset 0 1px 0 color-mix(in oklab, var(--member-accent) 38%, transparent),
+      0 20px 44px rgb(0 0 0 / 36%),
+      0 0 34px color-mix(in oklab, var(--member-accent) 9%, transparent);
+    transform: perspective(60rem) translateY(-4px) rotateX(0.7deg);
   }
 }
 
