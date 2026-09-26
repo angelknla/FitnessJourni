@@ -1,7 +1,8 @@
 'use client';
 
-import { BinIcon, MoreIcon, PencilIcon, ReactionIcon } from '@components/Icons/Icons';
+import { BinIcon, CalendarIcon, CrossIcon, MoreIcon, PencilIcon, ReactionIcon, SendIcon } from '@components/Icons/Icons';
 import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
+import { PageHeader } from '@components/PageHeader/PageHeader';
 import { accentHex } from '@data/fitnessData';
 import { useRouter } from 'next/navigation';
 import {
@@ -41,6 +42,10 @@ const dayLabel = new Intl.DateTimeFormat('en-GB', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
+});
+const shortDateLabel = new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'short',
 });
 const reactionOptions: Array<{ type: MessageReactionType; emoji: string; label: string }> = [
     { type: 'heart', emoji: '❤️', label: 'Heart' },
@@ -345,8 +350,9 @@ const MessageBubble = ({
 export const MessageBoard = ({ members, messages, viewerId }: MessageBoardProps) => {
     const [state, formAction, isPending] = useActionState(postMessage, initial);
     const formRef = useRef<HTMLFormElement>(null);
+    const composerInputRef = useRef<HTMLTextAreaElement>(null);
     const router = useRouter();
-    const [filterMode, setFilterMode] = useState<'all' | 'date' | 'month'>('all');
+    const [filterMode, setFilterMode] = useState<'all' | 'date'>('all');
     const [filterValue, setFilterValue] = useState('');
     const memberById = new Map(members.map((member) => [member.id, member]));
     const filteredMessages = [...messages]
@@ -355,7 +361,7 @@ export const MessageBoard = ({ members, messages, viewerId }: MessageBoardProps)
                 return true;
             }
             const date = localDateKey(message.createdAt);
-            return filterMode === 'date' ? date === filterValue : date.startsWith(filterValue);
+            return date === filterValue;
         })
         .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
 
@@ -366,111 +372,138 @@ export const MessageBoard = ({ members, messages, viewerId }: MessageBoardProps)
     useEffect(() => {
         if (state.ok && state.bookedAt) {
             formRef.current?.reset();
+            composerInputRef.current?.style.removeProperty('height');
         }
     }, [state.ok, state.bookedAt]);
 
+    const resizeComposer = () => {
+        const input = composerInputRef.current;
+        if (!input) return;
+        input.style.height = 'auto';
+        input.style.height = `${input.scrollHeight}px`;
+    };
+
+    const filterControls = (
+        <div className={styles.mobileFilters}>
+            <label
+                className={`${styles.mobileDateControl} ${filterValue ? styles.mobileDateActive : ''}`}
+                title="Filter messages by date"
+            >
+                <CalendarIcon size={18} />
+                {filterValue && (
+                    <span aria-hidden="true">
+                        {shortDateLabel.format(new Date(`${filterValue}T12:00:00`))}
+                    </span>
+                )}
+                <input
+                    type="date"
+                    aria-label="Filter messages by date"
+                    value={filterValue}
+                    onChange={(event) => {
+                        setFilterMode(event.target.value ? 'date' : 'all');
+                        setFilterValue(event.target.value);
+                    }}
+                />
+            </label>
+            {filterMode === 'date' && filterValue && (
+                <button
+                    type="button"
+                    className={styles.clearFilter}
+                    aria-label="Clear message date filter"
+                    title="Clear filter"
+                    onClick={() => {
+                        setFilterMode('all');
+                        setFilterValue('');
+                    }}
+                >
+                    <CrossIcon size={14} />
+                </button>
+            )}
+        </div>
+    );
+
     return (
-        <section className={styles.board} aria-label="Group chat">
-            {messages.length > 0 && (
-                <div className={styles.filters}>
-                    <label>
-                        <span>Show</span>
-                        <select
-                            value={filterMode}
-                            onChange={(event) => {
-                                setFilterMode(event.target.value as 'all' | 'date' | 'month');
-                                setFilterValue('');
-                            }}
-                        >
-                            <option value="all">All messages</option>
-                            <option value="date">A date</option>
-                            <option value="month">A month</option>
-                        </select>
-                    </label>
-                    {filterMode !== 'all' && (
-                        <label>
-                            <span>{filterMode === 'date' ? 'Date' : 'Month'}</span>
-                            <input
-                                type={filterMode === 'date' ? 'date' : 'month'}
-                                value={filterValue}
-                                onChange={(event) => setFilterValue(event.target.value)}
-                            />
-                        </label>
+        <>
+            <PageHeader
+                eyebrow="Chat"
+                title="Keep moving together"
+                actions={messages.length > 0 ? filterControls : undefined}
+            />
+            <section className={styles.board} aria-label="Group chat">
+                <div className={styles.conversation}>
+                    {filteredMessages.length > 0 ? (
+                        <ol className={styles.feed} aria-label="Conversation">
+                            {filteredMessages.map((message, index) => {
+                                const author = memberById.get(message.memberId);
+                                const accent = author ? accentHex[author.accent] : 'var(--c-ink-muted)';
+                                const date = localDateKey(message.createdAt);
+                                const previousDate =
+                                    index > 0 ? localDateKey(filteredMessages[index - 1].createdAt) : null;
+                                const own = message.memberId === viewerId;
+
+                                return (
+                                    <Fragment key={message.id}>
+                                        {date !== previousDate && (
+                                            <li className={styles.dateDivider}>
+                                                <span>{dayLabel.format(new Date(message.createdAt))}</span>
+                                            </li>
+                                        )}
+                                        <li
+                                            className={`${styles.message} ${own ? styles.own : ''}`}
+                                            style={{ '--message-accent': accent } as CSSProperties}
+                                        >
+                                            <MessageBubble
+                                                message={message}
+                                                author={author}
+                                                own={own}
+                                                viewerId={viewerId}
+                                            />
+                                        </li>
+                                    </Fragment>
+                                );
+                            })}
+                        </ol>
+                    ) : (
+                        <div className={styles.empty}>
+                            <strong>{messages.length > 0 ? 'No messages for that period' : 'Nothing shared yet'}</strong>
+                            <span>
+                                {messages.length > 0
+                                    ? 'Try another date or return to all messages.'
+                                    : 'Start with today’s win or the thought keeping you moving.'}
+                            </span>
+                        </div>
                     )}
                 </div>
-            )}
 
-            <div className={styles.conversation}>
-                {filteredMessages.length > 0 ? (
-                    <ol className={styles.feed} aria-label="Conversation">
-                        {filteredMessages.map((message, index) => {
-                            const author = memberById.get(message.memberId);
-                            const accent = author ? accentHex[author.accent] : 'var(--c-ink-muted)';
-                            const date = localDateKey(message.createdAt);
-                            const previousDate =
-                                index > 0 ? localDateKey(filteredMessages[index - 1].createdAt) : null;
-                            const own = message.memberId === viewerId;
-
-                            return (
-                                <Fragment key={message.id}>
-                                    {date !== previousDate && (
-                                        <li className={styles.dateDivider}>
-                                            <span>{dayLabel.format(new Date(message.createdAt))}</span>
-                                        </li>
-                                    )}
-                                    <li
-                                        className={`${styles.message} ${own ? styles.own : ''}`}
-                                        style={{ '--message-accent': accent } as CSSProperties}
-                                    >
-                                        <MessageBubble
-                                            message={message}
-                                            author={author}
-                                            own={own}
-                                            viewerId={viewerId}
-                                        />
-                                    </li>
-                                </Fragment>
-                            );
-                        })}
-                    </ol>
+                {viewerId ? (
+                    <form ref={formRef} action={formAction} className={styles.composer}>
+                        <label className="sr-only" htmlFor="chat-message">Share something with the group</label>
+                        <div className={styles.composeRow}>
+                            <textarea
+                                ref={composerInputRef}
+                                id="chat-message"
+                                name="content"
+                                rows={1}
+                                maxLength={500}
+                                placeholder="Write a message…"
+                                onInput={resizeComposer}
+                                required
+                            />
+                            <button type="submit" disabled={isPending} aria-label="Send message">
+                                <SendIcon />
+                            </button>
+                        </div>
+                        {state.error && (
+                            <p className={styles.error} role="alert">
+                                {state.error}
+                            </p>
+                        )}
+                        {state.ok && state.message && <p className={styles.success}>{state.message}</p>}
+                    </form>
                 ) : (
-                    <div className={styles.empty}>
-                        <strong>{messages.length > 0 ? 'No messages for that period' : 'Nothing shared yet'}</strong>
-                        <span>
-                            {messages.length > 0
-                                ? 'Try another date or return to all messages.'
-                                : 'Start with today’s win or the thought keeping you moving.'}
-                        </span>
-                    </div>
+                    <p className={styles.choosePerson}>Choose who you are from Profile to share a post.</p>
                 )}
-            </div>
-
-            {viewerId ? (
-                <form ref={formRef} action={formAction} className={styles.composer}>
-                    <label htmlFor="chat-message">Share something with the group</label>
-                    <div className={styles.composeRow}>
-                        <textarea
-                            id="chat-message"
-                            name="content"
-                            rows={2}
-                            maxLength={500}
-                            placeholder="A win, a reminder, or some motivation…"
-                            required
-                        />
-                        <button type="submit" disabled={isPending}>
-                            {isPending ? 'Sharing…' : 'Share'}
-                        </button>
-                    </div>
-                    {state.error && (
-                        <p className={styles.error} role="alert">
-                            {state.error}
-                        </p>
-                    )}
-                    {state.ok && state.message && <p className={styles.success}>{state.message}</p>}
-                </form>
-            ) : (
-                <p className={styles.choosePerson}>Choose who you are from Profile to share a post.</p>
-            )}
-        </section>
+            </section>
+        </>
     );
 };

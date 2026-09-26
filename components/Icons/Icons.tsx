@@ -60,10 +60,26 @@ export const CalendarIcon = ({ size }: IconProps) => (
   </NavIcon>
 );
 
+export const ResyncIcon = ({ size = 18 }: IconProps) => (
+  <NavIcon size={size}>
+    <path d="M20 6v5h-5" />
+    <path d="M4 18v-5h5" />
+    <path d="M6.1 8.5A7 7 0 0 1 18.7 7L20 11" />
+    <path d="M17.9 15.5A7 7 0 0 1 5.3 17L4 13" />
+  </NavIcon>
+);
+
 export const MessageIcon = ({ size }: IconProps) => (
   <NavIcon size={size}>
     <path d="M4 4.5h16v11H9l-5 4z" />
     <path d="M8 8.5h8M8 11.5h5" />
+  </NavIcon>
+);
+
+export const SendIcon = ({ size = 18 }: IconProps) => (
+  <NavIcon size={size}>
+    <path d="m3.5 4 17 8-17 8 3-8z" />
+    <path d="M6.5 12h14" />
   </NavIcon>
 );
 

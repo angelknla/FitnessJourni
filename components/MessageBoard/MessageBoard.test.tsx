@@ -101,7 +101,7 @@ describe('MessageBoard', () => {
         expect(screen.queryByRole('button', { name: 'Message options' })).not.toBeInTheDocument();
     });
 
-    it('filters the conversation by month', async () => {
+    it('filters the conversation by date and does not offer a month filter', async () => {
         const user = userEvent.setup();
         render(
             <MessageBoard
@@ -114,18 +114,32 @@ describe('MessageBoard', () => {
             />
         );
 
-        await user.selectOptions(screen.getByLabelText('Show'), 'month');
-        await user.type(screen.getByLabelText('Month'), '2026-09');
+        expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+        await user.type(screen.getByLabelText('Filter messages by date'), '2026-09-25');
 
+        expect(screen.getByText('25 Sept')).toBeInTheDocument();
         expect(screen.getByText('September')).toBeInTheDocument();
         expect(screen.queryByText('August')).not.toBeInTheDocument();
+
+        await user.click(screen.getByRole('button', { name: 'Clear message date filter' }));
+        expect(screen.getByText('August')).toBeInTheDocument();
     });
 
     it('asks visitors to choose a profile instead of showing the composer', () => {
         render(<MessageBoard members={[member]} viewerId={null} messages={[]} />);
 
-        expect(screen.queryByRole('button', { name: 'Share' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Send message' })).not.toBeInTheDocument();
         expect(screen.getByText(/Choose who you are/)).toBeInTheDocument();
+    });
+
+    it('grows the composer as the message wraps', () => {
+        render(<MessageBoard members={[member]} viewerId="m1" messages={[]} />);
+
+        const composer = screen.getByLabelText('Share something with the group');
+        Object.defineProperty(composer, 'scrollHeight', { configurable: true, value: 72 });
+        fireEvent.input(composer, { target: { value: 'A message that wraps onto another line' } });
+
+        expect(composer).toHaveStyle({ height: '72px' });
     });
 
     it('shows reaction counts and offers all four reactions', async () => {

@@ -7,6 +7,7 @@ import {
   HomeIcon,
   LogsIcon,
   MessageIcon,
+  ResyncIcon,
   RunningIcon,
 } from '@components/Icons/Icons';
 import { IdentityDialog } from '@components/IdentityDialog/IdentityDialog';
@@ -122,27 +123,38 @@ export const Header = ({
               </nav>
 
               {members.length > 0 && (
-                <Link
-                  href="/profile"
-                  className={styles.identity}
-                  data-visitor={viewer.chosen && !you}
-                  style={
-                    you ? ({ '--identity-accent': accentHex[you.accent] } as CSSProperties) : undefined
-                  }
-                  aria-label={`Open ${identityLabel} profile`}
-                >
-                  {you?.avatarPath ? (
-                    <Image
-                      src={you.avatarPath}
-                      alt=""
-                      width={32}
-                      height={32}
-                      unoptimized={you.avatarPath.startsWith('http://')}
-                    />
-                  ) : (
-                    identityInitial
-                  )}
-                </Link>
+                <>
+                  <button
+                    type="button"
+                    className={styles.resync}
+                    aria-label="Reload page"
+                    title="Reload page"
+                    onClick={() => window.location.reload()}
+                  >
+                    <ResyncIcon />
+                  </button>
+                  <Link
+                    href="/profile"
+                    className={styles.identity}
+                    data-visitor={viewer.chosen && !you}
+                    style={
+                      you ? ({ '--identity-accent': accentHex[you.accent] } as CSSProperties) : undefined
+                    }
+                    aria-label={`Open ${identityLabel} profile`}
+                  >
+                    {you?.avatarPath ? (
+                      <Image
+                        src={you.avatarPath}
+                        alt=""
+                        width={32}
+                        height={32}
+                        unoptimized={you.avatarPath.startsWith('http://')}
+                      />
+                    ) : (
+                      identityInitial
+                    )}
+                  </Link>
+                </>
               )}
 
               {members.length > 0 && (

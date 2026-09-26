@@ -96,6 +96,7 @@ describe('Header', () => {
     expect(profile).toHaveAttribute('href', '/profile');
     expect(profile).toHaveTextContent('A');
     expect(profile).toHaveStyle({ '--identity-accent': '#d95926' });
+    expect(screen.getByRole('button', { name: 'Reload page' })).toBeInTheDocument();
   });
 
   it('shows the selected avatar instead of the initial', () => {

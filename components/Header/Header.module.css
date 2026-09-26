@@ -165,6 +165,25 @@
   z-index: 110;
 }
 
+.resync {
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 2rem;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: var(--c-ink-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+}
+
+.resync:hover:not(:disabled) {
+  color: var(--c-ink);
+  background: var(--c-surface-soft);
+  border-color: transparent;
+}
+
 .identity {
   flex-shrink: 0;
   width: 2rem;

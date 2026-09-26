@@ -2,7 +2,7 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 1fr) auto;
   gap: 1rem;
 }
 
@@ -10,11 +10,8 @@
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
-  padding: 1rem;
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-sm);
+  gap: 0.4rem;
+  padding: 0;
 }
 
 .conversation {
@@ -32,27 +29,30 @@
 }
 
 .composeRow {
-  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
 }
 
 .composeRow textarea {
-  width: 100%;
-  min-height: 4.5rem;
-  padding-right: 4.8rem;
-  resize: vertical;
+  min-width: 0;
+  min-height: 2.75rem;
+  resize: none;
+  overflow-y: hidden;
   line-height: 1.45;
 }
 
 .composeRow button {
-  position: absolute;
-  right: 0.45rem;
-  bottom: 0.45rem;
-  min-height: 2rem;
-  padding: 0.35rem 0.75rem;
-  font-size: 0.78rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: 0 0 2.75rem;
+  display: grid;
+  place-items: center;
+  padding: 0;
   color: #fff;
   background: var(--c-accent);
   border-color: transparent;
+  border-radius: 50%;
 }
 
 .composeRow button:hover:not(:disabled) {
@@ -84,23 +84,64 @@
   border-radius: var(--r-sm);
 }
 
-.filters {
+.mobileFilters {
+  min-width: 0;
+  flex: 0 0 auto;
   display: flex;
-  align-items: end;
-  gap: 0.75rem;
+  align-items: center;
+  gap: 0.35rem;
 }
 
-.filters label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  min-width: 9rem;
-}
-
-.filters label span {
-  font-size: 0.72rem;
-  font-weight: 600;
+.mobileDateControl {
+  position: relative;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 2rem;
+  display: grid;
+  place-items: center;
   color: var(--c-ink-muted);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.mobileDateControl.mobileDateActive {
+  width: auto;
+  flex-basis: auto;
+  grid-auto-flow: column;
+  gap: 0.3rem;
+  padding: 0 0.55rem;
+  border-radius: var(--r-pill);
+}
+
+.mobileDateActive span {
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.mobileDateControl input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.clearFilter {
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 2rem;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: var(--c-ink-muted);
+  background: var(--c-surface);
+  border-color: var(--c-border);
+  border-radius: 50%;
 }
 
 .feed {
@@ -401,8 +442,7 @@
   }
 
   .composer {
-    gap: 0.45rem;
-    padding: 0.7rem;
+    gap: 0.35rem;
   }
 
   .composer > label {
@@ -410,44 +450,7 @@
   }
 
   .composeRow textarea {
-    min-height: 3.5rem;
-    max-height: 7rem;
-  }
-
-  .filters {
-    align-items: center;
-    gap: 0.4rem;
-  }
-
-  .filters label {
-    min-width: 0;
-    flex: 1;
-    position: relative;
-    gap: 0;
-  }
-
-  .filters label:first-child {
-    flex: 0 0 8.5rem;
-  }
-
-  .filters label span {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
-
-  .filters select,
-  .filters input {
-    height: 2.15rem;
-    min-height: 0;
-    padding: 0.3rem 0.55rem;
-    font-size: 0.78rem;
+    min-height: 2.75rem;
   }
 
   .bubble {

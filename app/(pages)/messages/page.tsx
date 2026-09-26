@@ -1,6 +1,5 @@
 import { Landing } from '@components/Landing/Landing';
 import { MessageBoard } from '@components/MessageBoard/MessageBoard';
-import { PageHeader } from '@components/PageHeader/PageHeader';
 import { PageLayout } from '@components/PageLayout/PageLayout';
 import { SetupNotice } from '@components/SetupNotice/SetupNotice';
 import type { Metadata } from 'next';
@@ -36,8 +35,6 @@ const MessagesPage = async () => {
 
     return (
         <PageLayout className={styles.page} data-page="chat">
-            <PageHeader eyebrow="Chat" title="A little momentum goes a long way" />
-
             <MessageBoard
                 members={viewerFirst(members, viewer.memberId)}
                 messages={messages}
