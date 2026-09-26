@@ -28,7 +28,7 @@
   gap: 0.7rem;
   overflow-x: auto;
   scroll-snap-type: x proximity;
-  padding-bottom: 0.4rem;
+  padding-bottom: 0.7rem;
   scrollbar-width: thin;
   scrollbar-color: var(--c-border-strong) transparent;
 }
