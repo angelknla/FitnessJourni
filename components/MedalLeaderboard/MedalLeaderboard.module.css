@@ -15,7 +15,7 @@
   padding: 1rem;
   overflow: clip;
   background:
-    linear-gradient(145deg, color-mix(in oklab, var(--c-warning) 9%, transparent), transparent 42%),
+    linear-gradient(145deg, color-mix(in oklab, var(--c-warning) 7%, transparent), transparent 42%),
     rgb(20 20 22 / 94%);
   border: 1px solid color-mix(in oklab, var(--c-warning) 24%, var(--c-border));
   border-radius: var(--r-xl);

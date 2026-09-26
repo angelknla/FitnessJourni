@@ -9,7 +9,7 @@
   position: relative;
   min-width: 0;
   background:
-    linear-gradient(145deg, color-mix(in oklab, var(--c-accent) 5%, transparent), transparent 46%),
+    linear-gradient(145deg, color-mix(in oklab, var(--c-accent) 4%, transparent), transparent 46%),
     var(--c-surface);
   border: 1px solid color-mix(in oklab, var(--c-accent) 24%, var(--c-border));
   border-radius: var(--r-xl);

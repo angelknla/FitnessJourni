@@ -14,7 +14,7 @@
   background:
     linear-gradient(
       145deg,
-      color-mix(in oklab, var(--member-accent) 8%, transparent),
+      color-mix(in oklab, var(--member-accent) 6%, transparent),
       transparent 50%
     ),
     var(--c-surface);
