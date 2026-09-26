@@ -118,7 +118,8 @@
   background: transparent;
 }
 
-.runFilter[aria-pressed="true"] {
+.runFilter[aria-pressed="true"],
+.runFilter[aria-pressed="true"]:hover:not(:disabled) {
   color: #07120d;
   background: var(--c-good);
 }
