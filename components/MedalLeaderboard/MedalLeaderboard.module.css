@@ -63,6 +63,16 @@
   gap: 0.75rem;
 }
 
+.leaderNote {
+  margin: -0.75rem 0 -0.55rem;
+  font-size: 0.76rem;
+  color: var(--c-ink-soft);
+}
+
+.leaderNote strong {
+  color: var(--c-warning);
+}
+
 .tabs {
   flex-shrink: 0;
   display: grid;
@@ -126,9 +136,14 @@
 
 .ranking {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-auto-rows: 2.6rem;
-  column-gap: 0;
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-rows: 3rem;
+  max-height: 12rem;
+  padding-right: 0.2rem;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--c-border-strong) transparent;
 }
 
 .person {
@@ -142,21 +157,16 @@
   border-bottom: 1px solid var(--c-border);
 }
 
-.person:nth-child(odd) {
-  padding-right: 0.9rem;
-  border-right: 1px solid var(--c-border-strong);
-}
-
-.person:nth-child(even) {
-  padding-left: 0.9rem;
-}
-
 .person:last-child {
   border-bottom: 0;
 }
 
-.person:nth-last-child(2):nth-child(odd) {
-  border-bottom: 0;
+.result {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.65rem;
 }
 
 .personName {
@@ -164,7 +174,7 @@
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  font-size: 0.82rem;
+  font-size: 0.96rem;
 }
 
 .personName strong {
@@ -178,18 +188,17 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 0.6px;
+  gap: 0.32rem;
   font-size: 1rem;
 }
 
 .medalCount {
   position: relative;
-  width: 1.65rem;
-  height: 1.65rem;
+  width: 1.48rem;
+  height: 1.75rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.38rem;
   line-height: 1;
 }
 
@@ -197,12 +206,12 @@
   position: absolute;
   right: -0.08rem;
   bottom: -0.08rem;
-  min-width: 0.85rem;
-  height: 0.85rem;
+  min-width: 0.92rem;
+  height: 0.92rem;
   display: grid;
   place-items: center;
   padding: 0 0.12rem;
-  font-size: 0.58rem;
+  font-size: 0.62rem;
   line-height: 1;
   font-variant-numeric: tabular-nums;
   color: var(--c-bg);
@@ -215,6 +224,14 @@
 .empty {
   font-size: 0.76rem;
   color: var(--c-ink-muted);
+}
+
+.points {
+  min-width: 3.25rem;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--c-warning);
 }
 
 .detailNote {
@@ -242,11 +259,6 @@
   background: var(--c-surface);
   border: 1px solid var(--c-border);
   border-radius: var(--r-sm);
-}
-
-.medal {
-  flex-shrink: 0;
-  font-size: 1.35rem;
 }
 
 .awards strong,
@@ -280,21 +292,7 @@
 }
 
 @media (max-width: 420px) {
-  .person:nth-child(odd) {
-    padding-right: 0.55rem;
-  }
-
-  .person:nth-child(even) {
-    padding-left: 0.55rem;
-  }
-
   .personName {
-    font-size: 0.75rem;
-  }
-
-  .medalCount {
-    width: 1.48rem;
-    height: 1.48rem;
-    font-size: 1.24rem;
+    font-size: 0.86rem;
   }
 }

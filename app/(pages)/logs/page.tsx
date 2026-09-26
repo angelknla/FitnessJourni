@@ -1,11 +1,11 @@
 import { Landing } from '@components/Landing/Landing';
+import { LogsPeriodNav } from '@components/LogsPeriodNav/LogsPeriodNav';
 import { LogsTable } from '@components/LogsTable/LogsTable';
 import { PageHeader } from '@components/PageHeader/PageHeader';
 import { PageLayout } from '@components/PageLayout/PageLayout';
 import { SetupNotice } from '@components/SetupNotice/SetupNotice';
-import { startOfMonth, startOfWeek, toISODate } from '@utils/date';
+import { fromISODate, startOfMonth, startOfWeek, toISODate } from '@utils/date';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { awardMedals, type Period, summarise } from '@/lib/aggregate';
 import { getLogsSince } from '@/lib/data/logs';
 import { getMembers } from '@/lib/data/members';
@@ -23,14 +23,8 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 
-const PERIODS: { key: Period; label: string }[] = [
-  { key: 'today', label: 'Today' },
-  { key: 'week', label: 'This week' },
-  { key: 'month', label: 'This month' },
-];
-
 interface LogsPageProps {
-  searchParams: Promise<{ period?: string }>;
+  searchParams: Promise<{ period?: string; date?: string }>;
 }
 
 const LogsPage = async ({ searchParams }: LogsPageProps) => {
@@ -43,13 +37,17 @@ const LogsPage = async ({ searchParams }: LogsPageProps) => {
     return <SetupNotice />;
   }
 
-  const { period: raw } = await searchParams;
-  const period: Period = raw === 'today' || raw === 'month' ? raw : 'week';
-
+  const { period: rawPeriod, date: rawDate } = await searchParams;
   const now = new Date();
   const today = toISODate(now);
-  const from =
-    period === 'today' ? today : period === 'week' ? startOfWeek(today) : startOfMonth(today);
+  const selectedDate = rawDate && /^\d{4}-\d{2}-\d{2}$/.test(rawDate)
+    && toISODate(fromISODate(rawDate)) === rawDate && rawDate <= today
+    ? rawDate
+    : null;
+  const period: Period = rawPeriod === 'today' || rawPeriod === 'month' ? rawPeriod : 'week';
+  const from = selectedDate
+    ?? (period === 'today' ? today : period === 'week' ? startOfWeek(today) : startOfMonth(today));
+  const through = selectedDate ?? today;
 
   const [members, logs, workouts, viewer] = await Promise.all([
     getMembers(),
@@ -58,33 +56,21 @@ const LogsPage = async ({ searchParams }: LogsPageProps) => {
     readViewer(),
   ]);
 
-  const summaries = summarise(logs, from, today);
-  const workoutCounts = countWorkouts(workouts, from, today);
+  const summaries = summarise(logs, from, through);
+  const workoutCounts = countWorkouts(workouts, from, through);
 
   return (
     <PageLayout>
       <PageHeader eyebrow="Logs" title="How everyone is doing" />
 
-      <nav className={styles.periods} aria-label="Period">
-        {PERIODS.map((option) => (
-          <Link
-            key={option.key}
-            href={`/logs?period=${option.key}`}
-            className={styles.period}
-            data-active={option.key === period}
-            aria-current={option.key === period ? 'page' : undefined}
-          >
-            {option.label}
-          </Link>
-        ))}
-      </nav>
+      <LogsPeriodNav period={period} selectedDate={selectedDate} today={today} />
 
       <LogsTable
         members={viewerFirst(members, viewer.memberId)}
         summaries={summaries}
         workoutCounts={workoutCounts}
         medals={awardMedals(summaries, workoutCounts)}
-        showAverages={period !== 'today'}
+        showAverages={!selectedDate && period !== 'today'}
       />
 
       <p className={styles.note}>Medals show each column&apos;s gold, silver and bronze places.</p>

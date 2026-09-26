@@ -56,6 +56,20 @@ export const MemberTabs = ({
     };
   }, [memberCount]);
 
+  useEffect(() => {
+    const list = listRef.current;
+    const activeTab = list?.querySelector<HTMLButtonElement>(`[data-tab-id="${activeId}"]`);
+    if (!list || !activeTab) {
+      return;
+    }
+
+    const listBounds = list.getBoundingClientRect();
+    const tabBounds = activeTab.getBoundingClientRect();
+    if (tabBounds.left < listBounds.left || tabBounds.right > listBounds.right) {
+      activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    }
+  }, [activeId]);
+
   /**
    * Roving tabindex: one stop for the whole tablist, arrows move between tabs.
    * This is the part the portfolio's tabs are missing.

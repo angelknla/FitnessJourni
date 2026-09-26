@@ -67,8 +67,8 @@ describe('LogsTable', () => {
         expect(screen.queryByText('Protein/day')).not.toBeInTheDocument();
         expect(screen.queryByText('kcal/day')).not.toBeInTheDocument();
         expect(screen.queryByText('★')).not.toBeInTheDocument();
-        expect(screen.getAllByText('🥇')).toHaveLength(6);
-        expect(screen.getAllByText('🥈')).toHaveLength(4);
+        expect(document.querySelectorAll('[data-medal-rank="gold"]')).toHaveLength(6);
+        expect(document.querySelectorAll('[data-medal-rank="silver"]')).toHaveLength(4);
     });
 
     it('shows daily sleep without calling it an average on the Today view', () => {

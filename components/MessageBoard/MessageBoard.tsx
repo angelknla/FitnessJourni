@@ -22,6 +22,7 @@ import {
     postMessage,
     reactToMessage,
 } from '@/app/actions';
+import { canModifyMessage, MESSAGE_EDIT_WINDOW_MS } from '@/lib/messagePolicy';
 import type { Member, MessagePost, MessageReactionType } from '@/types/fitness';
 
 import styles from './MessageBoard.module.css';
@@ -81,6 +82,7 @@ const MessageBubble = ({
     const [deleteState, deleteAction, isDeleting] = useActionState(deleteMessage, initial);
     const [reactionState, reactionAction, isReacting] = useActionState(reactToMessage, initial);
     const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
+    const [canModify, setCanModify] = useState(() => canModifyMessage(message.createdAt));
     const optionsRef = useRef<HTMLSpanElement>(null);
     const reactionFormRef = useRef<HTMLFormElement>(null);
     const reactionInputRef = useRef<HTMLInputElement>(null);
@@ -170,6 +172,19 @@ const MessageBubble = ({
     }, [editState.ok, editState.bookedAt]);
 
     useEffect(() => {
+        const expiresAt = new Date(message.createdAt).getTime() + MESSAGE_EDIT_WINDOW_MS;
+        const remaining = expiresAt - Date.now();
+        setCanModify(canModifyMessage(message.createdAt));
+
+        if (remaining <= 0) return;
+        const timer = window.setTimeout(() => {
+            setCanModify(false);
+            setEditing(false);
+        }, remaining);
+        return () => window.clearTimeout(timer);
+    }, [message.createdAt]);
+
+    useEffect(() => {
         if (!optionsOpen && !reactionPickerOpen) return;
 
         const handleOutsidePointer = (event: PointerEvent) => {
@@ -232,6 +247,8 @@ const MessageBubble = ({
                                 <span className={styles.optionsMenu}>
                                     <button
                                         type="button"
+                                        disabled={!canModify}
+                                        title={!canModify ? 'Messages can only be edited within 15 minutes.' : undefined}
                                         onClick={() => {
                                             setEditing(true);
                                             setOptionsOpen(false);
@@ -249,7 +266,11 @@ const MessageBubble = ({
                                         }}
                                     >
                                         <input type="hidden" name="id" value={message.id} />
-                                        <button type="submit" disabled={isDeleting}>
+                                        <button
+                                            type="submit"
+                                            disabled={isDeleting || !canModify}
+                                            title={!canModify ? 'Messages can only be deleted within 15 minutes.' : undefined}
+                                        >
                                             <BinIcon />
                                             {isDeleting ? 'Removing…' : 'Delete'}
                                         </button>

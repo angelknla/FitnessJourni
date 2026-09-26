@@ -68,22 +68,26 @@ describe('clamp', () => {
 });
 
 describe('startOfWeek', () => {
-  it('returns the Sunday of that week, matching the playbook', () => {
-    // Fri 25 Sep 2026 -> Sun 20 Sep 2026.
-    expect(startOfWeek('2026-09-25')).toBe('2026-09-20');
+  it('returns the Monday of that week', () => {
+    // Fri 25 Sep 2026 -> Mon 21 Sep 2026.
+    expect(startOfWeek('2026-09-25')).toBe('2026-09-21');
   });
 
-  it('returns the same day when it is already a Sunday', () => {
-    expect(startOfWeek('2026-09-20')).toBe('2026-09-20');
+  it('returns the same day when it is already a Monday', () => {
+    expect(startOfWeek('2026-09-21')).toBe('2026-09-21');
+  });
+
+  it('places Sunday at the end of the preceding Monday-start week', () => {
+    expect(startOfWeek('2026-09-20')).toBe('2026-09-14');
   });
 
   it('crosses into the previous month when the week straddles one', () => {
-    // Thu 1 Oct 2026 -> Sun 27 Sep 2026.
-    expect(startOfWeek('2026-10-01')).toBe('2026-09-27');
+    // Thu 1 Oct 2026 -> Mon 28 Sep 2026.
+    expect(startOfWeek('2026-10-01')).toBe('2026-09-28');
   });
 
-  it('matches the playbook: week 1 starts Sun 06 Sep 2026', () => {
-    expect(startOfWeek('2026-09-12')).toBe('2026-09-06');
+  it('keeps Saturday in the week beginning the preceding Monday', () => {
+    expect(startOfWeek('2026-09-12')).toBe('2026-09-07');
   });
 });
 

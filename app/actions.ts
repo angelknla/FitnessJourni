@@ -18,6 +18,7 @@ import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { VIEWER_COOKIE } from '@/lib/auth';
 import { getMembers } from '@/lib/data/members';
+import { canModifyMessage } from '@/lib/messagePolicy';
 import { ADMIN_MEMBER_NAME, canEditMember, canRemoveMember } from '@/lib/ownership';
 import { isUnlocked, readViewer } from '@/lib/session';
 import { getSupabase } from '@/lib/supabase/server';
@@ -1289,7 +1290,7 @@ const ownedMessage = async (
 
   const { data: message } = await supabase
     .from('messages')
-    .select('member_id')
+    .select('member_id, created_at')
     .eq('id', id)
     .maybeSingle();
   if (!message?.member_id) {
@@ -1297,6 +1298,9 @@ const ownedMessage = async (
   }
   if (await refuseUnlessOwn(message.member_id as string)) {
     return fail('You can only change your own messages.');
+  }
+  if (!canModifyMessage(message.created_at as string)) {
+    return fail('Messages can only be changed within 15 minutes of being sent.');
   }
 
   return { memberId: message.member_id as string, supabase };

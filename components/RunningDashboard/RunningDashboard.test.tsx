@@ -55,7 +55,7 @@ const setup = (viewerId: string | null = 'm1') =>
             runs={runs}
             latestRuns={runs.slice(0, 3)}
             tallies={{
-                m1: { week: 2, month: 2 },
+                m1: { week: 1, month: 2 },
                 m2: { week: 1, month: 1 },
             }}
             viewerId={viewerId}
@@ -69,13 +69,13 @@ describe('RunningDashboard', () => {
 
         const highlights = screen.getByRole('region', { name: 'Running highlights' });
         expect(highlights).toHaveTextContent('15.0 km');
-        expect(within(highlights).getByText('this week · 2 runs').previousElementSibling).toHaveTextContent('15.0 km');
+        expect(within(highlights).getByText('this week · 1 run').previousElementSibling).toHaveTextContent('5.0 km');
         expect(within(highlights).getByText('people showed up today').previousElementSibling).toHaveTextContent('2');
         expect(within(highlights).getByText('5.0 km · 31m')).toBeInTheDocument();
 
         const tallies = screen.getByRole('region', { name: 'Runs by person' });
         expect(within(tallies).getAllByRole('listitem')).toHaveLength(2);
-        expect(within(tallies).getByText('Dillon').closest('li')).toHaveTextContent('2/2');
+        expect(within(tallies).getByText('Dillon').closest('li')).toHaveTextContent('1/2');
     });
 
     it('shows distance, calculated pace, time and attendees for recent runs', () => {
@@ -99,7 +99,7 @@ describe('RunningDashboard', () => {
                 members={members}
                 runs={periodRuns}
                 latestRuns={periodRuns.slice(0, 3)}
-                tallies={{ m1: { week: 2, month: 4 }, m2: { week: 1, month: 1 } }}
+                tallies={{ m1: { week: 1, month: 4 }, m2: { week: 1, month: 1 } }}
                 viewerId="m1"
                 today="2026-09-25"
             />
@@ -110,7 +110,7 @@ describe('RunningDashboard', () => {
         expect(screen.getByRole('button', { name: 'Latest' })).toHaveAttribute('aria-pressed', 'true');
 
         await user.click(screen.getByRole('button', { name: 'This week' }));
-        expect(within(recentRuns).getAllByRole('listitem')).toHaveLength(2);
+        expect(within(recentRuns).getAllByRole('listitem')).toHaveLength(1);
 
         await user.click(screen.getByRole('button', { name: 'This month' }));
         expect(within(recentRuns).getAllByRole('listitem')).toHaveLength(4);

@@ -358,7 +358,7 @@ export const RunningDashboard = ({
                 </div>
                 <div className={styles.miniHighlight}>
                     <strong>{weekDistance.toFixed(1)} km</strong>
-                    <span>this week · {weekRuns.length} runs</span>
+                    <span>this week · {weekRuns.length} {weekRuns.length === 1 ? 'run' : 'runs'}</span>
                 </div>
                 <div className={styles.miniHighlight}>
                     <strong>{todayRunnerCount}</strong>

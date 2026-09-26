@@ -59,9 +59,6 @@
   z-index: 2;
   top: 0;
   left: 50%;
-  font-size: 1.3rem;
-  line-height: 1;
-  filter: drop-shadow(0 1px 2px color-mix(in oklab, var(--c-bg) 55%, transparent));
   transform: translateX(-50%);
 }
 

@@ -43,7 +43,7 @@ describe('tallyRuns', () => {
       '2026-09-25'
     );
 
-    expect(tallies.m1).toEqual({ week: 2, month: 2 });
+    expect(tallies.m1).toEqual({ week: 1, month: 2 });
     expect(tallies.m2).toEqual({ week: 1, month: 2 });
   });
 

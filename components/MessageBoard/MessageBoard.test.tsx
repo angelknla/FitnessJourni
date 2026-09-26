@@ -38,6 +38,7 @@ const member: Member = {
 describe('MessageBoard', () => {
     it('shows owner options and opens the inline message editor', async () => {
         const user = userEvent.setup();
+        const createdAt = new Date(Date.now() - 5 * 60 * 1000).toISOString();
         render(
             <MessageBoard
                 members={[member]}
@@ -47,7 +48,7 @@ describe('MessageBoard', () => {
                         id: 'post-1',
                         memberId: 'm1',
                         content: 'Keep showing up.',
-                        createdAt: '2026-09-25T08:30:00.000Z',
+                        createdAt,
                         reactions: [],
                     },
                 ]}
@@ -70,7 +71,16 @@ describe('MessageBoard', () => {
             screen.getByRole('list', { name: 'Conversation' }).parentElement?.className
         ).toContain('conversation');
         expect(screen.getByText('You')).toBeInTheDocument();
-        expect(screen.getByText('Friday, 25 September 2026')).toBeInTheDocument();
+        expect(
+            screen.getByText(
+                new Intl.DateTimeFormat('en-GB', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                }).format(new Date(createdAt))
+            )
+        ).toBeInTheDocument();
         await user.click(screen.getByRole('button', { name: 'Message options' }));
         expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
         fireEvent.pointerDown(document.body);
@@ -99,6 +109,32 @@ describe('MessageBoard', () => {
         );
 
         expect(screen.queryByRole('button', { name: 'Message options' })).not.toBeInTheDocument();
+    });
+
+    it('keeps expired message options available but disables edit and delete', async () => {
+        const user = userEvent.setup();
+        render(
+            <MessageBoard
+                members={[member]}
+                viewerId="m1"
+                messages={[
+                    {
+                        id: 'post-1',
+                        memberId: 'm1',
+                        content: 'An older message.',
+                        createdAt: '2026-09-25T08:30:00.000Z',
+                        reactions: [],
+                    },
+                ]}
+            />
+        );
+
+        const options = screen.getByRole('button', { name: 'Message options' });
+        expect(options).toBeEnabled();
+        await user.click(options);
+
+        expect(screen.getByRole('button', { name: 'Edit' })).toBeDisabled();
+        expect(screen.getByRole('button', { name: 'Delete' })).toBeDisabled();
     });
 
     it('filters the conversation by date and does not offer a month filter', async () => {

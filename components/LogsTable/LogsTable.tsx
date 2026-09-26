@@ -1,3 +1,4 @@
+import { MedalIcon } from '@components/MedalIcon/MedalIcon';
 import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
 import { accentHex } from '@data/fitnessData';
 import type { CSSProperties } from 'react';
@@ -154,7 +155,9 @@ export const LogsTable = ({
                     >
                       <span className={styles.barVisual}>
                         <span className={styles.barFill} data-zero={value <= 0} />
-                        {medal && <span className={styles.barMedal}>{medal.medal}</span>}
+                        {medal && (
+                          <MedalIcon rank={medal.rank} size="compact" className={styles.barMedal} />
+                        )}
                       </span>
                     </span>
                     <span className={styles.member} title={column.title}>

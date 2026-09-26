@@ -24,13 +24,10 @@ export const buildDays = (startISO: string, count: number) => {
   });
 };
 
-/**
- * Start of the week containing `iso`, as a Sunday — matching the playbook's
- * execution pages, whose weeks run Sun-Sat (Week 1 is 06-12 Sep 2026).
- */
+/** Start of the week containing `iso`, using Monday as the first day. */
 export const startOfWeek = (iso: string) => {
   const date = fromISODate(iso);
-  date.setDate(date.getDate() - date.getDay());
+  date.setDate(date.getDate() - ((date.getDay() + 6) % 7));
   return toISODate(date);
 };
 

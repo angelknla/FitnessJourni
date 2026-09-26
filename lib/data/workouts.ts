@@ -61,7 +61,7 @@ export const countWorkouts = (
 const emptyTally = (): WorkoutTally => ({ today: 0, week: 0, month: 0 });
 
 /**
- * Counts per member for the day, the Sunday-start week and the calendar month.
+ * Counts per member for the day, the Monday-start week and the calendar month.
  * A workout can land in the week but not the month (or vice versa) when a week
  * straddles a month boundary, so each bucket is tested independently.
  */

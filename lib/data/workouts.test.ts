@@ -49,7 +49,7 @@ describe('mapWorkout', () => {
 });
 
 describe('tallyWorkouts', () => {
-  // Friday 25 Sep 2026. Its Sunday-start week began Sun 20 Sep.
+  // Friday 25 Sep 2026. Its Monday-start week began Mon 21 Sep.
   const today = '2026-09-25';
 
   it('counts today, the week and the month separately', () => {
@@ -65,16 +65,16 @@ describe('tallyWorkouts', () => {
     expect(tallies.m1).toEqual({ today: 1, week: 2, month: 3 });
   });
 
-  it('starts the week on Sunday, matching the playbook', () => {
-    // Sun 20 Sep is in the week; Sat 19 Sep is the week before.
-    const tallies = tallyWorkouts([make('m1', '2026-09-20'), make('m1', '2026-09-19')], today);
+  it('starts the week on Monday', () => {
+    // Mon 21 Sep is in the week; Sun 20 Sep is the week before.
+    const tallies = tallyWorkouts([make('m1', '2026-09-21'), make('m1', '2026-09-20')], today);
 
     expect(tallies.m1.week).toBe(1);
     expect(tallies.m1.month).toBe(2);
   });
 
   it('counts a workout in the week but not the month when the week straddles a month end', () => {
-    // Thu 1 Oct 2026; its week began Sun 27 Sep, i.e. in September.
+    // Thu 1 Oct 2026; its week began Mon 28 Sep, i.e. in September.
     const tallies = tallyWorkouts(
       [make('m1', '2026-09-28'), make('m1', '2026-10-01')],
       '2026-10-01'

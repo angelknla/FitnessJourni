@@ -1,0 +1,86 @@
+.medal {
+  --medal-size: 1.8rem;
+  --metal-light: #ffe9a0;
+  --metal-mid: #d8a91e;
+  --metal-dark: #8a5900;
+  position: relative;
+  width: var(--medal-size);
+  height: calc(var(--medal-size) * 1.18);
+  display: inline-block;
+  flex: 0 0 auto;
+  vertical-align: middle;
+  filter: drop-shadow(0 0.12rem 0.14rem rgb(0 0 0 / 38%));
+}
+
+.compact {
+  --medal-size: 1.35rem;
+}
+
+.large {
+  --medal-size: 1.48rem;
+}
+
+.silver {
+  --metal-light: #f4f7f8;
+  --metal-mid: #aeb8c1;
+  --metal-dark: #626d77;
+}
+
+.bronze {
+  --metal-light: #f2bd92;
+  --metal-mid: #bd6c3b;
+  --metal-dark: #71391d;
+}
+
+.ribbon {
+  position: absolute;
+  inset: 0.02rem 20% auto;
+  height: 55%;
+  overflow: hidden;
+  background:
+    linear-gradient(115deg, transparent 47%, rgb(255 255 255 / 18%) 48% 53%, transparent 54%),
+    linear-gradient(90deg, #173d72 0 42%, #f1eee4 42% 58%, #a62f36 58%);
+  clip-path: polygon(0 0, 43% 0, 57% 57%, 72% 0, 100% 0, 68% 100%, 32% 100%);
+  filter: drop-shadow(0 0.08rem 0.08rem rgb(0 0 0 / 28%));
+}
+
+.coin {
+  position: absolute;
+  inset: auto 0 0;
+  width: var(--medal-size);
+  height: var(--medal-size);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  color: color-mix(in oklab, var(--metal-dark) 88%, #241b0c);
+  background:
+    radial-gradient(circle at 34% 25%, rgb(255 255 255 / 72%) 0 8%, transparent 9%),
+    linear-gradient(135deg, var(--metal-light), var(--metal-mid) 48%, var(--metal-dark));
+  border: max(1px, calc(var(--medal-size) * 0.055)) solid var(--metal-light);
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 0 calc(var(--medal-size) * 0.09) var(--metal-mid),
+    inset 0 0 0 calc(var(--medal-size) * 0.135)
+    color-mix(in oklab, var(--metal-dark) 72%, transparent),
+    inset 0.12rem 0.14rem 0.2rem rgb(255 255 255 / 35%),
+    inset -0.12rem -0.14rem 0.2rem rgb(0 0 0 / 25%);
+}
+
+.coin::after {
+  content: "";
+  position: absolute;
+  inset: 12% 18% 48%;
+  border-radius: 50%;
+  background: linear-gradient(110deg, rgb(255 255 255 / 48%), transparent 72%);
+  transform: rotate(-12deg);
+}
+
+.rank {
+  position: relative;
+  z-index: 1;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: calc(var(--medal-size) * 0.45);
+  font-weight: 700;
+  line-height: 1;
+  text-shadow: 0 1px 0 rgb(255 255 255 / 32%);
+}

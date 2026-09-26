@@ -129,4 +129,46 @@ describe('MemberTabs', () => {
     expect(viewport).not.toHaveAttribute('data-scroll-right');
   });
 
+  it('scrolls a newly active off-screen tab into view', () => {
+    const scrollIntoView = vi.fn();
+    const { rerender } = render(
+      <MemberTabs
+        members={members}
+        activeId="m1"
+        onSelect={vi.fn()}
+        onAdd={vi.fn()}
+        addOpen={false}
+        panelId="panel"
+      />
+    );
+    const tabs = screen.getByRole('tablist', { name: 'People' });
+    const bradley = screen.getByRole('tab', { name: 'Bradley' });
+    vi.spyOn(tabs, 'getBoundingClientRect').mockReturnValue({
+      left: 0,
+      right: 200,
+    } as DOMRect);
+    vi.spyOn(bradley, 'getBoundingClientRect').mockReturnValue({
+      left: 240,
+      right: 330,
+    } as DOMRect);
+    bradley.scrollIntoView = scrollIntoView;
+
+    rerender(
+      <MemberTabs
+        members={members}
+        activeId="m3"
+        onSelect={vi.fn()}
+        onAdd={vi.fn()}
+        addOpen={false}
+        panelId="panel"
+      />
+    );
+
+    expect(scrollIntoView).toHaveBeenCalledWith({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'nearest',
+    });
+  });
+
 });

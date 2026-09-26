@@ -1,5 +1,6 @@
 'use client';
 
+import { MedalIcon } from '@components/MedalIcon/MedalIcon';
 import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -25,15 +26,17 @@ const rankLabel: Record<MedalRank, string> = {
     bronze: 'Bronze',
 };
 
-const rankPoints: Record<MedalRank, number> = { gold: 3, silver: 2, bronze: 1 };
+const rankPoints: Record<MedalRank, number> = { gold: 5, silver: 3, bronze: 1 };
 const rankOrder: MedalRank[] = ['gold', 'silver', 'bronze'];
+
+export const medalPoints = (awards: MedalAward[]) =>
+    awards.reduce((total, award) => total + rankPoints[award.rank], 0);
 
 const orderMembers = (members: Member[], awards: MedalAward[]) =>
     [...members].sort((left, right) => {
-        const score = (memberId: string) =>
-            awards
-                .filter((award) => award.memberId === memberId)
-                .reduce((total, award) => total + rankPoints[award.rank], 0);
+        const score = (memberId: string) => medalPoints(
+            awards.filter((award) => award.memberId === memberId)
+        );
         return score(right.id) - score(left.id) || left.name.localeCompare(right.name);
     });
 
@@ -73,6 +76,20 @@ export const MedalLeaderboard = ({ members, boards }: MedalLeaderboardProps) => 
         return null;
     }
 
+    const rankedMembers = orderMembers(members, board.awards);
+    const leaderPoints = rankedMembers[0]
+        ? medalPoints(board.awards.filter((award) => award.memberId === rankedMembers[0].id))
+        : 0;
+    const leaders = leaderPoints > 0
+        ? rankedMembers.filter(
+            (member) => medalPoints(
+                board.awards.filter((award) => award.memberId === member.id)
+            ) === leaderPoints
+        )
+        : [];
+    const leaderNames = leaders.map((member) => member.name).join(' & ');
+    const periodPhrase = board.period === 'week' ? 'this week' : 'this month';
+
     return (
         <section className={styles.board} aria-labelledby="medal-leaderboard-heading">
             <header className={styles.headingRow}>
@@ -86,46 +103,58 @@ export const MedalLeaderboard = ({ members, boards }: MedalLeaderboardProps) => 
                     label="Leaderboard period"
                 />
             </header>
+            {leaders.length > 0 && (
+                <p className={styles.leaderNote}>
+                    Great work, <strong>{leaderNames}</strong> — {leaders.length > 1
+                        ? `tied for the lead ${periodPhrase}`
+                        : `leading ${periodPhrase}`} with {leaderPoints} {leaderPoints === 1 ? 'point' : 'points'}.
+                </p>
+            )}
             <section className={styles.period} role="tabpanel" aria-label={board.label}>
                 <h3>{board.label}</h3>
                 <ol className={styles.ranking}>
-                    {orderMembers(members, board.awards).map((member) => {
+                    {rankedMembers.map((member) => {
                         const awards = board.awards.filter((award) => award.memberId === member.id);
+                        const points = medalPoints(awards);
                         const grouped = rankOrder
                             .map((rank) => ({
                                 rank,
-                                medal: awards.find((award) => award.rank === rank)?.medal,
                                 awards: awards.filter((award) => award.rank === rank),
                             }))
-                            .filter((group) => group.medal && group.awards.length > 0);
+                            .filter((group) => group.awards.length > 0);
                         return (
                             <li className={styles.person} key={member.id}>
                                 <span className={styles.personName}>
                                     <MemberAvatar member={member} />
                                     <strong>{member.name}</strong>
                                 </span>
-                                {awards.length > 0 ? (
-                                    <span
-                                        className={styles.medals}
-                                        role="img"
-                                        aria-label={`${awards.length} medals`}
-                                    >
-                                        {grouped.map((group) => (
-                                            <span
-                                                className={styles.medalCount}
-                                                key={group.rank}
-                                                title={`${rankLabel[group.rank]}: ${group.awards
-                                                    .map((award) => award.categoryLabel)
-                                                    .join(', ')}`}
-                                            >
-                                                <span aria-hidden="true">{group.medal}</span>
-                                                <strong>{group.awards.length}</strong>
-                                            </span>
-                                        ))}
-                                    </span>
-                                ) : (
-                                    <span className={styles.none}>No medals</span>
-                                )}
+                                <span className={styles.result}>
+                                    {awards.length > 0 ? (
+                                        <span
+                                            className={styles.medals}
+                                            role="img"
+                                            aria-label={`${awards.length} medals`}
+                                        >
+                                            {grouped.map((group) => (
+                                                <span
+                                                    className={styles.medalCount}
+                                                    key={group.rank}
+                                                    title={`${rankLabel[group.rank]}: ${group.awards
+                                                        .map((award) => award.categoryLabel)
+                                                        .join(', ')}`}
+                                                >
+                                                    <MedalIcon rank={group.rank} size="large" />
+                                                    <strong>{group.awards.length}</strong>
+                                                </span>
+                                            ))}
+                                        </span>
+                                    ) : (
+                                        <span className={styles.none}>No medals</span>
+                                    )}
+                                    <strong className={styles.points}>
+                                        {points} pts
+                                    </strong>
+                                </span>
                             </li>
                         );
                     })}
@@ -168,7 +197,7 @@ export const MemberMedals = ({ memberId, boards }: MemberMedalsProps) => {
                     <ul className={styles.awards}>
                         {awards.map((award) => (
                             <li key={award.category}>
-                                <span className={styles.medal} aria-hidden="true">{award.medal}</span>
+                                <MedalIcon rank={award.rank} />
                                 <span>
                                     <strong>{award.categoryLabel}</strong>
                                     <small>{rankLabel[award.rank]}</small>

@@ -28,7 +28,7 @@ describe('WorkoutTally', () => {
                     m1: { today: 1, week: 3, month: 8 },
                     m2: { today: 0, week: 4, month: 10 },
                 }}
-                weekLabel="Sun 20 – Sat 26 Sept"
+                weekLabel="Mon 21 – Sun 27 Sept"
                 monthLabel="September 2026"
             />
         );
@@ -39,12 +39,11 @@ describe('WorkoutTally', () => {
         expect(cards[0]).toHaveTextContent('1 today');
         expect(cards[0]).toHaveTextContent('1 to target');
         expect(cards[0]).toHaveTextContent('8 workouts');
-        expect(cards[0]).toHaveTextContent('Sun 20 – Sat 26 Sept');
+        expect(cards[0]).toHaveTextContent('Mon 21 – Sun 27 Sept');
         expect(cards[1]).toHaveTextContent('Target met');
         expect(cards[1]).toHaveTextContent('September 2026');
         expect(within(cards[0]).getByRole('img')).toHaveAccessibleName(
             '3 of 4 recommended workouts this week'
         );
-        expect(screen.queryByText(/Week runs Sunday to Saturday/)).not.toBeInTheDocument();
     });
 });

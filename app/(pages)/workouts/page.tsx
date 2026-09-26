@@ -44,7 +44,7 @@ const WorkoutsPage = async () => {
   const weekStart = startOfWeek(today);
   const monthStart = startOfMonth(today);
 
-  // A Sunday-start week can begin in the previous month, so fetch from whichever
+  // A Monday-start week can begin in the previous month, so fetch from whichever
   // boundary is earlier or the week's counts would be short.
   const [members, workouts, viewer] = await Promise.all([
     getMembers(),
