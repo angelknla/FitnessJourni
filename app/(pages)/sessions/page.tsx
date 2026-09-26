@@ -49,7 +49,7 @@ const SessionsPage = async () => {
   return (
     <PageLayout>
       <SessionsReadMarker />
-      <PageHeader animatedBack eyebrow="Sessions" title="What's coming up" />
+      <PageHeader eyebrow="Sessions" title="What's coming up" />
 
       <SessionList
         sessions={visibleSessions}

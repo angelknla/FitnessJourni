@@ -1,39 +1,3 @@
-.back {
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  margin-top: -0.9rem;
-  margin-bottom: 0.35rem;
-  padding: 0.35rem 0.7rem 0.35rem 0.55rem;
-  font-size: 0.8rem;
-  font-weight: 500;
-  text-decoration: none;
-  color: var(--c-ink-soft);
-  background: var(--c-surface-soft);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-pill);
-}
-
-.back:hover {
-  color: var(--c-ink);
-  border-color: var(--c-border-strong);
-}
-
-.back svg {
-  display: block;
-}
-
-.animatedBack {
-  transition:
-    color 0.2s var(--ease-flow),
-    border-color 0.2s var(--ease-flow);
-}
-
-.animatedBack svg {
-  flex-shrink: 0;
-}
-
 .head {
   display: flex;
   flex-direction: column;

@@ -59,7 +59,7 @@ const WorkoutsPage = async () => {
 
   return (
     <PageLayout>
-      <PageHeader animatedBack eyebrow="Workouts" title="The split, and who has shown up" />
+      <PageHeader eyebrow="Workouts" title="The split, and who has shown up" />
 
       <section className={styles.section}>
         <h2 className={styles.sectionHeading}>This week and month</h2>

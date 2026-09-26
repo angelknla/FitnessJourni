@@ -1,10 +1,8 @@
-import { ArrowLeftIcon } from '@components/Icons/Icons';
 import { Landing } from '@components/Landing/Landing';
 import { PageLayout } from '@components/PageLayout/PageLayout';
 import { ProfileView } from '@components/ProfileView/ProfileView';
 import { SetupNotice } from '@components/SetupNotice/SetupNotice';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { getMembers } from '@/lib/data/members';
 import { getProfile } from '@/lib/data/profile';
 import { canRemoveMembers } from '@/lib/ownership';
@@ -46,11 +44,6 @@ const ProfilePage = async () => {
 
     return (
         <PageLayout>
-            <Link href="/" className={styles.back}>
-                <ArrowLeftIcon />
-                Home
-            </Link>
-
             <header className={styles.head}>
                 <p>Profile</p>
                 <h1>Your numbers, over time</h1>

@@ -73,7 +73,7 @@ const LogsPage = async ({ searchParams }: LogsPageProps) => {
 
   return (
     <PageLayout>
-      <PageHeader animatedBack eyebrow="Logs" title="How everyone is doing" />
+      <PageHeader eyebrow="Logs" title="How everyone is doing" />
 
       <nav className={styles.periods} aria-label="Period">
         {PERIODS.map((option) => (
