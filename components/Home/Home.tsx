@@ -23,7 +23,7 @@ import { useRouter } from 'next/navigation';
 import { type CSSProperties, type TouchEvent, useRef, useState } from 'react';
 import { emptyLog } from '@/lib/data/logs';
 import { workoutsForToday } from '@/lib/data/workouts';
-import { formatCount, formatMl } from '@/lib/progress';
+import { caloriesBurnedFromSteps, formatCount, formatMl } from '@/lib/progress';
 import type { DailyLog, Member, Workout, WorkoutTally } from '@/types/fitness';
 
 import styles from './Home.module.css';
@@ -196,6 +196,8 @@ export const Home = ({
 
   const log = logs[active.id] ?? emptyLog(active.id, date);
   const { targets } = active;
+  const caloriesBurned = caloriesBurnedFromSteps(log.steps);
+  const adjustedCalorieTarget = targets.calories + caloriesBurned;
   const todaysWorkouts = workoutsForToday(workouts, active.id, date);
   const tally = tallies[active.id] ?? { today: 0, week: 0, month: 0 };
 
@@ -297,19 +299,17 @@ export const Home = ({
             <ProgressRing
               label="Calories"
               display={formatCount(log.calories)}
-              targetDisplay={formatCount(targets.calories)}
+              targetDisplay={formatCount(adjustedCalorieTarget)}
               value={log.calories}
-              target={targets.calories}
+              target={adjustedCalorieTarget}
               overIsBad
             />
           </div>
 
-          <p className={styles.floorNote}>
-            The tick on Steps marks {formatCount(targets.stepsMin)} — the minimum, inside the{' '}
-            {formatCount(targets.steps)} goal.
-          </p>
-
           <div className={styles.macros}>
+            <p className={styles.caloriesBurned}>
+              <strong>{formatCount(caloriesBurned)} kcal</strong> burned from steps
+            </p>
             <div className={styles.macrosHead}>
               <h2 className={styles.sectionHeading}>Macros</h2>
               {canEdit && (

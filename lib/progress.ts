@@ -16,3 +16,13 @@ export const fillPercent = (value: number, target: number) =>
 export const formatMl = (ml: number) => `${(ml / 1000).toFixed(1)} L`;
 
 export const formatCount = (value: number) => value.toLocaleString('en-GB');
+
+const KCAL_PER_STEP = 0.04;
+
+export const caloriesBurnedFromSteps = (steps: number) => {
+  if (!Number.isFinite(steps) || steps <= 0) {
+    return 0;
+  }
+
+  return Math.round(steps * KCAL_PER_STEP);
+};

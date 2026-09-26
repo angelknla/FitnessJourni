@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { fillPercent, formatCount, formatMl, percentOfTarget } from './progress';
+import {
+  caloriesBurnedFromSteps,
+  fillPercent,
+  formatCount,
+  formatMl,
+  percentOfTarget,
+} from './progress';
 
 describe('percentOfTarget', () => {
   it('computes a straightforward percentage', () => {
@@ -48,5 +54,16 @@ describe('formatMl', () => {
 describe('formatCount', () => {
   it('groups thousands', () => {
     expect(formatCount(12431)).toBe('12,431');
+  });
+});
+
+describe('caloriesBurnedFromSteps', () => {
+  it('estimates burned calories at 0.04 kcal per step', () => {
+    expect(caloriesBurnedFromSteps(9000)).toBe(360);
+  });
+
+  it('returns zero for invalid or negative step totals', () => {
+    expect(caloriesBurnedFromSteps(-100)).toBe(0);
+    expect(caloriesBurnedFromSteps(Number.NaN)).toBe(0);
   });
 });

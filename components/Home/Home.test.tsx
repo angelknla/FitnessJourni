@@ -172,6 +172,17 @@ describe('Home', () => {
     expect(screen.getByRole('button', { name: "Edit Dillon's macro targets" })).toBeInTheDocument();
   });
 
+  it('adds estimated step calories to the calorie ring target only', () => {
+    setup('m1');
+
+    expect(screen.getByRole('img', { name: 'Calories: 2,400 of 2,860 target, 84 percent' }))
+      .toBeInTheDocument();
+    expect(screen.getByText('360 kcal')).toBeInTheDocument();
+    expect(screen.getByText('burned from steps')).toBeInTheDocument();
+    expect(screen.queryByText(/The tick on Steps marks/)).not.toBeInTheDocument();
+    expect(targets.calories).toBe(2500);
+  });
+
   it('swaps the targets pencil for a close icon while editing', async () => {
     const user = userEvent.setup();
     setup('m1');
