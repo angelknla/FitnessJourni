@@ -5,7 +5,7 @@ import { IdentityDialog } from '@components/IdentityDialog/IdentityDialog';
 import { MemberMedals } from '@components/MedalLeaderboard/MedalLeaderboard';
 import { RemoveMemberDialog } from '@components/RemoveMemberDialog/RemoveMemberDialog';
 import { avatarOptions, avatarUploadTypes, isAvatarPath } from '@data/avatarData';
-import { accentHex } from '@data/fitnessData';
+import { accentHex, accentNames } from '@data/fitnessData';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
@@ -19,6 +19,7 @@ import {
 import {
     type ActionState,
     saveAvatar,
+    saveProfileAccent,
     saveProfileDetails,
     saveWeightMeasurement,
 } from '@/app/actions';
@@ -65,6 +66,7 @@ export const ProfileView = ({
     const [selectedAvatar, setSelectedAvatar] = useState(
         member?.avatarPath && !isAvatarPath(member.avatarPath) ? 'upload' : (member?.avatarPath ?? '')
     );
+    const [selectedAccent, setSelectedAccent] = useState(member?.accent ?? 'blue');
     const avatarFileRef = useRef<HTMLInputElement>(null);
     const [signingOut, startSignOut] = useTransition();
     const [profileState, profileAction, profilePending] = useActionState(
@@ -76,6 +78,7 @@ export const ProfileView = ({
         initial
     );
     const [avatarState, avatarAction, avatarPending] = useActionState(saveAvatar, initial);
+    const [accentState, accentAction, accentPending] = useActionState(saveProfileAccent, initial);
 
     const currentWeight = measurements.at(-1)?.weightKg ?? null;
     const currentMonthMeasurement = measurements.find((item) => item.month.startsWith(currentMonth));
@@ -98,7 +101,8 @@ export const ProfileView = ({
         setCurrentWeightDraft(nextWeight);
         setMonthlyWeightDraft(nextWeight);
         setCurrentWeightChanged(false);
-    }, [currentMonth, currentMonthMeasurement?.weightKg, currentWeight, member?.id]);
+        setSelectedAccent(member.accent);
+    }, [currentMonth, currentMonthMeasurement?.weightKg, currentWeight, member?.accent, member?.id]);
 
     useEffect(() => {
         if (avatarState.ok && avatarState.bookedAt) {
@@ -175,7 +179,10 @@ export const ProfileView = ({
         );
     }
 
-    const accent = accentHex[member.accent];
+    const accent = accentHex[selectedAccent];
+    const assignedAccents = new Set(
+        members.filter((option) => option.id !== member.id).map((option) => option.accent)
+    );
     const uploadedAvatar = member.avatarPath && !isAvatarPath(member.avatarPath)
         ? member.avatarPath
         : null;
@@ -370,6 +377,44 @@ export const ProfileView = ({
                     </div>
                 </form>
             )}
+
+            <form className={styles.accentPicker} action={accentAction}>
+                <input type="hidden" name="memberId" value={member.id} />
+                <fieldset>
+                    <legend>Profile colour</legend>
+                    <div className={styles.accentOptions}>
+                        {accentNames.map((option) => {
+                            const assigned = assignedAccents.has(option);
+
+                            return (
+                                <label className={styles.accentOption} key={option}>
+                                    <input
+                                        type="radio"
+                                        name="accent"
+                                        value={option}
+                                        checked={selectedAccent === option}
+                                        disabled={assigned}
+                                        aria-label={assigned ? `${option} — already assigned` : option}
+                                        onChange={() => setSelectedAccent(option)}
+                                    />
+                                    <span
+                                        style={{ '--accent-option': accentHex[option] } as CSSProperties}
+                                        aria-hidden="true"
+                                    />
+                                </label>
+                            );
+                        })}
+                    </div>
+                </fieldset>
+                <button type="submit" disabled={accentPending || selectedAccent === member.accent}>
+                    {accentPending ? 'Saving…' : 'Save colour'}
+                </button>
+                {(accentState.error || accentState.message) && (
+                    <p className={accentState.error ? styles.error : styles.success} role="status">
+                        {accentState.error ?? accentState.message}
+                    </p>
+                )}
+            </form>
 
             <section className={styles.stats} aria-label="Current measurements">
                 <div>

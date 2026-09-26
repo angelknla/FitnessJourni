@@ -1,10 +1,11 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Member, MemberProfile } from '@/types/fitness';
 
 vi.mock('@/app/actions', () => ({
     saveProfileDetails: vi.fn(async () => ({ ok: true })),
+    saveProfileAccent: vi.fn(async () => ({ ok: true })),
     saveWeightMeasurement: vi.fn(async () => ({ ok: true })),
     saveAvatar: vi.fn(async () => ({ ok: true })),
     addMember: vi.fn(async () => ({ ok: false })),
@@ -35,6 +36,14 @@ const member: Member = {
         waterMl: 2500,
         workoutsPerWeek: 4,
     },
+};
+
+const otherMember: Member = {
+    ...member,
+    id: 'm2',
+    name: 'Angel',
+    accent: 'orange',
+    sortOrder: 1,
 };
 
 const profile: MemberProfile = {
@@ -90,7 +99,7 @@ describe('ProfileView', () => {
         const user = userEvent.setup();
         render(
             <ProfileView
-                members={[member]}
+                members={[member, otherMember]}
                 member={member}
                 profile={profile}
                 measurements={[{ month: '2026-09-01', weightKg: 81 }]}
@@ -118,6 +127,14 @@ describe('ProfileView', () => {
         });
         expect(screen.getByLabelText(/^Weight goal/)).toHaveValue(75);
         expect(screen.getByLabelText('BMI goal')).toHaveValue(23);
+        expect(screen.getByRole('radio', { name: 'blue' })).toBeChecked();
+        expect(screen.getByRole('radio', { name: 'orange — already assigned' })).toBeDisabled();
+
+        await user.click(screen.getByRole('radio', { name: 'aqua' }));
+
+        expect(screen.getByRole('radio', { name: 'aqua' })).toBeChecked();
+        expect(screen.getByRole('group', { name: 'Profile colour' }).closest('form')).toHaveFormValues({ accent: 'aqua' });
+        expect(screen.getByRole('button', { name: 'Save colour' })).toBeEnabled();
         expect(screen.getByRole('group', { name: 'Personal info' })).toBeInTheDocument();
         expect(screen.getByRole('group', { name: 'Measurements' })).toBeInTheDocument();
         expect(screen.getByRole('group', { name: 'Goals and targets' })).toBeInTheDocument();
@@ -192,7 +209,9 @@ describe('ProfileView', () => {
         await user.click(screen.getByRole('button', { name: 'Choose profile picture' }));
 
         expect(screen.getByRole('radio', { name: 'Initial' })).toBeChecked();
-        expect(screen.getAllByRole('radio')).toHaveLength(8);
+        expect(
+            within(screen.getByRole('group', { name: 'Profile picture' })).getAllByRole('radio')
+        ).toHaveLength(8);
         expect(screen.getByRole('radio', { name: 'Uploaded photo' })).not.toBeChecked();
         const upload = screen.getByLabelText('Upload photo', { selector: 'input[type="file"]' });
         expect(upload).toHaveAttribute('type', 'file');

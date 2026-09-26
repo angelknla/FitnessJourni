@@ -163,6 +163,50 @@ export const saveAvatar = async (_prev: ActionState, formData: FormData): Promis
   return { ok: true, message: 'Profile picture saved.', bookedAt: Date.now() };
 };
 
+export const saveProfileAccent = async (
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> => {
+  if (!(await isUnlocked())) {
+    return fail(LOCKED);
+  }
+
+  const supabase = getSupabase();
+  if (!supabase) {
+    return fail(NOT_CONFIGURED);
+  }
+
+  const memberId = toText(formData.get('memberId'));
+  const requestedAccent = toText(formData.get('accent'));
+  const notYours = await refuseUnlessOwn(memberId);
+
+  if (notYours) {
+    return fail(notYours);
+  }
+  if (!(accentNames as readonly string[]).includes(requestedAccent)) {
+    return fail('Choose a valid profile colour.');
+  }
+
+  const accent = requestedAccent as AccentName;
+  const accentTaken = (await getMembers()).some(
+    (member) => member.id !== memberId && member.accent === accent
+  );
+  if (accentTaken) {
+    return fail('That profile colour is already assigned.');
+  }
+
+  const { error } = await supabase.from('members').update({ accent }).eq('id', memberId);
+
+  if (error) {
+    console.error('[saveProfileAccent]', error.message);
+    return fail('Could not save your profile colour.');
+  }
+
+  revalidatePath('/profile');
+  revalidatePath('/', 'layout');
+  return { ok: true, message: 'Profile colour saved.', bookedAt: Date.now() };
+};
+
 export const saveProfileDetails = async (
   _prev: ActionState,
   formData: FormData
