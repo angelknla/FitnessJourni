@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import type { LogSummary, RankedMetric } from '@/lib/aggregate';
+import { awardMedals, type LogSummary } from '@/lib/aggregate';
 import type { Member } from '@/types/fitness';
 import { LogsTable } from './LogsTable';
 
@@ -43,13 +43,8 @@ const summaries: Record<string, LogSummary> = {
     },
 };
 
-const leaders: Record<RankedMetric, string[]> = {
-    daysLogged: ['m1'],
-    totalSteps: ['m1'],
-    avgSteps: ['m1'],
-    avgWaterMl: ['m1'],
-    avgProteinG: ['m1'],
-};
+const workoutCounts = { m1: 3 };
+const medals = awardMedals(summaries, workoutCounts);
 
 describe('LogsTable', () => {
     it('shows one accessible column chart per person with every period metric', () => {
@@ -57,8 +52,8 @@ describe('LogsTable', () => {
             <LogsTable
                 members={members}
                 summaries={summaries}
-                workoutCounts={{ m1: 3 }}
-                leaders={leaders}
+                workoutCounts={workoutCounts}
+                medals={medals}
                 showAverages
             />
         );
@@ -71,7 +66,9 @@ describe('LogsTable', () => {
             .toBeInTheDocument();
         expect(screen.queryByText('Protein/day')).not.toBeInTheDocument();
         expect(screen.queryByText('kcal/day')).not.toBeInTheDocument();
-        expect(screen.getAllByText('★')).toHaveLength(4);
+        expect(screen.queryByText('★')).not.toBeInTheDocument();
+        expect(screen.getAllByText('🥇')).toHaveLength(6);
+        expect(screen.getAllByText('🥈')).toHaveLength(4);
     });
 
     it('shows daily sleep without calling it an average on the Today view', () => {
@@ -80,7 +77,7 @@ describe('LogsTable', () => {
                 members={members}
                 summaries={summaries}
                 workoutCounts={{ m1: 1 }}
-                leaders={leaders}
+                medals={awardMedals(summaries, { m1: 1 })}
                 showAverages={false}
             />
         );

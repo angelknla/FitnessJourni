@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DailyLog } from '@/types/fitness';
-import { leaders, summarise } from './aggregate';
+import { awardMedals, leaders, summarise } from './aggregate';
 
 const log = (memberId: string, date: string, over: Partial<DailyLog> = {}): DailyLog => ({
   memberId,
@@ -137,5 +137,55 @@ describe('leaders', () => {
     };
 
     expect(leaders(none).totalSteps).toEqual([]);
+  });
+});
+
+describe('awardMedals', () => {
+  const summary = (steps: number): ReturnType<typeof summarise>[string] => ({
+    daysLogged: steps / 1000,
+    totalSteps: steps,
+    avgSteps: steps,
+    avgWaterMl: steps,
+    avgCalories: 0,
+    avgProteinG: 0,
+    sleepDaysLogged: 1,
+    avgSleepHours: steps / 1000,
+  });
+
+  it('awards a podium per category and includes workout-only members', () => {
+    const awards = awardMedals(
+      { m1: summary(3000), m2: summary(2000), m3: summary(1000), m4: summary(0) },
+      { m1: 1, m2: 2, m3: 3, m4: 4 }
+    );
+
+    expect(
+      awards
+        .filter((award) => award.category === 'totalSteps')
+        .map(({ memberId, medal }) => [memberId, medal])
+    ).toEqual([
+      ['m1', '🥇'],
+      ['m2', '🥈'],
+      ['m3', '🥉'],
+    ]);
+    expect(
+      awards.find((award) => award.category === 'workouts' && award.memberId === 'm4')?.medal
+    ).toBe('🥇');
+  });
+
+  it('shares medals on ties and skips the next podium place', () => {
+    const awards = awardMedals(
+      { m1: summary(3000), m2: summary(3000), m3: summary(2000), m4: summary(1000) },
+      {}
+    ).filter((award) => award.category === 'totalSteps');
+
+    expect(awards.map(({ memberId, medal }) => [memberId, medal])).toEqual([
+      ['m1', '🥇'],
+      ['m2', '🥇'],
+      ['m3', '🥉'],
+    ]);
+  });
+
+  it('does not award medals for zero scores', () => {
+    expect(awardMedals({}, {})).toEqual([]);
   });
 });

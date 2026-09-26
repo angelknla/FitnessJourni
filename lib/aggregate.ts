@@ -130,3 +130,88 @@ export const leaders = (summaries: Record<string, LogSummary>): Record<RankedMet
 
   return result;
 };
+
+export type MedalRank = 'gold' | 'silver' | 'bronze';
+export type MedalEmoji = '🥇' | '🥈' | '🥉';
+export type MedalCategory =
+  | 'daysLogged'
+  | 'workouts'
+  | 'totalSteps'
+  | 'avgSteps'
+  | 'avgWaterMl'
+  | 'avgSleepHours';
+
+export interface MedalAward {
+  memberId: string;
+  category: MedalCategory;
+  categoryLabel: string;
+  rank: MedalRank;
+  medal: MedalEmoji;
+  value: number;
+}
+
+const podium = [
+  { rank: 'gold', medal: '🥇' },
+  { rank: 'silver', medal: '🥈' },
+  { rank: 'bronze', medal: '🥉' },
+] as const;
+
+const medalCategories: {
+  key: MedalCategory;
+  label: string;
+  value: (summary: LogSummary, workouts: number) => number;
+}[] = [
+  { key: 'daysLogged', label: 'Logging', value: (summary) => summary.daysLogged },
+  { key: 'workouts', label: 'Workouts', value: (_summary, workouts) => workouts },
+  { key: 'totalSteps', label: 'Steps', value: (summary) => summary.totalSteps },
+  { key: 'avgSteps', label: 'Steps/day', value: (summary) => summary.avgSteps },
+  { key: 'avgWaterMl', label: 'Water/day', value: (summary) => summary.avgWaterMl },
+  { key: 'avgSleepHours', label: 'Sleep/day', value: (summary) => summary.avgSleepHours },
+];
+
+/** Podium awards for each category. Ties share a medal and skip the next place. */
+export const awardMedals = (
+  summaries: Record<string, LogSummary>,
+  workoutCounts: Record<string, number>
+): MedalAward[] => {
+  const memberIds = new Set([...Object.keys(summaries), ...Object.keys(workoutCounts)]);
+  const awards: MedalAward[] = [];
+
+  for (const category of medalCategories) {
+    const scores = [...memberIds]
+      .map((memberId) => ({
+        memberId,
+        value: category.value(summaries[memberId] ?? emptySummary, workoutCounts[memberId] ?? 0),
+      }))
+      .filter((score) => score.value > 0)
+      .sort(
+        (left, right) => right.value - left.value || left.memberId.localeCompare(right.memberId)
+      );
+
+    let previousValue: number | null = null;
+    let rankIndex = 0;
+
+    scores.forEach((score, index) => {
+      if (score.value !== previousValue) {
+        rankIndex = index;
+        previousValue = score.value;
+      }
+
+      const place = podium[rankIndex];
+      if (!place) {
+        return;
+      }
+
+      awards.push({
+        memberId: score.memberId,
+        category: category.key,
+        categoryLabel: category.label,
+        rank: place.rank,
+        medal: place.medal,
+        value: score.value,
+      });
+    });
+  }
+
+  return awards;
+};

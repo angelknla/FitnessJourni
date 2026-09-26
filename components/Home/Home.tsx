@@ -11,6 +11,7 @@ import {
   PencilIcon,
 } from '@components/Icons/Icons';
 import { MacroBars } from '@components/MacroBars/MacroBars';
+import { MedalLeaderboard } from '@components/MedalLeaderboard/MedalLeaderboard';
 import { MemberTabs } from '@components/MemberTabs/MemberTabs';
 import { ProgressRing } from '@components/ProgressRing/ProgressRing';
 import { QuickEntry } from '@components/QuickEntry/QuickEntry';
@@ -23,6 +24,7 @@ import { useRouter } from 'next/navigation';
 import { type CSSProperties, type TouchEvent, useRef, useState } from 'react';
 import { emptyLog } from '@/lib/data/logs';
 import { workoutsForToday } from '@/lib/data/workouts';
+import type { MedalBoard } from '@/lib/medals';
 import { caloriesBurnedFromSteps, formatCount, formatMl } from '@/lib/progress';
 import type { DailyLog, Member, Workout, WorkoutTally } from '@/types/fitness';
 
@@ -33,6 +35,7 @@ interface HomeProps {
   logs: Record<string, DailyLog>;
   workouts: Workout[];
   tallies: Record<string, WorkoutTally>;
+  medalBoards?: MedalBoard[];
   date: string;
   today: string;
   datePickerLabel: string;
@@ -54,6 +57,7 @@ export const Home = ({
   logs,
   workouts,
   tallies,
+  medalBoards = [],
   date,
   today,
   datePickerLabel,
@@ -390,6 +394,10 @@ export const Home = ({
           />
         </section>
       </div>
+
+      <section className={styles.panel}>
+        <MedalLeaderboard members={tabOrder} boards={medalBoards} />
+      </section>
 
       <CompareStrip
         members={tabOrder}

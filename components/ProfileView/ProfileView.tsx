@@ -2,6 +2,7 @@
 
 import { CrossIcon, UploadIcon } from '@components/Icons/Icons';
 import { IdentityDialog } from '@components/IdentityDialog/IdentityDialog';
+import { MemberMedals } from '@components/MedalLeaderboard/MedalLeaderboard';
 import { RemoveMemberDialog } from '@components/RemoveMemberDialog/RemoveMemberDialog';
 import { avatarOptions, avatarUploadTypes, isAvatarPath } from '@data/avatarData';
 import { accentHex } from '@data/fitnessData';
@@ -23,6 +24,7 @@ import {
 } from '@/app/actions';
 import { lock } from '@/app/auth-actions';
 import { calculateBmi } from '@/lib/data/profile';
+import type { MedalBoard } from '@/lib/medals';
 import type { Member, MemberProfile, WeightMeasurement } from '@/types/fitness';
 
 import styles from './ProfileView.module.css';
@@ -33,6 +35,7 @@ interface ProfileViewProps {
     profile: MemberProfile | null;
     measurements: WeightMeasurement[];
     currentMonth: string;
+    medalBoards?: MedalBoard[];
     canRemoveOthers?: boolean;
 }
 
@@ -51,6 +54,7 @@ export const ProfileView = ({
     profile,
     measurements,
     currentMonth,
+    medalBoards = [],
     canRemoveOthers = false,
 }: ProfileViewProps) => {
     const router = useRouter();
@@ -386,6 +390,8 @@ export const ProfileView = ({
                     <small>{profile.age ? `Age ${profile.age}` : 'Add your details'}</small>
                 </div>
             </section>
+
+            <MemberMedals memberId={member.id} boards={medalBoards} />
 
             <section className={styles.section} aria-labelledby="weight-history-heading">
                 <div className={styles.sectionHead}>

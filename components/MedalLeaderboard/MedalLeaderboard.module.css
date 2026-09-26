@@ -1,0 +1,267 @@
+.board,
+.shelf {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.board {
+  gap: 1.3rem;
+}
+
+.heading p {
+  margin: 0 0 0.15rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  color: var(--c-ink-muted);
+}
+
+.heading h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.board .heading h2 {
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--c-ink-muted);
+}
+
+.headingRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.tabs {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  padding: 0.2rem;
+  background: var(--c-surface-soft);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+}
+
+.tab {
+  min-width: 4.2rem;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+  color: var(--c-ink-muted);
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-sm);
+}
+
+.tab[data-active="true"] {
+  color: #17130a;
+  background: var(--c-warning);
+  box-shadow: 0 1px 5px color-mix(in oklab, var(--c-warning) 35%, transparent);
+}
+
+.tab[data-active="true"]:hover,
+.tab[data-active="true"]:focus-visible {
+  color: #17130a;
+  background: var(--c-warning);
+  border-color: transparent;
+}
+
+.period {
+  min-width: 0;
+  padding: 0.8rem;
+  background: var(--c-surface-soft);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+}
+
+.period h3 {
+  margin: 0 0 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--c-ink-muted);
+}
+
+.ranking,
+.awards {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ranking {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 0;
+}
+
+.person {
+  min-width: 0;
+  min-height: 2.45rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.person:nth-child(odd) {
+  padding-right: 0.9rem;
+  border-right: 1px solid var(--c-border-strong);
+}
+
+.person:nth-child(even) {
+  padding-left: 0.9rem;
+}
+
+.person:last-child {
+  border-bottom: 0;
+}
+
+.person:nth-last-child(2):nth-child(odd) {
+  border-bottom: 0;
+}
+
+.personName {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+}
+
+.personName strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.medals {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.1rem;
+  font-size: 1rem;
+}
+
+.medalCount {
+  position: relative;
+  width: 1.75rem;
+  height: 1.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
+.medalCount strong {
+  position: absolute;
+  right: -0.08rem;
+  bottom: -0.08rem;
+  min-width: 0.85rem;
+  height: 0.85rem;
+  display: grid;
+  place-items: center;
+  padding: 0 0.12rem;
+  font-size: 0.58rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-bg);
+  background: var(--c-ink);
+  border: 1px solid var(--c-surface-soft);
+  border-radius: var(--r-pill);
+}
+
+.none,
+.empty {
+  font-size: 0.76rem;
+  color: var(--c-ink-muted);
+}
+
+.detailNote {
+  margin: -0.75rem 0 0;
+  font-size: 0.68rem;
+  color: var(--c-ink-muted);
+}
+
+.detailNote a {
+  color: var(--c-ink-soft);
+}
+
+.awards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.awards li {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
+}
+
+.medal {
+  flex-shrink: 0;
+  font-size: 1.35rem;
+}
+
+.awards strong,
+.awards small {
+  display: block;
+}
+
+.awards strong {
+  font-size: 0.75rem;
+}
+
+.awards small {
+  margin-top: 0.1rem;
+  font-size: 0.68rem;
+  color: var(--c-ink-muted);
+}
+
+.empty {
+  margin: 0;
+}
+
+@media (max-width: 620px) {
+  .headingRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .tabs {
+    align-self: flex-start;
+  }
+}
+
+@media (max-width: 420px) {
+  .person:nth-child(odd) {
+    padding-right: 0.55rem;
+  }
+
+  .person:nth-child(even) {
+    padding-left: 0.55rem;
+  }
+
+  .personName {
+    font-size: 0.75rem;
+  }
+
+  .medalCount {
+    width: 1.55rem;
+    height: 1.55rem;
+    font-size: 1.3rem;
+  }
+}

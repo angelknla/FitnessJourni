@@ -6,7 +6,7 @@ import { SetupNotice } from '@components/SetupNotice/SetupNotice';
 import { startOfMonth, startOfWeek, toISODate } from '@utils/date';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { leaders, type Period, summarise } from '@/lib/aggregate';
+import { awardMedals, type Period, summarise } from '@/lib/aggregate';
 import { getLogsSince } from '@/lib/data/logs';
 import { getMembers } from '@/lib/data/members';
 import { countWorkouts, getWorkoutsSince } from '@/lib/data/workouts';
@@ -83,11 +83,11 @@ const LogsPage = async ({ searchParams }: LogsPageProps) => {
         members={viewerFirst(members, viewer.memberId)}
         summaries={summaries}
         workoutCounts={workoutCounts}
-        leaders={leaders(summaries)}
+        medals={awardMedals(summaries, workoutCounts)}
         showAverages={period !== 'today'}
       />
 
-      <p className={styles.note}>A ★ marks whoever leads a column.</p>
+      <p className={styles.note}>Medals show each column&apos;s gold, silver and bronze places.</p>
     </PageLayout>
   );
 };

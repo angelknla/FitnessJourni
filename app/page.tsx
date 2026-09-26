@@ -3,9 +3,10 @@ import { Landing } from '@components/Landing/Landing';
 import { SetupNotice } from '@components/SetupNotice/SetupNotice';
 import { earlier, fromISODate, startOfMonth, startOfWeek, toISODate } from '@utils/date';
 import type { Metadata } from 'next';
-import { getLogsForDate } from '@/lib/data/logs';
+import { getLogsForDate, getLogsSince } from '@/lib/data/logs';
 import { getMembers } from '@/lib/data/members';
 import { getWorkoutsSince, tallyWorkouts } from '@/lib/data/workouts';
+import { buildMedalBoards, medalFetchStart } from '@/lib/medals';
 import { viewerFirst } from '@/lib/ownership';
 import { isUnlocked, readViewer } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
@@ -68,9 +69,11 @@ const Homepage = async ({ searchParams }: HomepageProps) => {
           year: '2-digit',
         }).format(fromISODate(date));
 
-  const [members, logs, workouts, viewer] = await Promise.all([
+  const medalFrom = medalFetchStart(date);
+  const [members, logs, medalLogs, workouts, viewer] = await Promise.all([
     getMembers(),
     getLogsForDate(date),
+    getLogsSince(medalFrom),
     getWorkoutsSince(earlier(startOfWeek(date), startOfMonth(date))),
     readViewer(),
   ]);
@@ -81,6 +84,7 @@ const Homepage = async ({ searchParams }: HomepageProps) => {
       logs={logs}
       workouts={workouts}
       tallies={tallyWorkouts(workouts, date)}
+      medalBoards={buildMedalBoards(medalLogs, workouts, date)}
       date={date}
       today={today}
       datePickerLabel={datePickerLabel}
