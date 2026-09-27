@@ -1,7 +1,7 @@
 'use client';
 
 import { MemberCreateForm } from '@components/AddMemberForm/MemberCreateForm';
-import { EyeIcon, EyeOffIcon } from '@components/Icons/Icons';
+import { CrossIcon, EyeIcon, EyeOffIcon } from '@components/Icons/Icons';
 import { useRouter } from 'next/navigation';
 import { useActionState, useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -110,6 +110,15 @@ export const LoginButton = ({ variant = 'header' }: LoginButtonProps) => {
       </button>
 
       <dialog className={styles.dialog} ref={dialogRef} aria-labelledby="login-heading">
+        <button
+          type="button"
+          className={styles.closeButton}
+          onClick={close}
+          aria-label="Close login"
+          title="Close"
+        >
+          <CrossIcon size={15} />
+        </button>
         {mode === 'login' && (
           <form className={styles.form} action={loginAction}>
             <h2 className={styles.title} id="login-heading">Log in</h2>

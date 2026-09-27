@@ -66,6 +66,16 @@ describe('LoginButton', () => {
     expect(screen.getByRole('dialog', { hidden: true })).not.toHaveAttribute('open');
   });
 
+  it('offers a close control with the same dismiss behavior', async () => {
+    const user = userEvent.setup();
+    render(<LoginButton />);
+
+    await user.click(screen.getByRole('button', { name: 'Log in' }));
+    await user.click(screen.getByRole('button', { name: 'Close login' }));
+
+    expect(screen.getByRole('dialog', { hidden: true })).not.toHaveAttribute('open');
+  });
+
   it('requires the app passcode before either enrollment path', async () => {
     const user = userEvent.setup();
     render(<LoginButton />);
