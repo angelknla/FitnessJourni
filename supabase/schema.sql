@@ -85,6 +85,35 @@ alter table public.members drop constraint if exists members_target_bmi_check;
 alter table public.members add constraint members_target_bmi_check
   check (target_bmi is null or target_bmi between 10 and 60);
 
+-- Login details live separately from public profile data. Existing member rows
+-- remain valid without credentials until their owner claims the account.
+create table if not exists public.member_credentials (
+  member_id     uuid primary key references public.members (id) on delete cascade,
+  username      text not null,
+  email         text not null,
+  password_hash text not null,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now(),
+  check (username = lower(username)),
+  check (char_length(username) between 3 and 30),
+  check (username ~ '^[a-z0-9][a-z0-9._-]+$'),
+  check (email = lower(email)),
+  check (char_length(email) between 5 and 254)
+);
+
+create unique index if not exists member_credentials_username_idx
+  on public.member_credentials (lower(username));
+create unique index if not exists member_credentials_email_idx
+  on public.member_credentials (lower(email));
+
+create table if not exists public.member_links (
+  member_id        uuid not null references public.members (id) on delete cascade,
+  linked_member_id uuid not null references public.members (id) on delete cascade,
+  created_at       timestamptz not null default now(),
+  primary key (member_id, linked_member_id),
+  check (member_id <> linked_member_id)
+);
+
 create table if not exists public.weight_measurements (
   member_id   uuid not null references public.members (id) on delete cascade,
   month_start date not null,
@@ -269,10 +298,10 @@ create table if not exists public.message_reads (
 -- ----------------------------------------------------------------------------
 -- Row Level Security
 --
--- The anon key is used ONLY from the Next.js server (deliberately not exposed as
--- NEXT_PUBLIC_), so the browser never talks to Supabase directly. These policies
--- are therefore permissive. If you later add login, tighten them to match
--- auth.uid() and the rest of the app keeps working unchanged.
+-- The browser never talks to Supabase directly. Next.js uses a server-only
+-- secret/service-role key. Existing app-data policies remain permissive for
+-- compatibility, but member_credentials deliberately has no anon/authenticated
+-- policy so password hashes cannot be read with the publishable key.
 -- ----------------------------------------------------------------------------
 alter table public.members    enable row level security;
 alter table public.daily_logs enable row level security;
@@ -286,6 +315,8 @@ alter table public.weight_measurements enable row level security;
 alter table public.messages enable row level security;
 alter table public.message_reactions enable row level security;
 alter table public.message_reads enable row level security;
+alter table public.member_credentials enable row level security;
+alter table public.member_links enable row level security;
 
 drop policy if exists members_rw    on public.members;
 drop policy if exists daily_logs_rw on public.daily_logs;
@@ -299,6 +330,8 @@ drop policy if exists weight_measurements_rw on public.weight_measurements;
 drop policy if exists messages_rw on public.messages;
 drop policy if exists message_reactions_rw on public.message_reactions;
 drop policy if exists message_reads_rw on public.message_reads;
+drop policy if exists member_credentials_rw on public.member_credentials;
+drop policy if exists member_links_rw on public.member_links;
 
 create policy members_rw    on public.members    for all to anon, authenticated using (true) with check (true);
 create policy daily_logs_rw on public.daily_logs for all to anon, authenticated using (true) with check (true);
@@ -312,6 +345,7 @@ create policy weight_measurements_rw on public.weight_measurements for all to an
 create policy messages_rw on public.messages for all to anon, authenticated using (true) with check (true);
 create policy message_reactions_rw on public.message_reactions for all to anon, authenticated using (true) with check (true);
 create policy message_reads_rw on public.message_reads for all to anon, authenticated using (true) with check (true);
+create policy member_links_rw on public.member_links for all to anon, authenticated using (true) with check (true);
 
 -- ----------------------------------------------------------------------------
 -- Profile avatars — one deterministic object per member. Uploading again uses

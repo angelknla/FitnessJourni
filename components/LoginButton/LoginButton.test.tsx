@@ -3,11 +3,12 @@ import userEvent from '@testing-library/user-event';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/app/auth-actions', () => ({
-  unlock: vi.fn(async () => ({})),
-  signInAs: vi.fn(async () => ({})),
-  lock: vi.fn(async () => undefined),
+  loginWithCredentials: vi.fn(async () => ({})),
+  unlockEnrollment: vi.fn(async () => ({})),
+  claimLegacyAccount: vi.fn(async () => ({})),
 }));
-vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+vi.mock('@/app/actions', () => ({ addMember: vi.fn(async () => ({ ok: false })) }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: vi.fn() }) }));
 
 import { LoginButton } from './LoginButton';
 
@@ -39,7 +40,11 @@ describe('LoginButton', () => {
     await user.click(screen.getByRole('button', { name: 'Log in' }));
 
     expect(screen.getByRole('dialog', { hidden: true })).toHaveAttribute('open');
-    expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Username or email')).toBeRequired();
+    expect(screen.getAllByRole('button', { name: 'Log in' })).toHaveLength(2);
+    expect(screen.getByRole('button', { name: 'Set up existing account' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Create new user' })).toBeInTheDocument();
+    expect(screen.queryByText('Visitor')).not.toBeInTheDocument();
   });
 
   it('masks what is typed', async () => {
@@ -59,6 +64,17 @@ describe('LoginButton', () => {
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(screen.getByRole('dialog', { hidden: true })).not.toHaveAttribute('open');
+  });
+
+  it('requires the app passcode before either enrollment path', async () => {
+    const user = userEvent.setup();
+    render(<LoginButton />);
+
+    await user.click(screen.getByRole('button', { name: 'Log in' }));
+    await user.click(screen.getByRole('button', { name: 'Create new user' }));
+
+    expect(screen.getByRole('heading', { name: 'Enter app passcode' })).toBeInTheDocument();
+    expect(screen.getByLabelText('App passcode')).toBeRequired();
   });
 
   it('renders a primary variant for the intro screen', () => {

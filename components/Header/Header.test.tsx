@@ -3,12 +3,14 @@ import userEvent from '@testing-library/user-event';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/app/auth-actions', () => ({
-  unlock: vi.fn(async () => ({})),
-  signInAs: vi.fn(async () => ({})),
+  loginWithCredentials: vi.fn(async () => ({})),
+  unlockEnrollment: vi.fn(async () => ({})),
+  claimLegacyAccount: vi.fn(async () => ({})),
   lock: vi.fn(async () => undefined),
 }));
+vi.mock('@/app/actions', () => ({ addMember: vi.fn(async () => ({ ok: false })) }));
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ refresh: vi.fn() }),
+  useRouter: () => ({ refresh: vi.fn(), replace: vi.fn() }),
   usePathname: () => '/workouts',
 }));
 
@@ -120,30 +122,17 @@ describe('Header', () => {
     expect(profile).not.toHaveTextContent('A');
   });
 
-  it('uses a visitor initial for someone looking around', () => {
+  it('uses a neutral profile fallback when account data is unavailable', () => {
     render(<Header members={members} viewer={{ memberId: null, chosen: true }} />);
 
-    expect(screen.getByRole('link', { name: 'Open Visitor profile' })).toHaveTextContent('V');
+    expect(screen.getByRole('link', { name: 'Open Profile profile' })).toHaveTextContent('?');
   });
 
-  /* The second half of logging in: the passcode says you may be here, this asks
-     who you are. Picking Visitor counts as an answer, so it is not asked again. */
-  it('asks who you are when nobody has chosen yet', () => {
+  it('does not offer identity switching', () => {
     render(<Header members={members} viewer={{ memberId: null, chosen: false }} />);
 
-    expect(screen.getByRole('dialog', { hidden: true })).toHaveAttribute('open');
-  });
-
-  it('does not ask again once someone has chosen', () => {
-    render(<Header members={members} viewer={{ memberId: 'm1', chosen: true }} />);
-
-    expect(screen.getByRole('dialog', { hidden: true })).not.toHaveAttribute('open');
-  });
-
-  it('offers no picker before there is anyone to be', () => {
-    render(<Header members={[]} viewer={{ memberId: null, chosen: false }} />);
-
     expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument();
+    expect(screen.queryByText('Visitor')).not.toBeInTheDocument();
   });
 
   it('keeps logout out of navigation because it lives at the bottom of Profile', () => {

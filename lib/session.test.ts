@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { deriveToken } from './auth';
+import { createViewerToken, deriveToken } from './auth';
 
 const cookieStore = {
   value: undefined as string | undefined,
@@ -15,7 +15,7 @@ vi.mock('next/headers', () => ({
   }),
 }));
 
-const { isUnlocked, readViewer } = await import('./session');
+const { hasEnrollmentAccess, isUnlocked, readViewer } = await import('./session');
 
 describe('isUnlocked', () => {
   beforeEach(() => {
@@ -24,8 +24,9 @@ describe('isUnlocked', () => {
     delete process.env.APP_PASSCODE;
   });
 
-  it('is open when no passcode is configured, so an unset deploy still works', async () => {
-    await expect(isUnlocked()).resolves.toBe(true);
+  it('is locked when no session signing passcode is configured', async () => {
+    await expect(isUnlocked()).resolves.toBe(false);
+    await expect(hasEnrollmentAccess()).resolves.toBe(false);
   });
 
   it('is locked when a passcode is set and no cookie is present', async () => {
@@ -37,6 +38,7 @@ describe('isUnlocked', () => {
   it('unlocks for the cookie derived from the configured passcode', async () => {
     process.env.APP_PASSCODE = 'shared-phrase';
     cookieStore.value = await deriveToken('shared-phrase');
+    cookieStore.who = await createViewerToken('member-1', 'shared-phrase');
 
     await expect(isUnlocked()).resolves.toBe(true);
   });
@@ -58,6 +60,7 @@ describe('isUnlocked', () => {
   it('re-locks when the passcode is rotated', async () => {
     process.env.APP_PASSCODE = 'old-phrase';
     cookieStore.value = await deriveToken('old-phrase');
+    cookieStore.who = await createViewerToken('member-1', 'old-phrase');
     await expect(isUnlocked()).resolves.toBe(true);
 
     process.env.APP_PASSCODE = 'new-phrase';
@@ -68,22 +71,24 @@ describe('isUnlocked', () => {
 describe('readViewer', () => {
   beforeEach(() => {
     cookieStore.who = undefined;
+    process.env.APP_PASSCODE = 'session-secret';
   });
 
   it('reports nobody chosen when the cookie is absent, which opens the picker', async () => {
     await expect(readViewer()).resolves.toEqual({ memberId: null, chosen: false });
   });
 
-  /* The distinction the sentinel exists for: choosing to just look is a choice,
-     so it must not be asked again on the next load. */
-  it('treats the visitor sentinel as chosen, with nobody to write as', async () => {
+  it('does not authenticate a retired visitor cookie', async () => {
     cookieStore.who = 'visitor';
 
-    await expect(readViewer()).resolves.toEqual({ memberId: null, chosen: true });
+    await expect(readViewer()).resolves.toEqual({ memberId: null, chosen: false });
   });
 
   it('reads a member id back as that member', async () => {
-    cookieStore.who = 'aa11bb22-cccc-4ddd-8eee-ff0011223344';
+    cookieStore.who = await createViewerToken(
+      'aa11bb22-cccc-4ddd-8eee-ff0011223344',
+      'session-secret'
+    );
 
     await expect(readViewer()).resolves.toEqual({
       memberId: 'aa11bb22-cccc-4ddd-8eee-ff0011223344',

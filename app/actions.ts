@@ -17,11 +17,20 @@ import {
 import { minutesOfTime, toISODate } from '@utils/date';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import { VIEWER_COOKIE } from '@/lib/auth';
+import {
+  hashPassword,
+  isValidEmail,
+  isValidPassword,
+  isValidUsername,
+  normalizeEmail,
+  normalizeUsername,
+} from '@/lib/account';
+import { COOKIE_MAX_AGE, createViewerToken, VIEWER_COOKIE } from '@/lib/auth';
+import { createCredentials, findAccountByUsername } from '@/lib/data/accounts';
 import { getMembers } from '@/lib/data/members';
 import { canModifyMessage } from '@/lib/messagePolicy';
 import { ADMIN_MEMBER_NAME, canEditMember, canRemoveMember } from '@/lib/ownership';
-import { isUnlocked, readViewer } from '@/lib/session';
+import { hasEnrollmentAccess, isUnlocked, readViewer } from '@/lib/session';
 import { getSupabase } from '@/lib/supabase/server';
 import type { AccentName, ActivityType, MessageReactionType, WorkoutFocus } from '@/types/fitness';
 
@@ -51,7 +60,8 @@ export interface ActionState {
 const ok: ActionState = { ok: true };
 const fail = (error: string): ActionState => ({ ok: false, error });
 
-const NOT_CONFIGURED = 'Supabase is not connected yet — add SUPABASE_URL and SUPABASE_ANON_KEY.';
+const NOT_CONFIGURED =
+  'Supabase is not connected yet — add SUPABASE_URL and a Supabase server key.';
 const LOCKED = 'Locked — reload the page and log in.';
 const NOT_YOURS = 'You can only change your own numbers — switch person first.';
 
@@ -493,8 +503,8 @@ export const saveSleep = async (_prev: ActionState, formData: FormData): Promise
 };
 
 export const addMember = async (_prev: ActionState, formData: FormData): Promise<ActionState> => {
-  if (!(await isUnlocked())) {
-    return fail(LOCKED);
+  if (!(await hasEnrollmentAccess())) {
+    return fail('Enter the app passcode before creating a user.');
   }
 
   const supabase = getSupabase();
@@ -508,6 +518,19 @@ export const addMember = async (_prev: ActionState, formData: FormData): Promise
   }
   if (name.length > 40) {
     return fail('That name is too long.');
+  }
+
+  const username = normalizeUsername(toText(formData.get('username')));
+  const email = normalizeEmail(toText(formData.get('email')));
+  const password = String(formData.get('password') ?? '');
+  if (!isValidUsername(username)) {
+    return fail('Use 3–30 lowercase letters, numbers, dots, dashes or underscores.');
+  }
+  if (!isValidEmail(email)) {
+    return fail('Enter a valid email address.');
+  }
+  if (!isValidPassword(password)) {
+    return fail('Use a password between 8 and 128 characters.');
   }
 
   const requested = toText(formData.get('accent')) as AccentName;
@@ -529,12 +552,6 @@ export const addMember = async (_prev: ActionState, formData: FormData): Promise
     return fail('Profile pictures must be 5 MB or smaller.');
   }
 
-  /*
-   * Deliberately not ownership-checked, unlike the other writes: a visitor has to
-   * be able to add someone, or an empty members table deadlocks — with nobody to
-   * be, everyone is a visitor, and no visitor could ever create the first person.
-   * It only ever inserts a new row, so it cannot overwrite anyone.
-   */
   const { data, error } = await supabase
     .from('members')
     .insert({
@@ -590,6 +607,33 @@ export const addMember = async (_prev: ActionState, formData: FormData): Promise
     }
   }
 
+  const credentialError = await createCredentials(
+    data.id as string,
+    username,
+    email,
+    await hashPassword(password)
+  );
+  if (credentialError) {
+    if (avatarFile) {
+      await supabase.storage.from(AVATAR_UPLOAD_BUCKET).remove([avatarObjectPath(data.id as string)]);
+    }
+    await supabase.from('members').delete().eq('id', data.id as string);
+    return fail(credentialError);
+  }
+
+  const store = await cookies();
+  store.set(
+    VIEWER_COOKIE,
+    await createViewerToken(data.id as string, process.env.APP_PASSCODE as string),
+    {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: COOKIE_MAX_AGE,
+    }
+  );
+
   revalidatePath('/');
   return {
     ok: true,
@@ -597,6 +641,37 @@ export const addMember = async (_prev: ActionState, formData: FormData): Promise
     newMemberName: data.name as string,
     newMemberAccent: accent,
   };
+};
+
+export const linkMemberByUsername = async (
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> => {
+  if (!(await isUnlocked())) return fail(LOCKED);
+  const viewer = await readViewer();
+  if (!viewer.memberId) return fail('Log in before linking a user.');
+
+  const username = normalizeUsername(toText(formData.get('username')));
+  if (!isValidUsername(username)) return fail('Enter a valid username.');
+
+  const account = await findAccountByUsername(username);
+  if (!account) return fail('No user has that username.');
+  if (account.memberId === viewer.memberId) return fail('That is already your account.');
+
+  const supabase = getSupabase();
+  if (!supabase) return fail(NOT_CONFIGURED);
+  const { error } = await supabase.from('member_links').upsert([
+    { member_id: viewer.memberId, linked_member_id: account.memberId },
+    { member_id: account.memberId, linked_member_id: viewer.memberId },
+  ]);
+  if (error) {
+    console.error('[linkMemberByUsername]', error.message);
+    return fail('Could not link that user.');
+  }
+
+  const linked = (await getMembers()).find((member) => member.id === account.memberId);
+  revalidatePath('/', 'layout');
+  return { ok: true, message: `${linked?.name ?? account.username} linked.` };
 };
 
 /**

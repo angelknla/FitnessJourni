@@ -1,43 +1,46 @@
 'use client';
 
-import { IdentityDialog, type IdentityOption } from '@components/IdentityDialog/IdentityDialog';
-import { useCallback, useState } from 'react';
-import type { Member } from '@/types/fitness';
-import { MemberCreateForm, type MemberCreateOption } from './MemberCreateForm';
+import { useActionState } from 'react';
+import { linkMemberByUsername, type ActionState } from '@/app/actions';
+
+import styles from './AddMemberForm.module.css';
 
 interface AddMemberFormProps {
-  members: Member[];
-  /** Who is adding, so the prompt afterwards can say what staying means. */
   viewerId: string | null;
 }
 
-export const AddMemberForm = ({ members, viewerId }: AddMemberFormProps) => {
-  const [created, setCreated] = useState<MemberCreateOption | null>(null);
-  const [dismissed, setDismissed] = useState<string | null>(null);
-  const handleMemberAdded = useCallback((member: MemberCreateOption) => setCreated(member), []);
-  const prompted = created && created.id !== dismissed ? created : null;
-  const options: IdentityOption[] =
-    prompted && !members.some((member) => member.id === prompted.id)
-      ? [...members, prompted]
-      : members;
+export const AddMemberForm = ({ viewerId }: AddMemberFormProps) => {
+  const initial: ActionState = { ok: false };
+  const [state, formAction, isPending] = useActionState(linkMemberByUsername, initial);
 
   return (
-    <>
-      <MemberCreateForm members={members} onMemberAdded={handleMemberAdded} />
-
-      {prompted && (
-        <IdentityDialog
-          members={options}
-          viewerId={viewerId}
-          presetId={prompted.id}
-          open
-          onClose={() => setDismissed(prompted.id)}
-          title={`${prompted.name} is in`}
-          body={`Carry on as you are, or start logging as ${prompted.name}.`}
-          dismissLabel="Stay as I am"
-          submitLabel={`Log in as ${prompted.name}`}
-        />
-      )}
-    </>
+    <form className={styles.form} action={formAction}>
+      <fieldset className={styles.fieldset}>
+        <legend className={styles.legend}>Link a user</legend>
+        <label className={styles.nameField}>
+          <span className={styles.fieldLabel}>Username</span>
+          <input
+            type="text"
+            name="username"
+            minLength={3}
+            maxLength={30}
+            autoCapitalize="none"
+            autoComplete="off"
+            required
+          />
+        </label>
+      </fieldset>
+      <p className={styles.hint}>Enter the username of an existing FitnessJourni account.</p>
+      <div className={styles.actions}>
+        <button type="submit" className={styles.submit} disabled={isPending || !viewerId}>
+          {isPending ? 'Linking…' : 'Link user'}
+        </button>
+        {(state.error || state.message) && (
+          <p className={state.error ? styles.error : styles.success} role="status">
+            {state.error ?? state.message}
+          </p>
+        )}
+      </div>
+    </form>
   );
 };

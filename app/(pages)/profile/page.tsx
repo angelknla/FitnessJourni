@@ -4,6 +4,7 @@ import { ProfileView } from '@components/ProfileView/ProfileView';
 import { SetupNotice } from '@components/SetupNotice/SetupNotice';
 import { fromISODate, toISODate } from '@utils/date';
 import type { Metadata } from 'next';
+import { getAccount } from '@/lib/data/accounts';
 import { getLogsSince } from '@/lib/data/logs';
 import { getMembers } from '@/lib/data/members';
 import { getProfile } from '@/lib/data/profile';
@@ -51,7 +52,9 @@ const ProfilePage = async ({ searchParams }: ProfilePageProps) => {
         getWorkoutsSince(medalFrom),
     ]);
     const member = members.find((item) => item.id === viewer.memberId) ?? null;
-    const profileData = member ? await getProfile(member.id) : null;
+    const [profileData, account] = member
+        ? await Promise.all([getProfile(member.id), getAccount(member.id)])
+        : [null, null];
     const profile =
         profileData?.profile ??
         (member
@@ -75,6 +78,7 @@ const ProfilePage = async ({ searchParams }: ProfilePageProps) => {
                 members={members}
                 member={member}
                 profile={profile}
+                account={account}
                 measurements={profileData?.measurements ?? []}
                 currentDate={today}
                 medalDate={medalDate}

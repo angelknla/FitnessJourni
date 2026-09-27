@@ -12,8 +12,8 @@ vi.mock('@/app/actions', () => ({
     removeMember: vi.fn(async () => ({ ok: false })),
 }));
 vi.mock('@/app/auth-actions', () => ({
-    signInAs: vi.fn(async () => ({})),
     lock: vi.fn(async () => undefined),
+    saveAccountSettings: vi.fn(async () => ({ ok: true })),
 }));
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
@@ -218,23 +218,22 @@ describe('ProfileView', () => {
             });
     });
 
-    it('opens identity switching from the account section', async () => {
-        const user = userEvent.setup();
+    it('shows immutable username and editable account fields', () => {
         render(
             <ProfileView
                 members={[member]}
                 member={member}
                 profile={profile}
+                account={{ memberId: 'm1', username: 'dillon', email: 'dillon@example.com' }}
                 measurements={[]}
                 currentDate="2026-09-27"
             />
         );
 
-        await user.click(screen.getByRole('button', { name: 'Who are you?' }));
-
-        expect(screen.getByRole('dialog', { name: 'Who are you?', hidden: true })).toHaveAttribute(
-            'open'
-        );
+        expect(screen.getByLabelText('Username')).toBeDisabled();
+        expect(screen.getByLabelText('Username')).toHaveValue('dillon');
+        expect(screen.getByLabelText('Email')).toHaveValue('dillon@example.com');
+        expect(screen.queryByRole('button', { name: 'Who are you?' })).not.toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Log out' })).toBeInTheDocument();
     });
 

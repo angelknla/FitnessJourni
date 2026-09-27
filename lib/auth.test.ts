@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { deriveToken, tokensMatch } from './auth';
+import { createViewerToken, deriveToken, readViewerToken, tokensMatch } from './auth';
 
 describe('deriveToken', () => {
   it('is deterministic for the same passcode', async () => {
@@ -39,5 +39,21 @@ describe('tokensMatch', () => {
 
   it('rejects an empty cookie', async () => {
     expect(tokensMatch('', await deriveToken('shared'))).toBe(false);
+  });
+});
+
+describe('member session tokens', () => {
+  it('returns the member id when the signature is valid', async () => {
+    const token = await createViewerToken('member-1', 'session-secret');
+
+    await expect(readViewerToken(token, 'session-secret')).resolves.toBe('member-1');
+  });
+
+  it('rejects a changed member id or a different secret', async () => {
+    const token = await createViewerToken('member-1', 'session-secret');
+
+    await expect(readViewerToken(token.replace('member-1', 'member-2'), 'session-secret'))
+      .resolves.toBeNull();
+    await expect(readViewerToken(token, 'different-secret')).resolves.toBeNull();
   });
 });

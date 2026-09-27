@@ -1,7 +1,7 @@
 import styles from './SetupNotice.module.css';
 
 /**
- * Shown when SUPABASE_URL / SUPABASE_ANON_KEY are missing. The app has to stay
+ * Shown when the Supabase URL or server key is missing. The app has to stay
  * runnable before the credentials exist, so this replaces a white screen.
  */
 export const SetupNotice = () => (
@@ -19,9 +19,9 @@ export const SetupNotice = () => (
       </li>
       <li>
         Create <code className={styles.code}>.env.local</code> in the project root with your project
-        URL and <strong>anon</strong> key, then restart the dev server:
+        URL, <strong>secret</strong> key and app passcode, then restart the dev server:
         <pre className={styles.pre}>
-          <code>{'SUPABASE_URL=https://xxxxx.supabase.co\nSUPABASE_ANON_KEY=eyJhbGciOi...'}</code>
+          <code>{'SUPABASE_URL=https://xxxxx.supabase.co\nSUPABASE_SECRET_KEY=sb_secret_...\nAPP_PASSCODE=...'}</code>
         </pre>
       </li>
     </ol>

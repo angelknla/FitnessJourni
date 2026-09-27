@@ -381,7 +381,7 @@ export const Home = ({
         <p className={styles.emptyBody}>
           Run <code>supabase/schema.sql</code> to add the starting members, or add someone below.
         </p>
-        <AddMemberForm members={members} viewerId={viewerId} />
+        <AddMemberForm viewerId={viewerId} />
       </section>
     );
   }
@@ -461,7 +461,7 @@ export const Home = ({
         panelId={PANEL_ID}
       />
 
-      {addOpen && <AddMemberForm members={members} viewerId={viewerId} />}
+      {addOpen && <AddMemberForm viewerId={viewerId} />}
 
       <div
         className={styles.panels}

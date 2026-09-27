@@ -1,7 +1,6 @@
 'use client';
 
 import { CrossIcon, UploadIcon } from '@components/Icons/Icons';
-import { IdentityDialog } from '@components/IdentityDialog/IdentityDialog';
 import { MemberMedals } from '@components/MedalLeaderboard/MedalLeaderboard';
 import { RemoveMemberDialog } from '@components/RemoveMemberDialog/RemoveMemberDialog';
 import { avatarOptions, avatarUploadTypes, isAvatarPath } from '@data/avatarData';
@@ -23,7 +22,8 @@ import {
     saveProfileDetails,
     saveWeightMeasurement,
 } from '@/app/actions';
-import { lock } from '@/app/auth-actions';
+import { lock, saveAccountSettings } from '@/app/auth-actions';
+import type { MemberAccount } from '@/lib/data/accounts';
 import { calculateBmi } from '@/lib/data/profile';
 import {
     gramsFromPercents,
@@ -44,6 +44,7 @@ interface ProfileViewProps {
     members: Member[];
     member: Member | null;
     profile: MemberProfile | null;
+    account?: MemberAccount | null;
     measurements: WeightMeasurement[];
     currentDate: string;
     medalDate?: string;
@@ -113,6 +114,7 @@ export const ProfileView = ({
     members,
     member,
     profile,
+    account = null,
     measurements,
     currentDate,
     medalDate = currentDate,
@@ -120,7 +122,6 @@ export const ProfileView = ({
     canRemoveOthers = false,
 }: ProfileViewProps) => {
     const router = useRouter();
-    const [identityOpen, setIdentityOpen] = useState(false);
     const [removeOpen, setRemoveOpen] = useState(false);
     const [avatarOpen, setAvatarOpen] = useState(false);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -140,6 +141,10 @@ export const ProfileView = ({
     );
     const [avatarState, avatarAction, avatarPending] = useActionState(saveAvatar, initial);
     const [accentState, accentAction, accentPending] = useActionState(saveProfileAccent, initial);
+    const [accountState, accountAction, accountPending] = useActionState(
+        saveAccountSettings,
+        {}
+    );
 
     const currentWeight = measurements.at(-1)?.weightKg ?? null;
     const currentDateMeasurement = measurements.find((item) => item.date === currentDate);
@@ -256,17 +261,8 @@ export const ProfileView = ({
         return (
             <div className={styles.visitor}>
                 <div className={styles.avatar}>?</div>
-                <h2>Choose your profile</h2>
-                <p>Pick yourself to view and update your measurements.</p>
-                <button type="button" onClick={() => setIdentityOpen(true)}>
-                    Who are you?
-                </button>
-                <IdentityDialog
-                    members={members}
-                    viewerId={null}
-                    open={identityOpen}
-                    onClose={() => setIdentityOpen(false)}
-                />
+                <h2>Account unavailable</h2>
+                <p>Log in again to view and update your profile.</p>
                 <button type="button" className={styles.logout} onClick={signOut} disabled={signingOut}>
                     {signingOut ? 'Logging out…' : 'Log out'}
                 </button>
@@ -884,14 +880,53 @@ export const ProfileView = ({
 
             <section className={styles.account} aria-labelledby="account-heading">
                 <h2 id="account-heading">Account</h2>
+                {account && (
+                    <form className={styles.accountForm} action={accountAction}>
+                        <label>
+                            <span>Username</span>
+                            <input value={account.username} disabled />
+                        </label>
+                        <label>
+                            <span>Email</span>
+                            <input
+                                type="email"
+                                name="email"
+                                defaultValue={account.email}
+                                autoComplete="email"
+                                required
+                            />
+                        </label>
+                        <label>
+                            <span>Current password</span>
+                            <input
+                                type="password"
+                                name="currentPassword"
+                                autoComplete="current-password"
+                            />
+                        </label>
+                        <label>
+                            <span>New password</span>
+                            <input
+                                type="password"
+                                name="newPassword"
+                                minLength={8}
+                                maxLength={128}
+                                autoComplete="new-password"
+                            />
+                        </label>
+                        <div className={styles.accountSave}>
+                            <button type="submit" disabled={accountPending}>
+                                {accountPending ? 'Saving…' : 'Save account'}
+                            </button>
+                            {(accountState.error || accountState.message) && (
+                                <p className={accountState.error ? styles.error : styles.success} role="status">
+                                    {accountState.error ?? accountState.message}
+                                </p>
+                            )}
+                        </div>
+                    </form>
+                )}
                 <div className={styles.accountActions}>
-                    <button
-                        type="button"
-                        className={styles.switchUser}
-                        onClick={() => setIdentityOpen(true)}
-                    >
-                        Who are you?
-                    </button>
                     <button
                         type="button"
                         className={styles.logout}
@@ -908,12 +943,6 @@ export const ProfileView = ({
                         {canRemoveOthers ? 'Remove someone' : 'Remove my account'}
                     </button>
                 </div>
-                <IdentityDialog
-                    members={members}
-                    viewerId={member.id}
-                    open={identityOpen}
-                    onClose={() => setIdentityOpen(false)}
-                />
                 <RemoveMemberDialog
                     members={members}
                     viewerId={member.id}

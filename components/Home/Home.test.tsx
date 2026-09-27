@@ -14,7 +14,6 @@ vi.mock('@/app/actions', () => ({
 }));
 vi.mock('@/app/auth-actions', () => ({
   unlock: vi.fn(async () => ({})),
-  signInAs: vi.fn(async () => ({})),
   lock: vi.fn(async () => undefined),
 }));
 const navigation = vi.hoisted(() => ({ push: vi.fn(), refresh: vi.fn() }));

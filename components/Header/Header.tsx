@@ -10,14 +10,13 @@ import {
   ResyncIcon,
   RunningIcon,
 } from '@components/Icons/Icons';
-import { IdentityDialog } from '@components/IdentityDialog/IdentityDialog';
 import { LoginButton } from '@components/LoginButton/LoginButton';
 import { accentHex } from '@data/fitnessData';
 import { navigationData } from '@data/navigationData';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { type CSSProperties, useCallback, useEffect, useState } from 'react';
+import { type CSSProperties, useEffect, useState } from 'react';
 import type { Viewer } from '@/lib/session';
 import type { Member } from '@/types/fitness';
 
@@ -43,11 +42,8 @@ export const Header = ({
   hasUnreadSessions = false,
 }: HeaderProps) => {
   const [scrolled, setScrolled] = useState(false);
-  const [identityOpen, setIdentityOpen] = useState(false);
   const [resyncing, setResyncing] = useState(false);
   const pathname = usePathname();
-
-  const closeIdentity = useCallback(() => setIdentityOpen(false), []);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 40);
@@ -57,21 +53,9 @@ export const Header = ({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  /*
-   * Asking straight after the gate is what makes this the second step of logging
-   * in. It keys on `chosen` rather than on there being no member, so picking
-   * Visitor is remembered instead of being asked again on the next load. It also
-   * covers a deploy with no APP_PASSCODE, where there is no login modal at all.
-   */
-  useEffect(() => {
-    if (!locked && members.length > 0 && !viewer.chosen) {
-      setIdentityOpen(true);
-    }
-  }, [locked, members.length, viewer.chosen]);
-
   const you = members.find((member) => member.id === viewer.memberId);
-  const identityLabel = viewer.chosen ? (you?.name ?? 'Visitor') : 'Who are you?';
-  const identityInitial = you?.name.charAt(0).toUpperCase() ?? (viewer.chosen ? 'V' : '?');
+  const identityLabel = you?.name ?? 'Profile';
+  const identityInitial = you?.name.charAt(0).toUpperCase() ?? '?';
   const handleResync = () => {
     if (resyncing) return;
     setResyncing(true);
@@ -144,7 +128,6 @@ export const Header = ({
                   <Link
                     href="/profile"
                     className={styles.identity}
-                    data-visitor={viewer.chosen && !you}
                     style={
                       you ? ({ '--identity-accent': accentHex[you.accent] } as CSSProperties) : undefined
                     }
@@ -165,14 +148,6 @@ export const Header = ({
                 </>
               )}
 
-              {members.length > 0 && (
-                <IdentityDialog
-                  members={members}
-                  viewerId={viewer.memberId}
-                  open={identityOpen}
-                  onClose={closeIdentity}
-                />
-              )}
             </div>
           </>
         )}

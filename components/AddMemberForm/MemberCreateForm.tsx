@@ -83,7 +83,7 @@ export const MemberCreateForm = ({
                 <legend className={styles.legend}>Add a person</legend>
 
                 <label className={styles.nameField}>
-                    <span className={styles.fieldLabel}>Name</span>
+                    <span className={styles.fieldLabel}>Display name</span>
                     <input
                         type="text"
                         name="name"
@@ -94,6 +94,37 @@ export const MemberCreateForm = ({
                         onChange={(event) => setName(event.target.value)}
                     />
                 </label>
+
+                <div className={styles.accountFields}>
+                    <label className={styles.nameField}>
+                        <span className={styles.fieldLabel}>Username</span>
+                        <input
+                            type="text"
+                            name="username"
+                            minLength={3}
+                            maxLength={30}
+                            pattern="[A-Za-z0-9][A-Za-z0-9._-]+"
+                            autoCapitalize="none"
+                            autoComplete="username"
+                            required
+                        />
+                    </label>
+                    <label className={styles.nameField}>
+                        <span className={styles.fieldLabel}>Email</span>
+                        <input type="email" name="email" autoComplete="email" required />
+                    </label>
+                    <label className={styles.nameField}>
+                        <span className={styles.fieldLabel}>Password</span>
+                        <input
+                            type="password"
+                            name="password"
+                            minLength={8}
+                            maxLength={128}
+                            autoComplete="new-password"
+                            required
+                        />
+                    </label>
+                </div>
             </fieldset>
 
             <fieldset className={styles.fieldset}>
@@ -223,7 +254,7 @@ export const MemberCreateForm = ({
                     </button>
                 )}
                 <button type="submit" className={styles.submit} disabled={isPending}>
-                    {isPending ? 'Adding…' : 'Add person'}
+                    {isPending ? 'Creating…' : 'Create account'}
                 </button>
 
                 {state.error && (

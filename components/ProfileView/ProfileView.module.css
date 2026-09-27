@@ -679,6 +679,37 @@
   border-radius: var(--r-md);
 }
 
+.accountForm {
+  width: min(100%, 34rem);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.accountForm label {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.accountForm label span {
+  font-size: 0.78rem;
+  color: var(--c-ink-soft);
+}
+
+.accountForm input:disabled {
+  color: var(--c-ink-muted);
+  opacity: 0.75;
+}
+
+.accountSave {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
 .switchUser,
 .logout,
 .removeMember {
@@ -736,7 +767,8 @@
   }
 
   .inlineForm,
-  .detailFields {
+  .detailFields,
+  .accountForm {
     grid-template-columns: 1fr;
   }
 

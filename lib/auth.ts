@@ -15,13 +15,7 @@ export const COOKIE_NAME = 'fj_unlock';
 /** 90 days: long enough that nobody re-enters it weekly. */
 export const COOKIE_MAX_AGE = 60 * 60 * 24 * 90;
 
-/**
- * Which of the group this browser is acting as. Separate from the gate above:
- * the passcode says you may be here, this says whose numbers are yours.
- *
- * Self-asserted, and deliberately so — it stops the wrong tab being edited by
- * accident, not someone who already has the shared passcode and means it.
- */
+/** The signed member session created after credential authentication. */
 export const VIEWER_COOKIE = 'fj_who';
 
 /**
@@ -34,16 +28,51 @@ export const VIEWER_VISITOR = 'visitor';
 
 const encoder = new TextEncoder();
 
+const encodeBytes = (bytes: Uint8Array): string =>
+  btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+
 export const deriveToken = async (passcode: string): Promise<string> => {
   const digest = await crypto.subtle.digest(
     'SHA-256',
     encoder.encode(`fitnessjourni:v1:${passcode}`)
   );
 
-  return btoa(String.fromCharCode(...new Uint8Array(digest)))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
+  return encodeBytes(new Uint8Array(digest));
+};
+
+const sessionSignature = async (memberId: string, secret: string): Promise<string> => {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signature = await crypto.subtle.sign(
+    'HMAC',
+    key,
+    encoder.encode(`fitnessjourni:member:v1:${memberId}`)
+  );
+  return encodeBytes(new Uint8Array(signature));
+};
+
+export const createViewerToken = async (memberId: string, secret: string): Promise<string> =>
+  `${memberId}.${await sessionSignature(memberId, secret)}`;
+
+export const readViewerToken = async (
+  token: string,
+  secret: string
+): Promise<string | null> => {
+  const separator = token.lastIndexOf('.');
+  if (separator < 1) return null;
+
+  const memberId = token.slice(0, separator);
+  const signature = token.slice(separator + 1);
+  const expected = await sessionSignature(memberId, secret);
+  return tokensMatch(signature, expected) ? memberId : null;
 };
 
 /** Compares without leaking the position of the first mismatch through timing. */
