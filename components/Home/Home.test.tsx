@@ -78,7 +78,9 @@ describe('Home', () => {
 
     expect(screen.getByText('Today')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Friday, 25 September' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Choose dashboard date, Today' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Choose dashboard date, Today' })
+    ).toBeInTheDocument();
     expect(screen.getByLabelText('Dashboard date value')).toHaveAttribute('value', date);
     expect(screen.getByLabelText('Dashboard date value')).toHaveAttribute('max', date);
   });
@@ -174,11 +176,12 @@ describe('Home', () => {
 
   it('adds estimated step calories to the calorie ring target only', () => {
     setup('m1');
+    const summary = screen.getByRole('heading', { name: 'Macros' }).closest('section');
 
-    expect(screen.getByRole('img', { name: 'Calories: 2,400 of 2,860 target, 84 percent' }))
-      .toBeInTheDocument();
-    expect(screen.getByText('360 kcal')).toBeInTheDocument();
-    expect(screen.getByText('burned from steps')).toBeInTheDocument();
+    expect(
+      screen.getByRole('img', { name: 'Calories: 2,400 of 2,860 target, 84 percent' })
+    ).toBeInTheDocument();
+    expect(summary).toHaveTextContent('360 kcal burned from steps');
     expect(screen.queryByText(/The tick on Steps marks/)).not.toBeInTheDocument();
     expect(targets.calories).toBe(2500);
   });
@@ -188,7 +191,10 @@ describe('Home', () => {
     setup('m1');
 
     const edit = screen.getByRole('button', { name: "Edit Dillon's macro targets" });
-    expect(edit.querySelector('path')).toHaveAttribute('d', 'M11.1 2.4l2.5 2.5-7.4 7.4-3.1.6.6-3.1z');
+    expect(edit.querySelector('path')).toHaveAttribute(
+      'd',
+      'M11.1 2.4l2.5 2.5-7.4 7.4-3.1.6.6-3.1z'
+    );
 
     await user.click(edit);
 
@@ -197,8 +203,9 @@ describe('Home', () => {
 
     await user.click(close);
 
-    expect(screen.getByRole('button', { name: "Edit Dillon's macro targets" }).querySelector('path'))
-      .toHaveAttribute('d', 'M11.1 2.4l2.5 2.5-7.4 7.4-3.1.6.6-3.1z');
+    expect(
+      screen.getByRole('button', { name: "Edit Dillon's macro targets" }).querySelector('path')
+    ).toHaveAttribute('d', 'M11.1 2.4l2.5 2.5-7.4 7.4-3.1.6.6-3.1z');
   });
 
   it('keeps daily inputs collapsed until its title is opened', async () => {
@@ -242,23 +249,33 @@ describe('Home', () => {
     expect(quickEntry()).not.toBeInTheDocument();
     expect(screen.queryByText(/signed in as someone else/)).not.toBeInTheDocument();
     // The point of the app is comparing, so their read-only figures must survive.
-    expect(screen.getByText(/Protein: 150 of 156 grams/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Macros' }).closest('section')).toHaveTextContent(
+      'Protein: 150 of 156 grams'
+    );
   });
 
-  it('moves between member tabs when the rounded summary panel is swiped', () => {
+  it('slides the member panels out and the next member in when swiped', () => {
     setup('m1');
     const panel = screen.getByRole('heading', { name: 'Macros' }).closest('section');
+    const tabpanel = screen.getByRole('tabpanel');
+    const track = tabpanel.querySelector('[data-swipe-phase]');
     const measurements = screen.getByRole('img', { name: /^Steps:/ });
 
     expect(panel).not.toBeNull();
+    expect(track).not.toBeNull();
     expect(panel).toContainElement(measurements);
     fireEvent.touchStart(measurements!, { touches: [{ clientX: 180, clientY: 100 }] });
-    fireEvent.touchEnd(measurements!, { changedTouches: [{ clientX: 80, clientY: 105 }] });
-    expect(selectedTab()).toHaveTextContent('Angel');
+    fireEvent.touchMove(measurements!, { touches: [{ clientX: 120, clientY: 105 }] });
+    expect(track).toHaveAttribute('data-swipe-phase', 'dragging');
+    expect(track).toHaveStyle({ '--swipe-offset': '-60px' });
 
-    fireEvent.touchStart(panel!, { touches: [{ clientX: 80, clientY: 100 }] });
-    fireEvent.touchEnd(panel!, { changedTouches: [{ clientX: 180, clientY: 105 }] });
+    fireEvent.touchEnd(measurements!, { changedTouches: [{ clientX: 80, clientY: 105 }] });
+    expect(track).toHaveAttribute('data-swipe-phase', 'exiting');
     expect(selectedTab()).toHaveTextContent('Dillon');
+
+    fireEvent.transitionEnd(track!, { propertyName: 'transform' });
+    expect(selectedTab()).toHaveTextContent('Angel');
+    expect(track).toHaveAttribute('data-swipe-phase', 'positioning');
   });
 
   it('hides the targets pencil on someone else’s tab', async () => {

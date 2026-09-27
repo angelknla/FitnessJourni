@@ -21,7 +21,14 @@ import { accentHex } from '@data/fitnessData';
 import { fromISODate, toISODate } from '@utils/date';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { type CSSProperties, type TouchEvent, useRef, useState } from 'react';
+import {
+  type CSSProperties,
+  type TouchEvent,
+  type TransitionEvent,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { emptyLog } from '@/lib/data/logs';
 import { workoutsForToday } from '@/lib/data/workouts';
 import type { MedalBoard } from '@/lib/medals';
@@ -46,10 +53,119 @@ interface HomeProps {
 
 const PANEL_ID = 'member-panel';
 const TARGETS_ID = 'macro-targets';
+type SwipePhase = 'idle' | 'dragging' | 'exiting' | 'positioning' | 'resetting';
+
 const adjacentDate = (date: string, offset: number) => {
   const adjacent = fromISODate(date);
   adjacent.setDate(adjacent.getDate() + offset);
   return toISODate(adjacent);
+};
+
+interface MemberSummaryProps {
+  member: Member;
+  log: DailyLog;
+  date: string;
+  viewerId: string | null;
+  editingTargets: boolean;
+  preview?: boolean;
+  onToggleTargets: () => void;
+  onTargetsSaved: () => void;
+}
+
+const MemberSummary = ({
+  member,
+  log,
+  date,
+  viewerId,
+  editingTargets,
+  preview = false,
+  onToggleTargets,
+  onTargetsSaved,
+}: MemberSummaryProps) => {
+  const { targets } = member;
+  const caloriesBurned = caloriesBurnedFromSteps(log.steps);
+  const adjustedCalorieTarget = targets.calories + caloriesBurned;
+  const canEdit = !preview && member.id === viewerId;
+
+  return (
+    <section
+      className={styles.panel}
+      aria-hidden={preview || undefined}
+      inert={preview || undefined}
+      style={{ '--member-accent': accentHex[member.accent] } as CSSProperties}
+    >
+      <div className={styles.rings}>
+        <ProgressRing
+          label="Steps"
+          display={formatCount(log.steps)}
+          targetDisplay={formatCount(targets.steps)}
+          value={log.steps}
+          target={targets.steps}
+          floor={targets.stepsMin}
+        />
+        <ProgressRing
+          label="Water"
+          display={formatMl(log.waterMl)}
+          targetDisplay={formatMl(targets.waterMl)}
+          value={log.waterMl}
+          target={targets.waterMl}
+        />
+        <ProgressRing
+          label="Calories"
+          display={formatCount(log.calories)}
+          targetDisplay={formatCount(adjustedCalorieTarget)}
+          value={log.calories}
+          target={adjustedCalorieTarget}
+          overIsBad
+        />
+      </div>
+
+      <div className={styles.macros}>
+        <p className={styles.caloriesBurned}>
+          <strong>{formatCount(caloriesBurned)} kcal</strong> burned from steps
+        </p>
+        <div className={styles.macrosHead}>
+          <h2 className={styles.sectionHeading}>Macros</h2>
+          {canEdit && (
+            <button
+              type="button"
+              className={styles.editButton}
+              onClick={onToggleTargets}
+              aria-expanded={editingTargets}
+              aria-controls={TARGETS_ID}
+              aria-label={
+                editingTargets
+                  ? 'Stop editing macro targets'
+                  : `Edit ${member.name}'s macro targets`
+              }
+            >
+              {editingTargets ? <CrossIcon /> : <PencilIcon />}
+            </button>
+          )}
+        </div>
+
+        {editingTargets && canEdit && (
+          <EditTargets member={member} id={TARGETS_ID} onSaved={onTargetsSaved} />
+        )}
+
+        <MacroBars
+          rows={[
+            { label: 'Protein', value: log.proteinG, target: targets.protein },
+            { label: 'Carbs', value: log.carbsG, target: targets.carbs },
+            { label: 'Fat', value: log.fatG, target: targets.fat },
+          ]}
+        />
+      </div>
+
+      {canEdit ? (
+        <QuickEntry member={member} log={log} date={date} />
+      ) : !viewerId && !preview ? (
+        <p className={styles.readOnly}>
+          You&apos;re looking around as a visitor. Pick yourself in the header to log a day.
+        </p>
+      ) : null}
+    </section>
+  );
 };
 
 export const Home = ({
@@ -104,6 +220,19 @@ export const Home = ({
   const [addOpen, setAddOpen] = useState(false);
   const [editingTargets, setEditingTargets] = useState(false);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const pendingMemberId = useRef<string | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [swipePhase, setSwipePhase] = useState<SwipePhase>('idle');
+
+  useEffect(() => {
+    if (swipePhase !== 'positioning') {
+      return;
+    }
+
+    const frame = requestAnimationFrame(() => setSwipePhase('idle'));
+    return () => cancelAnimationFrame(frame);
+  }, [swipePhase]);
 
   const openDatePicker = () => {
     const input = dateInput.current;
@@ -142,18 +271,43 @@ export const Home = ({
   const tabOrder = you ? [you, ...members.filter((member) => member.id !== you.id)] : members;
 
   const selectMember = (id: string) => {
+    pendingMemberId.current = null;
+    setSwipeOffset(0);
+    setSwipePhase('idle');
     setActiveId(id);
     setEditingTargets(false);
   };
 
   const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
-    if (event.target instanceof Element && event.target.closest('button, input, select, textarea')) {
+    if (
+      event.target instanceof Element &&
+      event.target.closest('button, input, select, textarea')
+    ) {
       touchStart.current = null;
       return;
     }
 
     const touch = event.touches[0];
     touchStart.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
+    if (touch) {
+      setSwipePhase('dragging');
+    }
+  };
+
+  const handleTouchMove = (event: TouchEvent<HTMLDivElement>) => {
+    const start = touchStart.current;
+    const touch = event.touches[0];
+    if (!start || !touch) {
+      return;
+    }
+
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    if (Math.abs(deltaY) > Math.abs(deltaX)) {
+      return;
+    }
+
+    setSwipeOffset(deltaX);
   };
 
   const handleTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
@@ -162,12 +316,16 @@ export const Home = ({
     touchStart.current = null;
 
     if (!start || !touch || tabOrder.length < 2) {
+      setSwipeOffset(0);
+      setSwipePhase('resetting');
       return;
     }
 
     const deltaX = touch.clientX - start.x;
     const deltaY = touch.clientY - start.y;
     if (Math.abs(deltaX) < 50 || Math.abs(deltaX) <= Math.abs(deltaY)) {
+      setSwipeOffset(0);
+      setSwipePhase('resetting');
       return;
     }
 
@@ -175,7 +333,37 @@ export const Home = ({
     const offset = deltaX < 0 ? 1 : -1;
     const next = tabOrder[(index + offset + tabOrder.length) % tabOrder.length];
     if (next) {
-      selectMember(next.id);
+      const direction = deltaX < 0 ? -1 : 1;
+      const width = carouselRef.current?.clientWidth ?? window.innerWidth;
+      pendingMemberId.current = next.id;
+      setSwipePhase('exiting');
+      setSwipeOffset(direction * (width + 10));
+    }
+  };
+
+  const handleSwipeTransitionEnd = (event: TransitionEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+
+    if (swipePhase === 'exiting') {
+      const nextId = pendingMemberId.current;
+      if (!nextId) {
+        setSwipePhase('idle');
+        setSwipeOffset(0);
+        return;
+      }
+
+      pendingMemberId.current = null;
+      setActiveId(nextId);
+      setEditingTargets(false);
+      setSwipePhase('positioning');
+      setSwipeOffset(0);
+      return;
+    }
+
+    if (swipePhase === 'resetting') {
+      setSwipePhase('idle');
     }
   };
 
@@ -199,11 +387,11 @@ export const Home = ({
   const isToday = date === today;
 
   const log = logs[active.id] ?? emptyLog(active.id, date);
-  const { targets } = active;
-  const caloriesBurned = caloriesBurnedFromSteps(log.steps);
-  const adjustedCalorieTarget = targets.calories + caloriesBurned;
   const todaysWorkouts = workoutsForToday(workouts, active.id, date);
   const tally = tallies[active.id] ?? { today: 0, week: 0, month: 0 };
+  const activeIndex = tabOrder.findIndex((member) => member.id === active.id);
+  const previousMember = tabOrder[(activeIndex - 1 + tabOrder.length) % tabOrder.length] ?? active;
+  const nextMember = tabOrder[(activeIndex + 1) % tabOrder.length] ?? active;
 
   return (
     <div className={styles.home}>
@@ -276,89 +464,61 @@ export const Home = ({
         tabIndex={-1}
         style={{ '--member-accent': accentHex[active.accent] } as CSSProperties}
       >
-        <section
-          className={`${styles.panel} ${styles.swipePanel}`}
+        <div
+          ref={carouselRef}
+          className={styles.carousel}
           onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           onTouchCancel={() => {
             touchStart.current = null;
+            setSwipeOffset(0);
+            setSwipePhase('resetting');
           }}
         >
-          <div className={styles.rings}>
-            <ProgressRing
-              label="Steps"
-              display={formatCount(log.steps)}
-              targetDisplay={formatCount(targets.steps)}
-              value={log.steps}
-              target={targets.steps}
-              floor={targets.stepsMin}
-            />
-            <ProgressRing
-              label="Water"
-              display={formatMl(log.waterMl)}
-              targetDisplay={formatMl(targets.waterMl)}
-              value={log.waterMl}
-              target={targets.waterMl}
-            />
-            <ProgressRing
-              label="Calories"
-              display={formatCount(log.calories)}
-              targetDisplay={formatCount(adjustedCalorieTarget)}
-              value={log.calories}
-              target={adjustedCalorieTarget}
-              overIsBad
-            />
-          </div>
-
-          <div className={styles.macros}>
-            <p className={styles.caloriesBurned}>
-              <strong>{formatCount(caloriesBurned)} kcal</strong> burned from steps
-            </p>
-            <div className={styles.macrosHead}>
-              <h2 className={styles.sectionHeading}>Macros</h2>
-              {canEdit && (
-                <button
-                  type="button"
-                  className={styles.editButton}
-                  onClick={() => setEditingTargets((open) => !open)}
-                  aria-expanded={editingTargets}
-                  aria-controls={TARGETS_ID}
-                  aria-label={
-                    editingTargets
-                      ? 'Stop editing macro targets'
-                      : `Edit ${active.name}'s macro targets`
-                  }
-                >
-                  {editingTargets ? <CrossIcon /> : <PencilIcon />}
-                </button>
-              )}
-            </div>
-
-            {editingTargets && canEdit && (
-              <EditTargets
-                member={active}
-                id={TARGETS_ID}
-                onSaved={() => setEditingTargets(false)}
+          <div
+            className={styles.carouselTrack}
+            data-swipe-phase={swipePhase}
+            style={{ '--swipe-offset': `${swipeOffset}px` } as CSSProperties}
+            onTransitionEnd={handleSwipeTransitionEnd}
+          >
+            <div className={styles.carouselSlide}>
+              <MemberSummary
+                member={previousMember}
+                log={logs[previousMember.id] ?? emptyLog(previousMember.id, date)}
+                date={date}
+                viewerId={viewerId}
+                editingTargets={false}
+                preview
+                onToggleTargets={() => {}}
+                onTargetsSaved={() => {}}
               />
-            )}
-
-            <MacroBars
-              rows={[
-                { label: 'Protein', value: log.proteinG, target: targets.protein },
-                { label: 'Carbs', value: log.carbsG, target: targets.carbs },
-                { label: 'Fat', value: log.fatG, target: targets.fat },
-              ]}
-            />
+            </div>
+            <div className={styles.carouselSlide}>
+              <MemberSummary
+                member={active}
+                log={log}
+                date={date}
+                viewerId={viewerId}
+                editingTargets={editingTargets}
+                onToggleTargets={() => setEditingTargets((open) => !open)}
+                onTargetsSaved={() => setEditingTargets(false)}
+              />
+            </div>
+            <div className={styles.carouselSlide}>
+              <MemberSummary
+                member={nextMember}
+                log={logs[nextMember.id] ?? emptyLog(nextMember.id, date)}
+                date={date}
+                viewerId={viewerId}
+                editingTargets={false}
+                preview
+                onToggleTargets={() => {}}
+                onTargetsSaved={() => {}}
+              />
+            </div>
           </div>
-
-          {canEdit ? (
-            <QuickEntry member={active} log={log} date={date} />
-          ) : !viewerId ? (
-            <p className={styles.readOnly}>
-              You&apos;re looking around as a visitor. Pick yourself in the header to log a day.
-            </p>
-          ) : null}
-        </section>
+        </div>
 
         <section className={styles.panel}>
           <div className={styles.workoutsHead}>
