@@ -7,6 +7,7 @@ interface ProgressRingProps {
   /** Pre-formatted for display — "12,431", "2.1 L". */
   display: string;
   targetDisplay: string;
+  targetAdjustmentDisplay?: string;
   value: number;
   target: number;
   /**
@@ -29,6 +30,7 @@ export const ProgressRing = ({
   label,
   display,
   targetDisplay,
+  targetAdjustmentDisplay,
   value,
   target,
   floor,
@@ -54,9 +56,9 @@ export const ProgressRing = ({
           className={styles.svg}
           viewBox="0 0 100 100"
           role="img"
-          aria-label={`${label}: ${display} of ${targetDisplay} target, ${Math.round(pct)} percent`}
+          aria-label={`${label}: ${display} of ${targetDisplay} target${targetAdjustmentDisplay ? ` plus ${targetAdjustmentDisplay} burned` : ''}, ${Math.round(pct)} percent`}
         >
-          <title>{`${label}: ${display} of ${targetDisplay} (${Math.round(pct)}%)`}</title>
+          <title>{`${label}: ${display} of ${targetDisplay} target${targetAdjustmentDisplay ? ` plus ${targetAdjustmentDisplay} burned` : ''} (${Math.round(pct)}%)`}</title>
 
           {/* Track: a lighter step of the fill's own ramp, so the whole ring reads. */}
           <circle
@@ -95,6 +97,9 @@ export const ProgressRing = ({
         <div className={styles.center}>
           <span className={styles.value}>{display}</span>
           <span className={styles.target}>of {targetDisplay}</span>
+          {targetAdjustmentDisplay && (
+            <span className={styles.adjustment}>+ {targetAdjustmentDisplay}</span>
+          )}
         </div>
       </div>
 

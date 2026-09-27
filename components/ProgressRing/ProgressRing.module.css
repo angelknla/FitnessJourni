@@ -116,6 +116,15 @@
   white-space: nowrap;
 }
 
+.adjustment {
+  margin-top: 0.08rem;
+  font-size: clamp(0.52rem, 9cqi, 0.64rem);
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--member-accent);
+  white-space: nowrap;
+}
+
 .label {
   margin: 0;
   font-size: 0.86rem;
@@ -132,5 +141,9 @@
 
   .target {
     font-size: 0.68rem;
+  }
+
+  .adjustment {
+    font-size: 0.58rem;
   }
 }

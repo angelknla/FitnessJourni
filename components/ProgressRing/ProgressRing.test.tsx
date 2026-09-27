@@ -35,6 +35,28 @@ describe('ProgressRing', () => {
     expect(screen.getByText('Water')).toBeInTheDocument();
   });
 
+  it('shows a target adjustment separately while calculating against the total', () => {
+    render(
+      <ProgressRing
+        label="Calories"
+        display="2,400"
+        targetDisplay="2,500"
+        targetAdjustmentDisplay="360"
+        value={2400}
+        target={2860}
+        overIsBad
+      />
+    );
+
+    expect(screen.getByText('of 2,500')).toBeInTheDocument();
+    expect(screen.getByText('+ 360')).toBeInTheDocument();
+    expect(
+      screen.getByRole('img', {
+        name: 'Calories: 2,400 of 2,500 target plus 360 burned, 84 percent',
+      })
+    ).toBeInTheDocument();
+  });
+
   it('marks a budget overshoot as over, so severity can change colour', () => {
     const { container } = render(
       <ProgressRing

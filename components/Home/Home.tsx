@@ -114,7 +114,8 @@ const MemberSummary = ({
         <ProgressRing
           label="Calories"
           display={formatCount(log.calories)}
-          targetDisplay={formatCount(adjustedCalorieTarget)}
+          targetDisplay={formatCount(targets.calories)}
+          targetAdjustmentDisplay={formatCount(caloriesBurned)}
           value={log.calories}
           target={adjustedCalorieTarget}
           overIsBad

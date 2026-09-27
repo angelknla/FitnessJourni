@@ -157,6 +157,12 @@ export interface MedalAward {
   value: number;
 }
 
+export interface MedalQualification {
+  minimumCompetitors: number;
+  targetCompletion: number;
+  targetCloseness: number;
+}
+
 const podium = [
   { rank: 'gold', medal: '🥇' },
   { rank: 'silver', medal: '🥈' },
@@ -208,29 +214,64 @@ const medalCategories: {
   },
 ];
 
+const qualifiesForMedal = (
+  category: MedalCategory,
+  summary: LogSummary,
+  workouts: number,
+  targets: MemberTargets | undefined,
+  qualification: MedalQualification
+) => {
+  switch (category) {
+    case 'daysLogged':
+      return summary.daysLogged > 0;
+    case 'workouts':
+      return workouts >= 1;
+    case 'totalSteps':
+    case 'avgSteps':
+      return Boolean(targets && summary.avgSteps >= targets.steps * qualification.targetCompletion);
+    case 'avgWaterMl':
+      return Boolean(
+        targets && summary.avgWaterMl >= targets.waterMl * qualification.targetCompletion
+      );
+    case 'avgSleepHours':
+      return sleepTargetScore(summary, targets) >= qualification.targetCloseness;
+    case 'nutritionTarget':
+      return nutritionTargetScore(summary, targets) >= qualification.targetCloseness;
+  }
+};
+
 /** Podium awards for each category. Ties share a medal and skip the next place. */
 export const awardMedals = (
   summaries: Record<string, LogSummary>,
   workoutCounts: Record<string, number>,
-  targetsByMember: Record<string, MemberTargets> = {}
+  targetsByMember: Record<string, MemberTargets> = {},
+  qualification?: MedalQualification
 ): MedalAward[] => {
   const memberIds = new Set([...Object.keys(summaries), ...Object.keys(workoutCounts)]);
   const awards: MedalAward[] = [];
 
   for (const category of medalCategories) {
     const scores = [...memberIds]
-      .map((memberId) => ({
-        memberId,
-        value: category.value(
-          summaries[memberId] ?? emptySummary,
-          workoutCounts[memberId] ?? 0,
-          targetsByMember[memberId]
-        ),
-      }))
-      .filter((score) => score.value > 0)
+      .map((memberId) => {
+        const summary = summaries[memberId] ?? emptySummary;
+        const workouts = workoutCounts[memberId] ?? 0;
+        const targets = targetsByMember[memberId];
+        return {
+          memberId,
+          value: category.value(summary, workouts, targets),
+          qualified:
+            !qualification ||
+            qualifiesForMedal(category.key, summary, workouts, targets, qualification),
+        };
+      })
+      .filter((score) => score.value > 0 && score.qualified)
       .sort(
         (left, right) => right.value - left.value || left.memberId.localeCompare(right.memberId)
       );
+
+    if (qualification && scores.length < qualification.minimumCompetitors) {
+      continue;
+    }
 
     let previousValue: number | null = null;
     let rankIndex = 0;

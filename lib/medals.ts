@@ -3,6 +3,12 @@ import { awardMedals, type MedalAward, summarise } from '@/lib/aggregate';
 import { countWorkouts } from '@/lib/data/workouts';
 import type { DailyLog, MemberTargets, Workout } from '@/types/fitness';
 
+const leaderboardQualification = {
+  minimumCompetitors: 2,
+  targetCompletion: 0.2,
+  targetCloseness: 40,
+};
+
 export interface MedalBoard {
   period: 'day' | 'week' | 'month';
   label: string;
@@ -31,6 +37,7 @@ export const buildMedalBoards = (
     awards: awardMedals(
       summarise(logs, from, through),
       countWorkouts(workouts, from, through),
-      targetsByMember
+      targetsByMember,
+      leaderboardQualification
     ),
   }));

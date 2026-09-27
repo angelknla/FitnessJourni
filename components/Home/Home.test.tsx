@@ -179,8 +179,12 @@ describe('Home', () => {
     const summary = screen.getByRole('heading', { name: 'Macros' }).closest('section');
 
     expect(
-      screen.getByRole('img', { name: 'Calories: 2,400 of 2,860 target, 84 percent' })
+      screen.getByRole('img', {
+        name: 'Calories: 2,400 of 2,500 target plus 360 burned, 84 percent',
+      })
     ).toBeInTheDocument();
+    expect(summary).toHaveTextContent('of 2,500');
+    expect(summary).toHaveTextContent('+ 360');
     expect(summary).toHaveTextContent('360 kcal burned from steps');
     expect(screen.queryByText(/The tick on Steps marks/)).not.toBeInTheDocument();
     expect(targets.calories).toBe(2500);
