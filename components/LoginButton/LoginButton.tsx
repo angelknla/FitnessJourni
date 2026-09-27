@@ -127,11 +127,21 @@ export const LoginButton = ({ variant = 'header' }: LoginButtonProps) => {
               </button>
             </div>
             <div className={styles.alternatives}>
-              <button type="button" onClick={() => startEnrollment('legacy')}>
-                Set up existing account
+              <button
+                type="button"
+                className={styles.existingAccount}
+                aria-label="Set up existing account"
+                onClick={() => startEnrollment('legacy')}
+              >
+                Existing account
               </button>
-              <button type="button" onClick={() => startEnrollment('create')}>
-                Create new user
+              <button
+                type="button"
+                className={styles.newAccount}
+                aria-label="Create new user"
+                onClick={() => startEnrollment('create')}
+              >
+                New user
               </button>
             </div>
           </form>
