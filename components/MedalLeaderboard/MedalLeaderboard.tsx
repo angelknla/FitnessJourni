@@ -121,7 +121,7 @@ const MedalDatePicker = ({ medalDate, today }: { medalDate: string; today: strin
             className={`${styles.dateControl} ${selectedDate ? styles.dateActive : ''}`}
             title="Choose medal date"
         >
-            <CalendarIcon size={16} />
+            {!selectedDate && <CalendarIcon size={16} />}
             {selectedDate && (
                 <span aria-hidden="true">{shortDate.format(fromISODate(selectedDate))}</span>
             )}

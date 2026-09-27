@@ -70,13 +70,14 @@ describe('LogsTable', () => {
             .toBeInTheDocument();
         expect(screen.queryByText('Protein/day')).not.toBeInTheDocument();
         expect(screen.queryByText('kcal/day')).not.toBeInTheDocument();
+        expect(screen.queryByText('Days')).not.toBeInTheDocument();
         expect(screen.getAllByText('Nutrition')).toHaveLength(2);
         expect(screen.getByRole('img', { name: /Dillon progress:.*Nutrition 96%, gold medal/ }))
             .toBeInTheDocument();
         expect(screen.getByText('7.5 / 8 hours')).toBeInTheDocument();
         expect(screen.queryByText('★')).not.toBeInTheDocument();
-        expect(document.querySelectorAll('[data-medal-rank="gold"]')).toHaveLength(7);
-        expect(document.querySelectorAll('[data-medal-rank="silver"]')).toHaveLength(5);
+        expect(document.querySelectorAll('[data-medal-rank="gold"]')).toHaveLength(6);
+        expect(document.querySelectorAll('[data-medal-rank="silver"]')).toHaveLength(4);
     });
 
     it('shows daily sleep without calling it an average on the Today view', () => {

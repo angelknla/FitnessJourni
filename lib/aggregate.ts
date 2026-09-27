@@ -158,7 +158,6 @@ export interface MedalAward {
 }
 
 export interface MedalQualification {
-  minimumCompetitors: number;
   targetCompletion: number;
   targetCloseness: number;
 }
@@ -268,10 +267,6 @@ export const awardMedals = (
       .sort(
         (left, right) => right.value - left.value || left.memberId.localeCompare(right.memberId)
       );
-
-    if (qualification && scores.length < qualification.minimumCompetitors) {
-      continue;
-    }
 
     let previousValue: number | null = null;
     let rankIndex = 0;

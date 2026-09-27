@@ -40,13 +40,6 @@ const formatSleepProgress = (hours: number, target: number) =>
 
 const columns: Column[] = [
   {
-    key: 'daysLogged',
-    label: 'Days',
-    title: 'Days with something logged',
-    format: (s) => String(s.daysLogged),
-    value: (summary) => summary.daysLogged,
-  },
-  {
     key: 'workouts',
     label: 'Workouts',
     title: 'Workouts completed over the period',

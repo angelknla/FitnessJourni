@@ -62,21 +62,23 @@ describe('buildMedalBoards', () => {
     expect(day.label).toBe('20 Sept 2026');
   });
 
-  it('awards nothing when only one member qualifies', () => {
+  it('awards medals when one member qualifies', () => {
     const [today] = buildMedalBoards([log('m1', '2026-09-27', 10000)], [], '2026-09-27', {
       m1: targets,
     });
 
-    expect(today.awards).toEqual([]);
+    expect(today.awards.length).toBeGreaterThan(0);
+    expect(today.awards.every((award) => award.memberId === 'm1')).toBe(true);
+    expect(today.awards.every((award) => award.rank === 'gold')).toBe(true);
   });
 
-  it('accepts the 20% completion and 40% closeness boundaries', () => {
+  it('accepts the 30% completion and 50% closeness boundaries', () => {
     const boundaryLog = (memberId: string) =>
-      log(memberId, '2026-09-27', 2000, {
-        waterMl: 500,
-        calories: 1000,
-        proteinG: 62,
-        sleepHours: 3.2,
+      log(memberId, '2026-09-27', 3000, {
+        waterMl: 750,
+        calories: 1250,
+        proteinG: 78,
+        sleepHours: 4,
       });
     const [today] = buildMedalBoards([boundaryLog('m1'), boundaryLog('m2')], [], '2026-09-27', {
       m1: targets,
@@ -97,11 +99,11 @@ describe('buildMedalBoards', () => {
 
   it('rejects target categories below the qualification boundaries', () => {
     const belowThresholdLog = (memberId: string) =>
-      log(memberId, '2026-09-27', 1999, {
-        waterMl: 499,
-        calories: 950,
-        proteinG: 60,
-        sleepHours: 3.1,
+      log(memberId, '2026-09-27', 2999, {
+        waterMl: 749,
+        calories: 1200,
+        proteinG: 75,
+        sleepHours: 3.9,
       });
     const [today] = buildMedalBoards(
       [belowThresholdLog('m1'), belowThresholdLog('m2')],
