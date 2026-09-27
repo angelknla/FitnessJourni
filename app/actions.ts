@@ -35,6 +35,8 @@ export interface ActionState {
    * every field into the dependency list.
    */
   bookedAt?: number;
+  /** The message postMessage just created, used to scroll after refreshed data arrives. */
+  messageId?: string;
   /**
    * The member addMember just created. Returned so the form can offer to sign in
    * as them, which is the only way a first identity can be picked on a fresh
@@ -1233,6 +1235,7 @@ export const postMessage = async (_prev: ActionState, formData: FormData): Promi
 
   const viewer = await readViewer();
   const content = toText(formData.get('content'));
+  const replyToId = toText(formData.get('replyToId')) || null;
 
   if (!viewer.memberId) {
     return fail('Choose who you are before posting.');
@@ -1244,11 +1247,21 @@ export const postMessage = async (_prev: ActionState, formData: FormData): Promi
     return fail('Keep your post under 500 characters.');
   }
 
-  const { data, error } = await supabase
+  let insertResult = await supabase
     .from('messages')
-    .insert({ member_id: viewer.memberId, content })
-    .select('created_at')
+    .insert({ member_id: viewer.memberId, content, reply_to_id: replyToId })
+    .select('id, created_at')
     .single();
+
+  if (!replyToId && insertResult.error?.message.includes('reply_to_id')) {
+    insertResult = await supabase
+      .from('messages')
+      .insert({ member_id: viewer.memberId, content })
+      .select('id, created_at')
+      .single();
+  }
+
+  const { data, error } = insertResult;
 
   if (error || !data) {
     console.error('[postMessage]', error?.message ?? 'Message insert returned no row.');
@@ -1268,7 +1281,7 @@ export const postMessage = async (_prev: ActionState, formData: FormData): Promi
 
   revalidatePath('/messages');
   revalidatePath('/', 'layout');
-  return { ok: true, message: 'Shared with the group.', bookedAt: Date.now() };
+  return { ok: true, bookedAt: Date.now(), messageId: data.id as string };
 };
 
 const ownedMessage = async (

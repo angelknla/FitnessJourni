@@ -39,6 +39,22 @@ describe('messages', () => {
     ]);
   });
 
+  it('maps a quoted message', () => {
+    expect(
+      mapMessage(
+        {
+          id: 'message-2',
+          member_id: 'member-2',
+          content: 'Absolutely.',
+          created_at: '2026-09-25T08:31:00.000Z',
+          reply_to_id: 'message-1',
+        },
+        [],
+        { id: 'message-1', memberId: 'member-1', content: 'Keep showing up.' }
+      ).replyTo
+    ).toEqual({ id: 'message-1', memberId: 'member-1', content: 'Keep showing up.' });
+  });
+
   it('only reports posts newer than the read cursor', () => {
     expect(hasUnreadMessages('2026-09-25T08:30:00.000Z', null)).toBe(true);
     expect(hasUnreadMessages('2026-09-25T08:30:00.000Z', '2026-09-25T08:29:59.000Z')).toBe(true);

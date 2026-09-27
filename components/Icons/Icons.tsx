@@ -202,6 +202,24 @@ export const ArrowLeftIcon = ({ size = 15 }: IconProps) => (
   </svg>
 );
 
+export const ReplyIcon = ({ size = 16 }: IconProps) => (
+  <svg
+    viewBox="0 0 16 16"
+    width={size}
+    height={size}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.7"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path d="M6.5 3.5 3 7l3.5 3.5" />
+    <path d="M3.5 7h4.25C10.9 7 13 8.7 13 12" />
+  </svg>
+);
+
 export const ChevronLeftIcon = ({ size = 16 }: IconProps) => (
   <NavIcon size={size}>
     <path d="m14.5 5-7 7 7 7" />

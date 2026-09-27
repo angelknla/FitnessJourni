@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { Member, MemberTargets } from '@/types/fitness';
 
 vi.mock('@/app/actions', () => ({
-    postMessage: vi.fn(async () => ({ ok: true })),
+    postMessage: vi.fn(async () => ({ ok: true, bookedAt: 1, messageId: 'post-new' })),
     editMessage: vi.fn(async () => ({ ok: true })),
     deleteMessage: vi.fn(async () => ({ ok: true })),
     reactToMessage: vi.fn(async () => ({ ok: true })),
@@ -14,7 +14,7 @@ vi.mock('next/navigation', () => ({
     useRouter: () => ({ refresh: vi.fn() }),
 }));
 
-import { reactToMessage } from '@/app/actions';
+import { postMessage, reactToMessage } from '@/app/actions';
 import { MessageBoard } from './MessageBoard';
 
 const targets: MemberTargets = {
@@ -91,7 +91,8 @@ describe('MessageBoard', () => {
         expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
     });
 
-    it('does not show message options for another member’s post', () => {
+    it('offers reply but not edit or delete for another member’s post', async () => {
+        const user = userEvent.setup();
         render(
             <MessageBoard
                 members={[member]}
@@ -108,7 +109,22 @@ describe('MessageBoard', () => {
             />
         );
 
-        expect(screen.queryByRole('button', { name: 'Message options' })).not.toBeInTheDocument();
+        await user.click(screen.getByRole('button', { name: 'Message options' }));
+        expect(screen.getByRole('button', { name: 'Reply' })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
+
+        await user.click(screen.getByRole('button', { name: 'Reply' }));
+        expect(screen.getByText('Replying to Dillon')).toBeInTheDocument();
+        expect(screen.getAllByText('Keep showing up.')).toHaveLength(2);
+
+        await user.type(screen.getByLabelText('Share something with the group'), 'Absolutely');
+        await user.click(screen.getByRole('button', { name: 'Send message' }));
+
+        await waitFor(() => expect(postMessage).toHaveBeenCalled());
+        const submitted = vi.mocked(postMessage).mock.calls.at(-1)?.[1];
+        expect(submitted?.get('content')).toBe('Absolutely');
+        expect(submitted?.get('replyToId')).toBe('post-1');
     });
 
     it('keeps expired message options available but disables edit and delete', async () => {
@@ -178,6 +194,71 @@ describe('MessageBoard', () => {
         expect(composer).toHaveStyle({ height: '72px' });
     });
 
+    it('shows a message optimistically, keeps failures retryable, and scrolls to it', async () => {
+        const user = userEvent.setup();
+        let resolvePost: (result: { ok: boolean; error?: string }) => void = () => { };
+        vi.mocked(postMessage).mockImplementationOnce(
+            () => new Promise((resolve) => {
+                resolvePost = resolve;
+            })
+        );
+        const { rerender } = render(
+            <MessageBoard members={[member]} viewerId="m1" messages={[]} />
+        );
+        const conversation = screen.getByLabelText('Group chat').querySelector('div');
+        const scrollTo = vi.fn();
+        Object.defineProperty(conversation, 'scrollHeight', { configurable: true, value: 240 });
+        Object.defineProperty(conversation, 'scrollTo', { configurable: true, value: scrollTo });
+
+        fireEvent.change(screen.getByLabelText('Share something with the group'), {
+            target: { value: 'New win' },
+        });
+        fireEvent.submit(screen.getByRole('button', { name: 'Send message' }).closest('form')!);
+
+        expect(screen.getByText('New win')).toBeInTheDocument();
+        expect(screen.getByText('Sending…')).toBeInTheDocument();
+        await waitFor(() => {
+            expect(scrollTo).toHaveBeenCalledWith({ top: 240, behavior: 'smooth' });
+        });
+
+        await act(async () => {
+            resolvePost({ ok: false, error: 'Could not share that post.' });
+        });
+        expect(screen.getByText('Not sent')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Retry sending message' })).toHaveAttribute(
+            'title',
+            'Could not share that post.'
+        );
+
+        vi.mocked(postMessage).mockResolvedValueOnce({
+            ok: true,
+            bookedAt: 2,
+            messageId: 'post-new',
+        });
+        await user.click(screen.getByRole('button', { name: 'Retry sending message' }));
+
+        rerender(
+            <MessageBoard
+                members={[member]}
+                viewerId="m1"
+                messages={[
+                    {
+                        id: 'post-new',
+                        memberId: 'm1',
+                        content: 'New win',
+                        createdAt: '2026-09-27T10:00:00.000Z',
+                        reactions: [],
+                    },
+                ]}
+            />
+        );
+
+        await waitFor(() => {
+            expect(screen.getAllByText('New win')).toHaveLength(1);
+        });
+        expect(screen.queryByText('Shared with the group.')).not.toBeInTheDocument();
+    });
+
     it('shows reaction counts and offers all six reactions', async () => {
         const user = userEvent.setup();
         render(
@@ -242,6 +323,42 @@ describe('MessageBoard', () => {
 
         expect(screen.getByRole('group', { name: 'Choose reaction' })).toBeInTheDocument();
         vi.useRealTimers();
+    });
+
+    it('selects a message for reply after swiping it right', () => {
+        render(
+            <MessageBoard
+                members={[member]}
+                viewerId="m1"
+                messages={[
+                    {
+                        id: 'post-1',
+                        memberId: 'm1',
+                        content: 'Swipe this message.',
+                        createdAt: '2026-09-25T08:30:00.000Z',
+                        reactions: [],
+                    },
+                ]}
+            />
+        );
+
+        const bubble = screen.getByText('Swipe this message.').closest('article');
+        const fireTouchPointer = (type: 'pointerdown' | 'pointermove' | 'pointerup', x: number) => {
+            const event = new Event(type, { bubbles: true });
+            Object.defineProperties(event, {
+                pointerType: { value: 'touch' },
+                clientX: { value: x },
+                clientY: { value: 20 },
+            });
+            fireEvent(bubble!, event);
+        };
+
+        fireTouchPointer('pointerdown', 20);
+        fireTouchPointer('pointermove', 100);
+        fireTouchPointer('pointerup', 100);
+
+        expect(screen.getByText('Replying to yourself')).toBeInTheDocument();
+        expect(screen.getAllByText('Swipe this message.')).toHaveLength(2);
     });
 
     it('reacts with a heart after double-tapping a message on touch', async () => {

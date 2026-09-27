@@ -1,18 +1,30 @@
 'use client';
 
-import { BinIcon, CalendarIcon, CrossIcon, MoreIcon, PencilIcon, ReactionIcon, SendIcon } from '@components/Icons/Icons';
+import {
+    BinIcon,
+    CalendarIcon,
+    CrossIcon,
+    MoreIcon,
+    PencilIcon,
+    ReactionIcon,
+    ReplyIcon,
+    ResyncIcon,
+    SendIcon,
+} from '@components/Icons/Icons';
 import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
 import { PageHeader } from '@components/PageHeader/PageHeader';
 import { accentHex } from '@data/fitnessData';
 import { useRouter } from 'next/navigation';
 import {
     type CSSProperties,
+    type FormEvent,
     Fragment,
     type PointerEvent as ReactPointerEvent,
     useActionState,
     useEffect,
     useRef,
     useState,
+    useTransition,
 } from 'react';
 import {
     type ActionState,
@@ -23,7 +35,7 @@ import {
     reactToMessage,
 } from '@/app/actions';
 import { canModifyMessage, MESSAGE_EDIT_WINDOW_MS } from '@/lib/messagePolicy';
-import type { Member, MessagePost, MessageReactionType } from '@/types/fitness';
+import type { Member, MessagePost, MessageReactionType, MessageReply } from '@/types/fitness';
 
 import styles from './MessageBoard.module.css';
 
@@ -34,6 +46,16 @@ interface MessageBoardProps {
 }
 
 const initial: ActionState = { ok: false };
+interface OptimisticMessage {
+    clientId: string;
+    content: string;
+    createdAt: string;
+    status: 'sending' | 'failed' | 'confirmed';
+    serverId?: string;
+    error?: string;
+    replyTo?: MessageReply;
+}
+
 const messageTime = new Intl.DateTimeFormat('en-GB', {
     hour: '2-digit',
     minute: '2-digit',
@@ -68,13 +90,17 @@ const localDateKey = (value: string): string => {
 const MessageBubble = ({
     message,
     author,
+    replyAuthor,
     own,
     viewerId,
+    onReply,
 }: {
     message: MessagePost;
     author?: Member;
+    replyAuthor?: Member;
     own: boolean;
     viewerId: string | null;
+    onReply: (message: MessageReply) => void;
 }) => {
     const [editing, setEditing] = useState(false);
     const [optionsOpen, setOptionsOpen] = useState(false);
@@ -83,6 +109,7 @@ const MessageBubble = ({
     const [reactionState, reactionAction, isReacting] = useActionState(reactToMessage, initial);
     const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
     const [canModify, setCanModify] = useState(() => canModifyMessage(message.createdAt));
+    const bubbleRef = useRef<HTMLElement>(null);
     const optionsRef = useRef<HTMLSpanElement>(null);
     const reactionFormRef = useRef<HTMLFormElement>(null);
     const reactionInputRef = useRef<HTMLInputElement>(null);
@@ -90,6 +117,8 @@ const MessageBubble = ({
     const longPressTriggeredRef = useRef(false);
     const lastTapRef = useRef(0);
     const touchStartRef = useRef({ x: 0, y: 0 });
+    const swipeOffsetRef = useRef(0);
+    const swipeActiveRef = useRef(false);
     const lastPointerTypeRef = useRef('');
     const viewerReaction = message.reactions.find(
         (reaction) => reaction.memberId === viewerId
@@ -129,6 +158,8 @@ const MessageBubble = ({
         clearLongPress();
         longPressTriggeredRef.current = false;
         touchStartRef.current = { x: event.clientX, y: event.clientY };
+        swipeOffsetRef.current = 0;
+        swipeActiveRef.current = false;
         longPressTimerRef.current = setTimeout(() => {
             longPressTriggeredRef.current = true;
             setReactionPickerOpen(true);
@@ -136,16 +167,52 @@ const MessageBubble = ({
     };
 
     const handlePointerMove = (event: ReactPointerEvent<HTMLElement>) => {
+        const distanceX = event.clientX - touchStartRef.current.x;
+        const distanceY = event.clientY - touchStartRef.current.y;
         if (
-            Math.abs(event.clientX - touchStartRef.current.x) > 10 ||
-            Math.abs(event.clientY - touchStartRef.current.y) > 10
+            event.pointerType === 'touch' &&
+            viewerId &&
+            !isInteractive(event.target) &&
+            distanceX > 4 &&
+            Math.abs(distanceX) > Math.abs(distanceY)
+        ) {
+            clearLongPress();
+            swipeActiveRef.current = true;
+            swipeOffsetRef.current = Math.min(distanceX * 0.65, 64);
+            bubbleRef.current?.style.setProperty('--reply-swipe', `${swipeOffsetRef.current}px`);
+            bubbleRef.current?.style.setProperty(
+                '--reply-progress',
+                String(Math.min(swipeOffsetRef.current / 48, 1))
+            );
+            bubbleRef.current?.setAttribute('data-swiping', 'true');
+            return;
+        }
+        if (
+            Math.abs(distanceX) > 10 ||
+            Math.abs(distanceY) > 10
         ) {
             clearLongPress();
         }
     };
 
+    const resetSwipe = () => {
+        bubbleRef.current?.style.setProperty('--reply-swipe', '0px');
+        bubbleRef.current?.style.setProperty('--reply-progress', '0');
+        bubbleRef.current?.removeAttribute('data-swiping');
+    };
+
     const handlePointerUp = (event: ReactPointerEvent<HTMLElement>) => {
         clearLongPress();
+        if (swipeActiveRef.current) {
+            const shouldReply = swipeOffsetRef.current >= 48;
+            swipeActiveRef.current = false;
+            swipeOffsetRef.current = 0;
+            resetSwipe();
+            if (shouldReply) {
+                onReply({ id: message.id, memberId: message.memberId, content: message.content });
+            }
+            return;
+        }
         if (
             event.pointerType !== 'touch' ||
             !viewerId ||
@@ -208,15 +275,26 @@ const MessageBubble = ({
 
     return (
         <article
+            ref={bubbleRef}
             className={`${styles.bubble} ${viewerId || reactionCounts.length > 0 ? styles.hasReactions : ''}`}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
-            onPointerCancel={clearLongPress}
+            onPointerCancel={() => {
+                clearLongPress();
+                swipeActiveRef.current = false;
+                swipeOffsetRef.current = 0;
+                resetSwipe();
+            }}
             onContextMenu={(event) => {
                 if (lastPointerTypeRef.current === 'touch') event.preventDefault();
             }}
         >
+            {viewerId && (
+                <span className={styles.swipeReplyCue} aria-hidden="true">
+                    <ReplyIcon />
+                </span>
+            )}
             <header className={styles.meta}>
                 <span className={styles.author}>
                     {author ? (
@@ -232,7 +310,7 @@ const MessageBubble = ({
                     <time dateTime={message.createdAt}>
                         {messageTime.format(new Date(message.createdAt))}
                     </time>
-                    {own && (
+                    {viewerId && (
                         <span ref={optionsRef} className={styles.options}>
                             <button
                                 type="button"
@@ -247,40 +325,68 @@ const MessageBubble = ({
                                 <span className={styles.optionsMenu}>
                                     <button
                                         type="button"
-                                        disabled={!canModify}
-                                        title={!canModify ? 'Messages can only be edited within 15 minutes.' : undefined}
                                         onClick={() => {
-                                            setEditing(true);
+                                            onReply({
+                                                id: message.id,
+                                                memberId: message.memberId,
+                                                content: message.content,
+                                            });
                                             setOptionsOpen(false);
                                         }}
                                     >
-                                        <PencilIcon />
-                                        Edit
+                                        <ReplyIcon />
+                                        Reply
                                     </button>
-                                    <form
-                                        action={deleteAction}
-                                        onSubmit={(event) => {
-                                            if (!window.confirm('Remove this message?')) {
-                                                event.preventDefault();
-                                            }
-                                        }}
-                                    >
-                                        <input type="hidden" name="id" value={message.id} />
-                                        <button
-                                            type="submit"
-                                            disabled={isDeleting || !canModify}
-                                            title={!canModify ? 'Messages can only be deleted within 15 minutes.' : undefined}
-                                        >
-                                            <BinIcon />
-                                            {isDeleting ? 'Removing…' : 'Delete'}
-                                        </button>
-                                    </form>
+                                    {own && (
+                                        <>
+                                            <button
+                                                type="button"
+                                                disabled={!canModify}
+                                                title={!canModify ? 'Messages can only be edited within 15 minutes.' : undefined}
+                                                onClick={() => {
+                                                    setEditing(true);
+                                                    setOptionsOpen(false);
+                                                }}
+                                            >
+                                                <PencilIcon />
+                                                Edit
+                                            </button>
+                                            <form
+                                                action={deleteAction}
+                                                onSubmit={(event) => {
+                                                    if (!window.confirm('Remove this message?')) {
+                                                        event.preventDefault();
+                                                    }
+                                                }}
+                                            >
+                                                <input type="hidden" name="id" value={message.id} />
+                                                <button
+                                                    type="submit"
+                                                    disabled={isDeleting || !canModify}
+                                                    title={!canModify ? 'Messages can only be deleted within 15 minutes.' : undefined}
+                                                >
+                                                    <BinIcon />
+                                                    {isDeleting ? 'Removing…' : 'Delete'}
+                                                </button>
+                                            </form>
+                                        </>
+                                    )}
                                 </span>
                             )}
                         </span>
                     )}
                 </span>
             </header>
+            {message.replyTo && (
+                <blockquote className={styles.quotedMessage}>
+                    <strong>
+                        {message.replyTo.memberId === viewerId
+                            ? 'You'
+                            : (replyAuthor?.name ?? 'Former member')}
+                    </strong>
+                    <span>{message.replyTo.content}</span>
+                </blockquote>
+            )}
             {editing ? (
                 <form action={editAction} className={styles.editForm}>
                     <input type="hidden" name="id" value={message.id} />
@@ -371,9 +477,11 @@ const MessageBubble = ({
 };
 
 export const MessageBoard = ({ members, messages, viewerId }: MessageBoardProps) => {
-    const [state, formAction, isPending] = useActionState(postMessage, initial);
-    const formRef = useRef<HTMLFormElement>(null);
+    const [optimisticMessages, setOptimisticMessages] = useState<OptimisticMessage[]>([]);
+    const [replyTo, setReplyTo] = useState<MessageReply | null>(null);
+    const [isPending, startTransition] = useTransition();
     const composerInputRef = useRef<HTMLTextAreaElement>(null);
+    const conversationRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
     const [filterMode, setFilterMode] = useState<'all' | 'date'>('all');
     const [filterValue, setFilterValue] = useState('');
@@ -393,11 +501,104 @@ export const MessageBoard = ({ members, messages, viewerId }: MessageBoardProps)
     }, [router]);
 
     useEffect(() => {
-        if (state.ok && state.bookedAt) {
-            formRef.current?.reset();
-            composerInputRef.current?.style.removeProperty('height');
+        const confirmedIds = new Set(messages.map((message) => message.id));
+        setOptimisticMessages((current) => {
+            const pending = current.filter(
+                (message) => !message.serverId || !confirmedIds.has(message.serverId)
+            );
+            return pending.length === current.length ? current : pending;
+        });
+    }, [messages]);
+
+    useEffect(() => {
+        if (optimisticMessages.length === 0) {
+            return;
         }
-    }, [state.ok, state.bookedAt]);
+        const frame = requestAnimationFrame(() => {
+            const conversation = conversationRef.current;
+            conversation?.scrollTo({ top: conversation.scrollHeight, behavior: 'smooth' });
+        });
+        return () => cancelAnimationFrame(frame);
+    }, [optimisticMessages]);
+
+    const sendOptimisticMessage = (clientId: string, content: string, reply?: MessageReply) => {
+        setOptimisticMessages((current) =>
+            current.map((message) =>
+                message.clientId === clientId
+                    ? { ...message, status: 'sending', error: undefined }
+                    : message
+            )
+        );
+
+        startTransition(async () => {
+            const formData = new FormData();
+            formData.set('content', content);
+            if (reply) formData.set('replyToId', reply.id);
+
+            try {
+                const result = await postMessage(initial, formData);
+                if (!result.ok || !result.messageId) {
+                    setOptimisticMessages((current) =>
+                        current.map((message) =>
+                            message.clientId === clientId
+                                ? {
+                                    ...message,
+                                    status: 'failed',
+                                    error: result.error ?? 'Could not share that post.',
+                                }
+                                : message
+                        )
+                    );
+                    return;
+                }
+
+                setOptimisticMessages((current) =>
+                    current.map((message) =>
+                        message.clientId === clientId
+                            ? { ...message, status: 'confirmed', serverId: result.messageId }
+                            : message
+                    )
+                );
+                router.refresh();
+            } catch {
+                setOptimisticMessages((current) =>
+                    current.map((message) =>
+                        message.clientId === clientId
+                            ? { ...message, status: 'failed', error: 'Could not share that post.' }
+                            : message
+                    )
+                );
+            }
+        });
+    };
+
+    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const content = String(new FormData(form).get('content') ?? '').trim();
+        if (!content) {
+            return;
+        }
+
+        const clientId = `pending-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const selectedReply = replyTo ?? undefined;
+        setOptimisticMessages((current) => [
+            ...current,
+            {
+                clientId,
+                content,
+                createdAt: new Date().toISOString(),
+                status: 'sending',
+                replyTo: selectedReply,
+            },
+        ]);
+        setReplyTo(null);
+        form.reset();
+        composerInputRef.current?.style.removeProperty('height');
+        setFilterMode('all');
+        setFilterValue('');
+        sendOptimisticMessage(clientId, content, selectedReply);
+    };
 
     const resizeComposer = () => {
         const input = composerInputRef.current;
@@ -453,8 +654,8 @@ export const MessageBoard = ({ members, messages, viewerId }: MessageBoardProps)
                 actions={messages.length > 0 ? filterControls : undefined}
             />
             <section className={styles.board} aria-label="Group chat">
-                <div className={styles.conversation}>
-                    {filteredMessages.length > 0 ? (
+                <div ref={conversationRef} className={styles.conversation}>
+                    {filteredMessages.length > 0 || optimisticMessages.length > 0 ? (
                         <ol className={styles.feed} aria-label="Conversation">
                             {filteredMessages.map((message, index) => {
                                 const author = memberById.get(message.memberId);
@@ -478,13 +679,80 @@ export const MessageBoard = ({ members, messages, viewerId }: MessageBoardProps)
                                             <MessageBubble
                                                 message={message}
                                                 author={author}
+                                                replyAuthor={message.replyTo ? memberById.get(message.replyTo.memberId) : undefined}
                                                 own={own}
                                                 viewerId={viewerId}
+                                                onReply={(selected) => {
+                                                    setReplyTo(selected);
+                                                    requestAnimationFrame(() => composerInputRef.current?.focus());
+                                                }}
                                             />
                                         </li>
                                     </Fragment>
                                 );
                             })}
+                            {optimisticMessages.map((message) => (
+                                <li
+                                    className={`${styles.message} ${styles.own}`}
+                                    key={message.clientId}
+                                    style={
+                                        {
+                                            '--message-accent': viewerId
+                                                ? accentHex[memberById.get(viewerId)?.accent ?? 'blue']
+                                                : 'var(--c-accent)',
+                                        } as CSSProperties
+                                    }
+                                >
+                                    <article
+                                        className={`${styles.bubble} ${styles.optimisticBubble} ${message.status === 'failed' ? styles.failedBubble : ''
+                                            }`}
+                                    >
+                                        <div className={styles.meta}>
+                                            <span className={styles.author}>
+                                                {viewerId && memberById.get(viewerId) && (
+                                                    <MemberAvatar member={memberById.get(viewerId)!} size="1.5rem" />
+                                                )}
+                                                <strong>You</strong>
+                                            </span>
+                                            <span className={styles.deliveryState}>
+                                                {message.status === 'failed' ? (
+                                                    <>
+                                                        <span role="alert">Not sent</span>
+                                                        <button
+                                                            type="button"
+                                                            className={styles.retryButton}
+                                                            aria-label="Retry sending message"
+                                                            title={message.error}
+                                                            onClick={() =>
+                                                                sendOptimisticMessage(
+                                                                    message.clientId,
+                                                                    message.content,
+                                                                    message.replyTo
+                                                                )
+                                                            }
+                                                        >
+                                                            <ResyncIcon size={14} />
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <span>{message.status === 'sending' ? 'Sending…' : 'Sent'}</span>
+                                                )}
+                                            </span>
+                                        </div>
+                                        {message.replyTo && (
+                                            <blockquote className={styles.quotedMessage}>
+                                                <strong>
+                                                    {message.replyTo.memberId === viewerId
+                                                        ? 'You'
+                                                        : (memberById.get(message.replyTo.memberId)?.name ?? 'Former member')}
+                                                </strong>
+                                                <span>{message.replyTo.content}</span>
+                                            </blockquote>
+                                        )}
+                                        <p>{message.content}</p>
+                                    </article>
+                                </li>
+                            ))}
                         </ol>
                     ) : (
                         <div className={styles.empty}>
@@ -499,8 +767,28 @@ export const MessageBoard = ({ members, messages, viewerId }: MessageBoardProps)
                 </div>
 
                 {viewerId ? (
-                    <form ref={formRef} action={formAction} className={styles.composer}>
+                    <form onSubmit={handleSubmit} className={styles.composer}>
                         <label className="sr-only" htmlFor="chat-message">Share something with the group</label>
+                        {replyTo && (
+                            <div className={styles.replyPreview}>
+                                <span>
+                                    <strong>
+                                        Replying to{' '}
+                                        {replyTo.memberId === viewerId
+                                            ? 'yourself'
+                                            : (memberById.get(replyTo.memberId)?.name ?? 'Former member')}
+                                    </strong>
+                                    <span>{replyTo.content}</span>
+                                </span>
+                                <button
+                                    type="button"
+                                    aria-label="Cancel reply"
+                                    onClick={() => setReplyTo(null)}
+                                >
+                                    <CrossIcon size={14} />
+                                </button>
+                            </div>
+                        )}
                         <div className={styles.composeRow}>
                             <textarea
                                 ref={composerInputRef}
@@ -516,12 +804,6 @@ export const MessageBoard = ({ members, messages, viewerId }: MessageBoardProps)
                                 <SendIcon />
                             </button>
                         </div>
-                        {state.error && (
-                            <p className={styles.error} role="alert">
-                                {state.error}
-                            </p>
-                        )}
-                        {state.ok && state.message && <p className={styles.success}>{state.message}</p>}
                     </form>
                 ) : (
                     <p className={styles.choosePerson}>Choose who you are from Profile to share a post.</p>

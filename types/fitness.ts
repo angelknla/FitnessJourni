@@ -128,7 +128,14 @@ export interface MessagePost {
   memberId: string;
   content: string;
   createdAt: string;
+  replyTo?: MessageReply;
   reactions: MessageReaction[];
+}
+
+export interface MessageReply {
+  id: string;
+  memberId: string;
+  content: string;
 }
 
 export type MessageReactionType =

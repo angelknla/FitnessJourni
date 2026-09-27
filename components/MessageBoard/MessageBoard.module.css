@@ -7,6 +7,8 @@
 }
 
 .composer {
+  position: relative;
+  z-index: 1;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -15,6 +17,8 @@
 }
 
 .conversation {
+  position: relative;
+  z-index: 2;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -60,18 +64,13 @@
   border-color: transparent;
 }
 
-.error,
-.success {
+.error {
   margin: 0;
   font-size: 0.8rem;
 }
 
 .error {
   color: var(--c-serious);
-}
-
-.success {
-  color: var(--c-ink-soft);
 }
 
 .choosePerson,
@@ -213,6 +212,9 @@
 }
 
 .bubble {
+  --reply-swipe: 0px;
+  --reply-progress: 0;
+
   position: relative;
   width: fit-content;
   max-width: min(74%, 36rem);
@@ -223,13 +225,72 @@
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 5%),
     0 7px 20px rgb(0 0 0 / 22%);
-  touch-action: manipulation;
+  translate: var(--reply-swipe) 0;
+  transition: translate 180ms var(--ease-flow);
+  touch-action: pan-y;
+}
+
+.bubble[data-swiping="true"] {
+  transition: none;
+}
+
+.swipeReplyCue {
+  position: absolute;
+  top: 50%;
+  left: -2.3rem;
+  width: 1.7rem;
+  height: 1.7rem;
+  display: grid;
+  place-items: center;
+  color: var(--c-ink);
+  background: var(--c-surface-soft);
+  border: 1px solid var(--c-border);
+  border-radius: 50%;
+  opacity: var(--reply-progress);
+  transform: translateY(-50%) scale(calc(0.72 + var(--reply-progress) * 0.28));
 }
 
 .own .bubble {
   background: color-mix(in oklab, var(--message-accent) 14%, var(--c-surface-raised));
   border-color: color-mix(in oklab, var(--message-accent) 36%, var(--c-border));
   border-radius: var(--r-md) 0.25rem var(--r-md) var(--r-md);
+}
+
+.optimisticBubble {
+  opacity: 0.72;
+}
+
+.failedBubble {
+  opacity: 1;
+  border-color: color-mix(in oklab, var(--c-critical) 58%, var(--c-border));
+}
+
+.deliveryState {
+  min-height: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.7rem;
+  color: var(--c-ink-muted);
+}
+
+.failedBubble .deliveryState {
+  color: var(--c-serious);
+}
+
+.retryButton {
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  color: var(--c-serious);
+  background: transparent;
+  border-color: color-mix(in oklab, var(--c-critical) 45%, var(--c-border));
+}
+
+.retryButton svg {
+  display: block;
 }
 
 .bubble.hasReactions {
@@ -283,7 +344,7 @@
 
 .options {
   position: relative;
-  z-index: 6;
+  z-index: 20;
   height: 1.75rem;
 }
 
@@ -308,11 +369,13 @@
 
 .optionsMenu {
   position: absolute;
-  z-index: 0;
-  top: calc(100% + 0.25rem);
-  right: 0;
-  min-width: 7.5rem;
-  padding: 0.3rem;
+  z-index: 20;
+  top: 0;
+  right: calc(100% + 0.35rem);
+  min-width: 6rem;
+  display: grid;
+  gap: 0.08rem;
+  padding: 0.12rem;
   background: var(--c-surface-raised);
   border: 1px solid var(--c-border);
   border-radius: var(--r-sm);
@@ -323,12 +386,20 @@
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.45rem 0.55rem;
+  gap: 0.25rem;
+  min-height: 1.35rem;
+  padding: 0.16rem 0.35rem;
+  font-size: 0.7rem;
+  line-height: 1;
   color: var(--c-ink-soft);
   background: transparent;
   border: 0;
   text-align: left;
+}
+
+.optionsMenu svg {
+  width: 0.8rem;
+  height: 0.8rem;
 }
 
 .optionsMenu button:hover:not(:disabled) {
@@ -373,6 +444,75 @@
   color: var(--c-ink-soft);
   overflow-wrap: anywhere;
   white-space: pre-wrap;
+}
+
+.quotedMessage {
+  display: grid;
+  gap: 0.15rem;
+  margin: 0.5rem 0 0;
+  padding: 0.45rem 0.6rem;
+  overflow: hidden;
+  background: color-mix(in oklab, var(--c-surface-soft) 78%, transparent);
+  border-left: 0.2rem solid var(--message-accent);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+}
+
+.quotedMessage strong {
+  font-size: 0.72rem;
+  color: var(--message-accent);
+}
+
+.quotedMessage span {
+  overflow: hidden;
+  font-size: 0.76rem;
+  color: var(--c-ink-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.replyPreview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem 0.65rem;
+  background: var(--c-surface-soft);
+  border-left: 0.2rem solid var(--c-accent);
+}
+
+.replyPreview > span {
+  min-width: 0;
+  display: grid;
+  gap: 0.1rem;
+}
+
+.replyPreview strong,
+.replyPreview span span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.replyPreview strong {
+  font-size: 0.74rem;
+  color: var(--c-accent);
+}
+
+.replyPreview span span {
+  font-size: 0.76rem;
+  color: var(--c-ink-muted);
+}
+
+.replyPreview button {
+  flex: 0 0 auto;
+  width: 1.7rem;
+  height: 1.7rem;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: var(--c-ink-muted);
+  background: transparent;
+  border: 0;
 }
 
 .reactions {
