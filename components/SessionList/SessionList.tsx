@@ -6,6 +6,7 @@ import { activityLabels } from '@data/fitnessData';
 import { fromISODate } from '@utils/date';
 import { useActionState, useEffect, useState } from 'react';
 import { type ActionState, deleteSession, respondToSession } from '@/app/actions';
+import { SESSION_GRACE_MINUTES } from '@/lib/data/sessions';
 import type { Member, RsvpStatus, TrainingSession } from '@/types/fitness';
 
 import styles from './SessionList.module.css';
@@ -146,7 +147,7 @@ const SessionRow = ({
 };
 
 const expiresAt = (session: TrainingSession) =>
-  new Date(`${session.date}T${session.time}:00`).getTime() + 30 * 60 * 1000;
+  new Date(`${session.date}T${session.time}:00`).getTime() + SESSION_GRACE_MINUTES * 60 * 1000;
 
 export const SessionList = ({ sessions, members, viewerId, initialNow }: SessionListProps) => {
   const [now, setNow] = useState(initialNow);

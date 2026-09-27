@@ -5,7 +5,7 @@ import type { DailyLog, Member, MemberTargets } from '@/types/fitness';
 
 // Mocked so the real modules (and next/cache with them) stay out of jsdom.
 vi.mock('@/app/actions', () => ({
-  saveDailyLog: vi.fn(async () => ({ ok: true })),
+  saveDailyLog: vi.fn(async () => ({ ok: true, message: 'Data saved.' })),
   saveSleep: vi.fn(async () => ({ ok: true })),
   updateTargets: vi.fn(async () => ({ ok: false })),
   logWorkout: vi.fn(async () => ({ ok: false })),
@@ -253,6 +253,19 @@ describe('Home', () => {
     await user.clear(steps);
     await user.type(steps, '9000');
     expect(save).toBeDisabled();
+  });
+
+  it('confirms when daily inputs are saved', async () => {
+    const user = userEvent.setup();
+    setup('m1');
+    await user.click(screen.getByRole('button', { name: "Log Dillon's day" }));
+
+    const steps = screen.getByRole('spinbutton', { name: 'Steps' });
+    await user.clear(steps);
+    await user.type(steps, '9500');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Data saved.');
   });
 
   it('turns another person’s tab read-only without showing a redundant notice', async () => {

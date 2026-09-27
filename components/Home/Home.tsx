@@ -43,6 +43,7 @@ interface HomeProps {
   workouts: Workout[];
   tallies: Record<string, WorkoutTally>;
   medalBoards?: MedalBoard[];
+  medalDate?: string;
   date: string;
   today: string;
   datePickerLabel: string;
@@ -177,6 +178,7 @@ export const Home = ({
   tallies,
   medalBoards = [],
   date,
+  medalDate = date,
   today,
   datePickerLabel,
   dateLabel,
@@ -593,7 +595,12 @@ export const Home = ({
       </div>
 
       <section className={`${styles.panel} ${styles.medalPanel}`}>
-        <MedalLeaderboard members={tabOrder} boards={medalBoards} />
+        <MedalLeaderboard
+          members={tabOrder}
+          boards={medalBoards}
+          medalDate={medalDate}
+          today={today}
+        />
       </section>
 
       <CompareStrip

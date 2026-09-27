@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 interface HomepageProps {
-  searchParams: Promise<{ date?: string }>;
+  searchParams: Promise<{ date?: string; medalDate?: string }>;
 }
 
 const resolveHomeDate = (requestedDate?: string) => {
@@ -52,10 +52,11 @@ const Homepage = async ({ searchParams }: HomepageProps) => {
     return <SetupNotice />;
   }
 
-  const { date: requestedDate } = await searchParams;
+  const { date: requestedDate, medalDate: requestedMedalDate } = await searchParams;
   // Resolved on the server because both metadata and data fetching are keyed by it.
   // Set TZ in the host environment if the deployed date ever disagrees with yours.
   const { date, dateLabel, today } = resolveHomeDate(requestedDate);
+  const medalDate = resolveHomeDate(requestedMedalDate).date;
   const yesterday = fromISODate(today);
   yesterday.setDate(yesterday.getDate() - 1);
   const datePickerLabel =
@@ -69,27 +70,32 @@ const Homepage = async ({ searchParams }: HomepageProps) => {
           year: '2-digit',
         }).format(fromISODate(date));
 
-  const medalFrom = medalFetchStart(date);
+  const medalFrom = medalFetchStart(medalDate);
+  const dashboardWorkoutFrom = earlier(startOfWeek(date), startOfMonth(date));
+  const workoutFrom = earlier(dashboardWorkoutFrom, medalFrom);
   const [members, logs, medalLogs, workouts, viewer] = await Promise.all([
     getMembers(),
     getLogsForDate(date),
     getLogsSince(medalFrom),
-    getWorkoutsSince(earlier(startOfWeek(date), startOfMonth(date))),
+    getWorkoutsSince(workoutFrom),
     readViewer(),
   ]);
+  const dashboardWorkouts = workouts.filter((workout) => workout.date >= dashboardWorkoutFrom);
 
   return (
     <Home
       members={viewerFirst(members, viewer.memberId)}
       logs={logs}
-      workouts={workouts}
-      tallies={tallyWorkouts(workouts, date)}
+      workouts={dashboardWorkouts}
+      tallies={tallyWorkouts(dashboardWorkouts, date)}
       medalBoards={buildMedalBoards(
         medalLogs,
         workouts,
-        date,
-        Object.fromEntries(members.map((member) => [member.id, member.targets]))
+        medalDate,
+        Object.fromEntries(members.map((member) => [member.id, member.targets])),
+        today
       )}
+      medalDate={medalDate}
       date={date}
       today={today}
       datePickerLabel={datePickerLabel}

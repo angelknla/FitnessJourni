@@ -115,6 +115,8 @@
 
 .carousel {
   min-width: 0;
+  margin-block: -5px;
+  padding-block: 5px;
   overflow: clip;
   touch-action: pan-y;
 }

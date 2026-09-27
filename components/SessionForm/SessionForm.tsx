@@ -1,7 +1,7 @@
 'use client';
 
 import { activityLabels, activityTypes, bookingWindowDays, quickTimes } from '@data/fitnessData';
-import { buildDays, toISODate } from '@utils/date';
+import { buildDays, minutesOfTime, toISODate } from '@utils/date';
 import { useActionState, useEffect, useMemo, useState } from 'react';
 import { type ActionState, bookSession } from '@/app/actions';
 import type { ActivityType, Member } from '@/types/fitness';
@@ -14,6 +14,9 @@ interface SessionFormProps {
   viewerId: string | null;
 }
 
+const formatMinutes = (minutes: number) =>
+  `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+
 /** Not { ok: true }, so a successful booking is distinguishable from the start. */
 const initial: ActionState = { ok: false };
 
@@ -25,6 +28,7 @@ export const SessionForm = ({ members, viewerId }: SessionFormProps) => {
    * with the browser's clock and trigger a hydration mismatch.
    */
   const [todayISO, setTodayISO] = useState<string | null>(null);
+  const [nowMinutes, setNowMinutes] = useState(0);
   const [activity, setActivity] = useState<ActivityType>('run');
   const [dateISO, setDateISO] = useState('');
   const [time, setTime] = useState('07:00');
@@ -32,9 +36,15 @@ export const SessionForm = ({ members, viewerId }: SessionFormProps) => {
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    const iso = toISODate(new Date());
+    const now = new Date();
+    const iso = toISODate(now);
+    const minutes = now.getHours() * 60 + now.getMinutes();
+    const nextQuickTime = quickTimes.find((option) => minutesOfTime(option) > minutes);
+    const initialDate = nextQuickTime ? iso : buildDays(iso, 2)[1].iso;
     setTodayISO(iso);
-    setDateISO((current) => current || iso);
+    setNowMinutes(minutes);
+    setDateISO((current) => current || initialDate);
+    setTime(nextQuickTime ?? quickTimes[0]);
   }, []);
 
   /*
@@ -126,6 +136,11 @@ export const SessionForm = ({ members, viewerId }: SessionFormProps) => {
                   aria-label={formats.full.format(day.date)}
                   onChange={() => {
                     setDateISO(day.iso);
+                    if (day.iso === todayISO && minutesOfTime(time) <= nowMinutes) {
+                      setTime(
+                        quickTimes.find((option) => minutesOfTime(option) > nowMinutes) ?? time
+                      );
+                    }
                     setDismissed(true);
                   }}
                 />
@@ -147,6 +162,7 @@ export const SessionForm = ({ members, viewerId }: SessionFormProps) => {
             type="time"
             name="time"
             value={time}
+            min={dateISO === todayISO ? formatMinutes(Math.min(nowMinutes + 1, 1439)) : undefined}
             required
             onChange={(event) => {
               setTime(event.target.value);
@@ -179,6 +195,7 @@ export const SessionForm = ({ members, viewerId }: SessionFormProps) => {
               key={option}
               className={styles.quickChip}
               data-active={time === option}
+              disabled={dateISO === todayISO && minutesOfTime(option) <= nowMinutes}
               onClick={() => setTime(option)}
             >
               {option}

@@ -67,7 +67,7 @@ describe('nextSession', () => {
     expect(found?.id).toBe('a');
   });
 
-  it('skips a session more than 30 minutes after it started', () => {
+  it('skips a session more than 45 minutes after it started', () => {
     const found = nextSession([session('a', today, '07:00')], today, now);
 
     expect(found).toBeNull();
@@ -77,9 +77,9 @@ describe('nextSession', () => {
     expect(nextSession([session('a', today, '14:00')], today, now)?.id).toBe('a');
   });
 
-  it('keeps a started session for 29 minutes, then removes it at 30', () => {
-    expect(upcomingSessions([session('a', today, '13:31')], today, now)).toHaveLength(1);
-    expect(upcomingSessions([session('a', today, '13:30')], today, now)).toHaveLength(0);
+  it('keeps a started session for 44 minutes, then removes it at 45', () => {
+    expect(upcomingSessions([session('a', today, '13:16')], today, now)).toHaveLength(1);
+    expect(upcomingSessions([session('a', today, '13:15')], today, now)).toHaveLength(0);
   });
 
   it('falls through to a later day once today is done', () => {

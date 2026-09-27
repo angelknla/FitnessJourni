@@ -60,10 +60,14 @@
 }
 
 .headingRow {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: end;
   gap: 0.75rem;
+}
+
+.heading {
+  grid-column: 1 / -1;
 }
 
 .leaderNote {
@@ -77,6 +81,9 @@
 }
 
 .tabs {
+  grid-column: 1;
+  grid-row: 2;
+  height: 2.25rem;
   flex-shrink: 0;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -84,6 +91,56 @@
   background: var(--c-surface-soft);
   border: 1px solid var(--c-border);
   border-radius: var(--r-md);
+}
+
+.dateControl {
+  grid-column: 3;
+  grid-row: 2;
+  position: relative;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: 0 0 2.25rem;
+  display: grid;
+  place-items: center;
+  color: var(--c-ink-soft);
+  background: var(--c-surface-soft);
+  border: 1px solid var(--c-border);
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.dateControl:hover,
+.dateControl:focus-within {
+  color: var(--c-warning);
+  border-color: color-mix(in oklab, var(--c-warning) 45%, var(--c-border));
+}
+
+.dateControl.dateActive {
+  width: auto;
+  grid-auto-flow: column;
+  gap: 0.3rem;
+  padding-inline: 0.55rem;
+  color: #17130a;
+  background: var(--c-warning);
+  border-color: var(--c-warning);
+  border-radius: var(--r-pill);
+  box-shadow: 0 1px 4px color-mix(in oklab, var(--c-warning) 31%, transparent);
+}
+
+.dateActive span {
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dateControl input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
 }
 
 .tab {
@@ -285,12 +342,7 @@
 
 @media (max-width: 620px) {
   .headingRow {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .tabs {
-    align-self: flex-start;
+    gap: 0.6rem;
   }
 }
 

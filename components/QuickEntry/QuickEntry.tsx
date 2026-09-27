@@ -101,6 +101,11 @@ export const QuickEntry = ({ member, log, date }: QuickEntryProps) => {
                 {state.error}
               </p>
             )}
+            {state.ok && state.message && (
+              <p className={styles.success} role="status">
+                {state.message}
+              </p>
+            )}
           </div>
         </form>
       )}

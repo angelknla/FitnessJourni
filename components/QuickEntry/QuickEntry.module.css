@@ -75,6 +75,12 @@
   color: var(--c-critical);
 }
 
+.success {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--c-good);
+}
+
 @media (min-width: 600px) {
   .grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));

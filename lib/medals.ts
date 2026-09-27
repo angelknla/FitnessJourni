@@ -15,6 +15,12 @@ export interface MedalBoard {
   awards: MedalAward[];
 }
 
+const medalDayLabel = new Intl.DateTimeFormat('en-GB', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+});
+
 export const medalFetchStart = (date: string) => {
   const week = startOfWeek(date);
   const month = startOfMonth(date);
@@ -25,10 +31,15 @@ export const buildMedalBoards = (
   logs: DailyLog[],
   workouts: Workout[],
   through: string,
-  targetsByMember: Record<string, MemberTargets> = {}
+  targetsByMember: Record<string, MemberTargets> = {},
+  today = through
 ): MedalBoard[] =>
   [
-    { period: 'day' as const, label: 'Today', from: through },
+    {
+      period: 'day' as const,
+      label: through === today ? 'Today' : medalDayLabel.format(new Date(`${through}T12:00:00`)),
+      from: through,
+    },
     { period: 'week' as const, label: 'This week', from: startOfWeek(through) },
     { period: 'month' as const, label: 'This month', from: startOfMonth(through) },
   ].map(({ period, label, from }) => ({

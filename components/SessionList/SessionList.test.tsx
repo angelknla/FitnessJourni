@@ -113,9 +113,9 @@ describe('SessionList', () => {
     expect(screen.queryByRole('form', { name: 'RSVP' })).not.toBeInTheDocument();
   });
 
-  it('automatically removes a session 30 minutes after its start time', () => {
+  it('automatically removes a session 45 minutes after its start time', () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-09-26T07:59:00'));
+    vi.setSystemTime(new Date('2026-09-26T08:14:00'));
     render(
       <SessionList
         sessions={[sessions[0]]}

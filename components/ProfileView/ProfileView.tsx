@@ -46,6 +46,7 @@ interface ProfileViewProps {
     profile: MemberProfile | null;
     measurements: WeightMeasurement[];
     currentDate: string;
+    medalDate?: string;
     medalBoards?: MedalBoard[];
     canRemoveOthers?: boolean;
 }
@@ -114,6 +115,7 @@ export const ProfileView = ({
     profile,
     measurements,
     currentDate,
+    medalDate = currentDate,
     medalBoards = [],
     canRemoveOthers = false,
 }: ProfileViewProps) => {
@@ -566,7 +568,12 @@ export const ProfileView = ({
                 </div>
             </section>
 
-            <MemberMedals memberId={member.id} boards={medalBoards} />
+            <MemberMedals
+                memberId={member.id}
+                boards={medalBoards}
+                medalDate={medalDate}
+                today={currentDate}
+            />
 
             <section className={styles.section} aria-labelledby="weight-history-heading">
                 <div className={styles.sectionHead}>

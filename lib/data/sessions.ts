@@ -3,6 +3,8 @@ import { cache } from 'react';
 import { getSupabase } from '@/lib/supabase/server';
 import type { ActivityType, RsvpStatus, TrainingSession } from '@/types/fitness';
 
+export const SESSION_GRACE_MINUTES = 45;
+
 export interface SessionRow {
   id: string;
   session_date: string;
@@ -82,7 +84,7 @@ export const getUpcomingSessions = cache(async (fromDate: string): Promise<Train
   return (data as SessionRow[]).map(mapSession);
 });
 
-/** Keep a session visible until 30 minutes after its booked start time. */
+/** Keep a session visible until 45 minutes after its booked start time. */
 export const upcomingSessions = (
   sessions: TrainingSession[],
   today: string,
@@ -95,7 +97,7 @@ export const upcomingSessions = (
     if (session.date < today) {
       return false;
     }
-    return minutesOfTime(session.time) + 30 > nowMinutes;
+    return minutesOfTime(session.time) + SESSION_GRACE_MINUTES > nowMinutes;
   });
 
 /** The query is already ordered, so the first session inside the grace window is next. */

@@ -14,6 +14,7 @@ import {
   defaultTargets,
   workoutFocuses,
 } from '@data/fitnessData';
+import { minutesOfTime, toISODate } from '@utils/date';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { VIEWER_COOKIE } from '@/lib/auth';
@@ -439,7 +440,7 @@ export const saveDailyLog = async (
   }
 
   revalidatePath('/');
-  return ok;
+  return { ok: true, message: 'Data saved.' };
 };
 
 export const saveSleep = async (_prev: ActionState, formData: FormData): Promise<ActionState> => {
@@ -771,6 +772,14 @@ export const bookSession = async (_prev: ActionState, formData: FormData): Promi
   }
   if (!HH_MM.test(time)) {
     return fail('Pick a time.');
+  }
+  const now = new Date();
+  const today = toISODate(now);
+  if (
+    date < today ||
+    (date === today && minutesOfTime(time) <= now.getHours() * 60 + now.getMinutes())
+  ) {
+    return fail('Pick a future time.');
   }
   if (!activityTypes.includes(activity)) {
     return fail('Pick an activity.');

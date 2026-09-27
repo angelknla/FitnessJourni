@@ -56,6 +56,12 @@ describe('buildMedalBoards', () => {
     });
   });
 
+  it('labels a historical day with its date', () => {
+    const [day] = buildMedalBoards([], [], '2026-09-20', {}, '2026-09-27');
+
+    expect(day.label).toBe('20 Sept 2026');
+  });
+
   it('awards nothing when only one member qualifies', () => {
     const [today] = buildMedalBoards([log('m1', '2026-09-27', 10000)], [], '2026-09-27', {
       m1: targets,

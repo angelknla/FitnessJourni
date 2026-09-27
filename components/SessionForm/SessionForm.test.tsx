@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { Member } from '@/types/fitness';
@@ -64,16 +64,31 @@ describe('SessionForm', () => {
     expect(screen.getByText('Tomorrow')).toBeInTheDocument();
   });
 
-  it('lets a quick-time chip set the time', async () => {
-    const user = userEvent.setup();
+  it('lets a quick-time chip set the time', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-27T05:00:00'));
     render(<SessionForm members={members} viewerId={null} />);
 
     const time = screen.getByLabelText('Time') as HTMLInputElement;
-    expect(time.value).toBe('07:00');
+    expect(time.value).toBe('06:30');
 
-    await user.click(screen.getByRole('button', { name: '18:30' }));
+    fireEvent.click(screen.getByRole('button', { name: '18:30' }));
 
     expect(time.value).toBe('18:30');
+    vi.useRealTimers();
+  });
+
+  it('defaults to the next available time and disables past presets for today', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-27T12:00:00'));
+
+    render(<SessionForm members={members} viewerId={null} />);
+
+    expect(screen.getByLabelText('Time')).toHaveValue('12:30');
+    expect(screen.getByLabelText('Time')).toHaveAttribute('min', '12:01');
+    expect(screen.getByRole('button', { name: '08:00' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '12:30' })).toBeEnabled();
+    vi.useRealTimers();
   });
 
   it('lists everyone as a possible booker, plus an anyone option', () => {
