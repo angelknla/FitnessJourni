@@ -59,8 +59,8 @@ describe('MedalLeaderboard', () => {
         expect(within(rows[1]).getByText('6 pts')).toBeInTheDocument();
         expect(within(rows[2]).getByText('Bradley')).toBeInTheDocument();
         expect(within(rows[2]).getByText('0 pts')).toBeInTheDocument();
-        expect(screen.getByText(/Great work,/)).toHaveTextContent(
-            'Great work, Dillon — leading this week with 8 points.'
+        expect(screen.getByText(/winner, baby!/)).toHaveTextContent(
+            "Dillon is leading this week — you're a winner, baby!"
         );
         expect(document.querySelectorAll('[data-medal-rank="gold"]')).toHaveLength(2);
         expect(document.querySelectorAll('[data-medal-rank="silver"]')).toHaveLength(1);

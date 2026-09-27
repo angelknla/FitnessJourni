@@ -105,9 +105,8 @@ export const MedalLeaderboard = ({ members, boards }: MedalLeaderboardProps) => 
             </header>
             {leaders.length > 0 && (
                 <p className={styles.leaderNote}>
-                    Great work, <strong>{leaderNames}</strong> — {leaders.length > 1
-                        ? `tied for the lead ${periodPhrase}`
-                        : `leading ${periodPhrase}`} with {leaderPoints} {leaderPoints === 1 ? 'point' : 'points'}.
+                    <strong>{leaderNames}</strong> {leaders.length > 1 ? 'are' : 'is'} leading{' '}
+                    {periodPhrase} — you&apos;re {leaders.length > 1 ? 'winners' : 'a winner'}, baby!
                 </p>
             )}
             <section className={styles.period} role="tabpanel" aria-label={board.label}>

@@ -141,7 +141,7 @@
   max-height: 12rem;
   padding-right: 0.2rem;
   overflow-y: auto;
-  overscroll-behavior-y: contain;
+  overscroll-behavior-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--c-border-strong) transparent;
 }
