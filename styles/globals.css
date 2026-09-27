@@ -14,6 +14,16 @@
   --c-surface-raised: #1c1c20;
   --c-surface-hover: #232328;
 
+  --surface-metal-wash:
+    linear-gradient(
+      118deg,
+      rgb(255 255 255 / 7%) 0%,
+      transparent 24% 68%,
+      rgb(255 255 255 / 2%) 100%
+    ),
+    linear-gradient(180deg, rgb(255 255 255 / 2%), rgb(0 0 0 / 9%)),
+    repeating-linear-gradient(100deg, rgb(255 255 255 / 1.2%) 0 1px, transparent 1px 4px);
+
   /* Ink */
   --c-ink: #f4f4f5;
   /* Deliberately brighter than the AA minimum. Measured on the darkest and
@@ -99,8 +109,8 @@ body {
      horizontal scrollbar even if a descendant misbehaves. */
   overflow-x: clip;
   background:
-    linear-gradient(135deg, rgb(57 135 229 / 5%) 0%, transparent 32rem),
-    linear-gradient(315deg, rgb(25 158 112 / 3%) 0%, transparent 28rem), var(--c-bg);
+    linear-gradient(135deg, rgb(57 135 229 / 7%) 0%, transparent 32rem),
+    linear-gradient(315deg, rgb(25 158 112 / 5%) 0%, transparent 28rem), var(--c-bg);
   background-attachment: fixed;
   color: var(--c-ink);
   font-family: var(--font-sans);

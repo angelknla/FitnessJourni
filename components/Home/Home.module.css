@@ -156,9 +156,10 @@
   padding: 1.1rem;
   overflow: clip;
   background:
+    var(--surface-metal-wash),
     linear-gradient(
       145deg,
-      color-mix(in oklab, var(--member-accent) 5%, transparent),
+      color-mix(in oklab, var(--member-accent) 7%, transparent),
       transparent 42%
     ),
     rgb(20 20 22 / 94%);
@@ -170,7 +171,8 @@
     0 0 22px color-mix(in oklab, var(--member-accent) 2%, transparent);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  transform: translateZ(0);
+  transform: perspective(70rem) rotateX(0.35deg) translateZ(0);
+  transform-origin: top center;
   animation: panel-arrive 0.65s var(--ease-flow) backwards;
   transition:
     border-color 0.3s var(--ease-flow),

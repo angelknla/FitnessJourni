@@ -13,9 +13,10 @@
   padding: 0.85rem 0.85rem 0.85rem 0.95rem;
   overflow: clip;
   background:
+    var(--surface-metal-wash),
     linear-gradient(
       145deg,
-      color-mix(in oklab, var(--accent-green) 6%, transparent),
+      color-mix(in oklab, var(--accent-green) 8%, transparent),
       transparent 45%
     ),
     rgb(20 20 22 / 94%);
