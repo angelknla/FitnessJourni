@@ -284,6 +284,21 @@ describe('nutritionTargetScore', () => {
   it('does not score incomplete nutrition logging', () => {
     expect(nutritionTargetScore({ ...summary, avgCalories: 2000 }, targets(2000, 100))).toBe(0);
   });
+
+  it('scores calories against the base target regardless of calories burned from steps', () => {
+    const score = nutritionTargetScore(
+      {
+        ...summary,
+        totalSteps: 20000,
+        avgSteps: 20000,
+        avgCalories: 2000,
+        avgProteinG: 100,
+      },
+      targets(2000, 100)
+    );
+
+    expect(score).toBe(100);
+  });
 });
 
 describe('sleepTargetScore', () => {
