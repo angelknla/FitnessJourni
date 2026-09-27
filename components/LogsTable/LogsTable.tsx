@@ -7,6 +7,8 @@ import {
   type LogSummary,
   type MedalAward,
   type MedalCategory,
+  nutritionTargetScore,
+  sleepTargetScore,
 } from '@/lib/aggregate';
 import { formatCount, formatMl } from '@/lib/progress';
 import type { Member } from '@/types/fitness';
@@ -26,13 +28,15 @@ interface Column {
   key: MedalCategory;
   label: string;
   title: string;
-  format: (summary: LogSummary) => string;
-  value: (summary: LogSummary, memberId: string, workoutCounts: Record<string, number>) => number;
+  format: (summary: LogSummary, member: Member) => string;
+  value: (summary: LogSummary, member: Member, workoutCounts: Record<string, number>) => number;
   averageOnly?: boolean;
+  fixedMaximum?: number;
 }
 
 const hoursFormat = new Intl.NumberFormat('en-GB', { maximumFractionDigits: 2 });
-const formatHours = (hours: number) => `${hoursFormat.format(hours)} h`;
+const formatSleepProgress = (hours: number, target: number) =>
+  `${hoursFormat.format(hours)} / ${hoursFormat.format(target)} hours`;
 
 const columns: Column[] = [
   {
@@ -47,7 +51,15 @@ const columns: Column[] = [
     label: 'Workouts',
     title: 'Workouts completed over the period',
     format: () => '',
-    value: (_summary, memberId, workoutCounts) => workoutCounts[memberId] ?? 0,
+    value: (_summary, member, workoutCounts) => workoutCounts[member.id] ?? 0,
+  },
+  {
+    key: 'nutritionTarget',
+    label: 'Nutrition',
+    title: 'Average calorie and protein closeness to personal targets',
+    format: (summary, member) => `${Math.round(nutritionTargetScore(summary, member.targets))}%`,
+    value: (summary, member) => nutritionTargetScore(summary, member.targets),
+    fixedMaximum: 100,
   },
   {
     key: 'totalSteps',
@@ -74,9 +86,13 @@ const columns: Column[] = [
   {
     key: 'avgSleepHours',
     label: 'Sleep/day',
-    title: 'Average sleep per day with sleep logged',
-    format: (s) => (s.sleepDaysLogged > 0 ? formatHours(s.avgSleepHours) : '—'),
-    value: (summary) => summary.avgSleepHours,
+    title: 'Average sleep closeness to personal target',
+    format: (s, member) =>
+      s.sleepDaysLogged > 0
+        ? formatSleepProgress(s.avgSleepHours, member.targets.sleepHours ?? 8)
+        : '—',
+    value: (summary, member) => sleepTargetScore(summary, member.targets),
+    fixedMaximum: 100,
   },
 ];
 
@@ -91,10 +107,11 @@ export const LogsTable = ({
   const maximums = new Map(
     shown.map((column) => [
       column.key,
+      column.fixedMaximum ??
       Math.max(
         1,
         ...members.map((member) =>
-          column.value(summaries[member.id] ?? emptySummary, member.id, workoutCounts)
+          column.value(summaries[member.id] ?? emptySummary, member, workoutCounts)
         )
       ),
     ])
@@ -107,8 +124,8 @@ export const LogsTable = ({
         const memberMedals = medals.filter((award) => award.memberId === member.id);
         const chartLabel = `${member.name} progress: ${shown
           .map((column) => {
-            const value = column.value(summary, member.id, workoutCounts);
-            const display = column.key === 'workouts' ? String(value) : column.format(summary);
+            const value = column.value(summary, member, workoutCounts);
+            const display = column.key === 'workouts' ? String(value) : column.format(summary, member);
             const award = memberMedals.find((item) => item.category === column.key);
             return `${column.label} ${display}${award ? `, ${award.rank} medal` : ''}`;
           })
@@ -133,8 +150,8 @@ export const LogsTable = ({
               style={{ '--metric-count': shown.length } as CSSProperties}
             >
               {shown.map((column, columnIndex) => {
-                const value = column.value(summary, member.id, workoutCounts);
-                const display = column.key === 'workouts' ? String(value) : column.format(summary);
+                const value = column.value(summary, member, workoutCounts);
+                const display = column.key === 'workouts' ? String(value) : column.format(summary, member);
                 const medal = memberMedals.find((award) => award.category === column.key);
 
                 return (

@@ -28,6 +28,7 @@ create table if not exists public.members (
   target_steps      integer not null default 10000,  -- ring goal ("10k ideal")
   target_steps_min  integer not null default 8000,   -- floor marker ("8k minimum")
   target_water_ml   integer not null default 2500,
+  target_sleep_hours numeric(4, 2) not null default 8,
   created_at        timestamptz not null default now()
 );
 
@@ -49,7 +50,12 @@ alter table public.members add constraint members_accent_check
 
 -- The playbook's standard is 4 lifting sessions a week. Per-member so it can differ.
 alter table public.members
-  add column if not exists target_workouts_per_week integer not null default 4;
+  add column if not exists target_workouts_per_week integer not null default 4,
+  add column if not exists target_sleep_hours numeric(4, 2) not null default 8;
+
+alter table public.members drop constraint if exists members_target_sleep_hours_check;
+alter table public.members add constraint members_target_sleep_hours_check
+  check (target_sleep_hours between 1 and 24);
 
 alter table public.members
   add column if not exists age integer,
@@ -82,14 +88,27 @@ alter table public.members add constraint members_target_bmi_check
 create table if not exists public.weight_measurements (
   member_id   uuid not null references public.members (id) on delete cascade,
   month_start date not null,
+  measured_on date,
   weight_kg   numeric(5, 2) not null check (weight_kg between 25 and 500),
   updated_at  timestamptz not null default now(),
   primary key (member_id, month_start),
   check (month_start = date_trunc('month', month_start)::date)
 );
 
-create index if not exists weight_measurements_month_idx
-  on public.weight_measurements (member_id, month_start desc);
+alter table public.weight_measurements
+  add column if not exists measured_on date;
+update public.weight_measurements
+  set measured_on = month_start
+  where measured_on is null;
+alter table public.weight_measurements
+  alter column measured_on set not null;
+alter table public.weight_measurements
+  drop constraint if exists weight_measurements_pkey;
+alter table public.weight_measurements
+  add primary key (member_id, measured_on);
+
+create index if not exists weight_measurements_date_idx
+  on public.weight_measurements (member_id, measured_on desc);
 
 -- ----------------------------------------------------------------------------
 -- daily_logs

@@ -65,8 +65,13 @@ const ProfilePage = async () => {
                 member={member}
                 profile={profile}
                 measurements={profileData?.measurements ?? []}
-                currentMonth={new Date().toISOString().slice(0, 7)}
-                medalBoards={buildMedalBoards(logs, workouts, today)}
+                currentDate={today}
+                medalBoards={buildMedalBoards(
+                    logs,
+                    workouts,
+                    today,
+                    Object.fromEntries(members.map((item) => [item.id, item.targets]))
+                )}
                 canRemoveOthers={canRemoveMembers(viewer, members)}
             />
         </PageLayout>

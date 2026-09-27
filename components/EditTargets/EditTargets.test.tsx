@@ -29,6 +29,25 @@ const hidden = (container: HTMLElement, name: string) =>
   container.querySelector<HTMLInputElement>(`input[type="hidden"][name="${name}"]`);
 
 describe('EditTargets', () => {
+  it('shows a decimal sleep target in sleep-only mode', () => {
+    render(
+      <EditTargets
+        member={{ ...member, targets: { ...member.targets, sleepHours: 7.5 } }}
+        id="sleep-target"
+        section="sleep"
+        onSaved={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole('spinbutton', { name: 'Hours per night' })).toHaveValue(7.5);
+    expect(screen.getByRole('spinbutton', { name: 'Hours per night' })).toHaveAttribute(
+      'step',
+      '0.25'
+    );
+    expect(screen.getByRole('button', { name: 'Save sleep target' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Grams' })).not.toBeInTheDocument();
+  });
+
   it('starts in grams with the current targets', () => {
     setup();
 
@@ -128,14 +147,13 @@ describe('EditTargets', () => {
     expect(screen.getByText('50%')).toBeInTheDocument();
   });
 
-  it('carries the calorie figure into percent mode', async () => {
+  it('keeps the calorie figure unchanged when switching to percent mode', async () => {
     const user = userEvent.setup();
     setup();
 
     await user.click(screen.getByRole('button', { name: 'Percent' }));
 
-    // Switching recomputes it from the grams: 156*4 + 313*4 + 69*9.
-    expect(screen.getByLabelText(/Calories/)).toHaveValue(2497);
+    expect(screen.getByLabelText(/Calories/)).toHaveValue(2500);
   });
 
   it('raises every gram figure when calories rise at a fixed split', async () => {

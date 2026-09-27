@@ -17,6 +17,7 @@ export interface MemberRow {
   target_steps: number | null;
   target_steps_min: number | null;
   target_water_ml: number | null;
+  target_sleep_hours?: number | null;
   target_workouts_per_week: number | null;
 }
 
@@ -42,6 +43,7 @@ export const mapMember = (row: MemberRow): Member => ({
     steps: row.target_steps ?? defaultTargets.steps,
     stepsMin: row.target_steps_min ?? defaultTargets.stepsMin,
     waterMl: row.target_water_ml ?? defaultTargets.waterMl,
+    sleepHours: row.target_sleep_hours ?? defaultTargets.sleepHours,
     workoutsPerWeek: row.target_workouts_per_week ?? defaultTargets.workoutsPerWeek,
   },
 });

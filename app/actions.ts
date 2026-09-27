@@ -64,7 +64,6 @@ const refuseUnlessOwn = async (memberId: string): Promise<string | null> =>
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const HH_MM = /^\d{2}:\d{2}$/;
-const MONTH_INPUT = /^\d{4}-\d{2}$/;
 
 /** Blank inputs mean zero, not NaN. Negatives and absurd values are clamped away. */
 const toInt = (value: FormDataEntryValue | null, max: number) => {
@@ -230,9 +229,14 @@ export const saveProfileDetails = async (
   const heightCm = toOptionalNumber(formData.get('heightCm'));
   const targetWeightKg = toOptionalNumber(formData.get('targetWeightKg'));
   const targetBmi = toOptionalNumber(formData.get('targetBmi'));
+  const targetSleepHours = toOptionalNumber(formData.get('targetSleepHours'));
+  const targetCalories = toOptionalNumber(formData.get('targetCalories'));
+  const targetProtein = toOptionalNumber(formData.get('targetProtein'));
+  const targetCarbs = toOptionalNumber(formData.get('targetCarbs'));
+  const targetFat = toOptionalNumber(formData.get('targetFat'));
   const saveCurrentWeight = formData.get('saveCurrentWeight') === 'true';
-  const currentMonthInput = toText(formData.get('currentMonth'));
-  const currentMonth = MONTH_INPUT.test(currentMonthInput) ? `${currentMonthInput}-01` : '';
+  const currentDateInput = toText(formData.get('currentDate'));
+  const currentDate = ISO_DATE.test(currentDateInput) ? currentDateInput : '';
   const currentWeightKg = toOptionalNumber(formData.get('currentWeightKg'));
   const notYours = await refuseUnlessOwn(memberId);
 
@@ -261,8 +265,26 @@ export const saveProfileDetails = async (
     return fail('Enter a BMI goal from 10 to 60.');
   }
   if (
+    targetSleepHours !== null &&
+    (!Number.isFinite(targetSleepHours) || targetSleepHours < 1 || targetSleepHours > 24)
+  ) {
+    return fail('Enter a sleep target from 1 to 24 hours.');
+  }
+  const nutritionTargets = [
+    { value: targetCalories, max: 20000, label: 'calorie' },
+    { value: targetProtein, max: 1000, label: 'protein' },
+    { value: targetCarbs, max: 2000, label: 'carb' },
+    { value: targetFat, max: 1000, label: 'fat' },
+  ];
+  const invalidNutritionTarget = nutritionTargets.find(
+    ({ value, max }) => value !== null && (!Number.isInteger(value) || value < 1 || value > max)
+  );
+  if (invalidNutritionTarget) {
+    return fail(`Enter a valid ${invalidNutritionTarget.label} target.`);
+  }
+  if (
     saveCurrentWeight &&
-    (!currentMonth ||
+    (!currentDate ||
       currentWeightKg === null ||
       !Number.isFinite(currentWeightKg) ||
       currentWeightKg < 25 ||
@@ -280,6 +302,13 @@ export const saveProfileDetails = async (
       height_cm: heightCm,
       target_weight_kg: targetWeightKg,
       target_bmi: targetBmi,
+      ...(targetSleepHours !== null
+        ? { target_sleep_hours: Math.round(targetSleepHours * 100) / 100 }
+        : {}),
+      ...(targetCalories !== null ? { target_calories: targetCalories } : {}),
+      ...(targetProtein !== null ? { target_protein: targetProtein } : {}),
+      ...(targetCarbs !== null ? { target_carbs: targetCarbs } : {}),
+      ...(targetFat !== null ? { target_fat: targetFat } : {}),
     })
     .eq('id', memberId);
 
@@ -292,11 +321,12 @@ export const saveProfileDetails = async (
     const { error: weightError } = await supabase.from('weight_measurements').upsert(
       {
         member_id: memberId,
-        month_start: currentMonth,
+        month_start: `${currentDate.slice(0, 7)}-01`,
+        measured_on: currentDate,
         weight_kg: Math.round(currentWeightKg * 100) / 100,
         updated_at: new Date().toISOString(),
       },
-      { onConflict: 'member_id,month_start' }
+      { onConflict: 'member_id,measured_on' }
     );
 
     if (weightError) {
@@ -306,6 +336,7 @@ export const saveProfileDetails = async (
   }
 
   revalidatePath('/profile');
+  revalidatePath('/logs');
   revalidatePath('/', 'layout');
   return { ok: true, message: 'Profile saved.' };
 };
@@ -324,16 +355,16 @@ export const saveWeightMeasurement = async (
   }
 
   const memberId = toText(formData.get('memberId'));
-  const monthInput = toText(formData.get('month'));
-  const month = MONTH_INPUT.test(monthInput) ? `${monthInput}-01` : '';
+  const dateInput = toText(formData.get('date'));
+  const measuredOn = ISO_DATE.test(dateInput) ? dateInput : '';
   const weightKg = Number(formData.get('weightKg'));
   const notYours = await refuseUnlessOwn(memberId);
 
   if (notYours) {
     return fail(notYours);
   }
-  if (!month) {
-    return fail('Choose a month.');
+  if (!measuredOn) {
+    return fail('Choose a date.');
   }
   if (!Number.isFinite(weightKg) || weightKg < 25 || weightKg > 500) {
     return fail('Enter a weight from 25 to 500 kg.');
@@ -342,11 +373,12 @@ export const saveWeightMeasurement = async (
   const { error } = await supabase.from('weight_measurements').upsert(
     {
       member_id: memberId,
-      month_start: month,
+      month_start: `${measuredOn.slice(0, 7)}-01`,
+      measured_on: measuredOn,
       weight_kg: Math.round(weightKg * 100) / 100,
       updated_at: new Date().toISOString(),
     },
-    { onConflict: 'member_id,month_start' }
+    { onConflict: 'member_id,measured_on' }
   );
 
   if (error) {
@@ -355,7 +387,7 @@ export const saveWeightMeasurement = async (
   }
 
   revalidatePath('/profile');
-  return { ok: true, message: 'Monthly weight saved.' };
+  return { ok: true, message: 'Weight saved.' };
 };
 
 export const saveDailyLog = async (
@@ -688,6 +720,15 @@ export const updateTargets = async (
   field('steps', 'target_steps', 200000, 'steps');
   field('stepsMin', 'target_steps_min', 200000, 'step minimum');
   field('waterMl', 'target_water_ml', 20000, 'water');
+  const sleepHoursRaw = formData.get('sleepHours');
+  if (sleepHoursRaw !== null && String(sleepHoursRaw).trim() !== '') {
+    const sleepHours = Number(sleepHoursRaw);
+    if (!Number.isFinite(sleepHours) || sleepHours < 1 || sleepHours > 24) {
+      invalid.push('sleep hours');
+    } else {
+      patch.target_sleep_hours = Math.round(sleepHours * 100) / 100;
+    }
+  }
 
   if (invalid.length > 0) {
     return fail(`A target has to be at least 1 — check ${invalid.join(', ')}.`);
@@ -705,6 +746,7 @@ export const updateTargets = async (
   }
 
   revalidatePath('/');
+  revalidatePath('/logs');
   return ok;
 };
 

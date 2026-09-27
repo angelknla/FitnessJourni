@@ -79,7 +79,7 @@
 .tabs {
   flex-shrink: 0;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   padding: 0.2rem;
   background: var(--c-surface-soft);
   border: 1px solid var(--c-border);

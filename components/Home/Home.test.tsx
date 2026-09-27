@@ -208,6 +208,17 @@ describe('Home', () => {
     ).toHaveAttribute('d', 'M11.1 2.4l2.5 2.5-7.4 7.4-3.1.6.6-3.1z');
   });
 
+  it('opens the sleep target editor from the Sleep section pencil', async () => {
+    const user = userEvent.setup();
+    setup('m1');
+
+    await user.click(screen.getByRole('button', { name: "Edit Dillon's sleep target" }));
+
+    expect(screen.getByRole('spinbutton', { name: 'Hours per night' })).toHaveValue(8);
+    expect(screen.getByRole('button', { name: 'Stop editing sleep target' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save sleep target' })).toBeInTheDocument();
+  });
+
   it('keeps daily inputs collapsed until its title is opened', async () => {
     const user = userEvent.setup();
     setup('m1');

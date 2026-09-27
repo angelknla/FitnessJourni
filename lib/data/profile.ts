@@ -10,7 +10,7 @@ export interface ProfileRow {
 }
 
 export interface WeightMeasurementRow {
-  month_start: string;
+  measured_on: string;
   weight_kg: number | string;
 }
 
@@ -26,7 +26,7 @@ export const mapProfile = (row: ProfileRow): MemberProfile => ({
 });
 
 export const mapWeightMeasurement = (row: WeightMeasurementRow): WeightMeasurement => ({
-  month: row.month_start,
+  date: row.measured_on,
   weightKg: Number(row.weight_kg),
 });
 
@@ -55,9 +55,9 @@ export const getProfile = async (
       .single(),
     supabase
       .from('weight_measurements')
-      .select('month_start, weight_kg')
+      .select('measured_on, weight_kg')
       .eq('member_id', memberId)
-      .order('month_start', { ascending: true }),
+      .order('measured_on', { ascending: true }),
   ]);
 
   if (profileResult.error || measurementResult.error) {

@@ -38,6 +38,7 @@ describe('mapMember', () => {
         steps: 10000,
         stepsMin: 8000,
         waterMl: 2500,
+        sleepHours: 8,
         workoutsPerWeek: 4,
       },
     });
@@ -166,9 +167,14 @@ describe('resolveAccent via mapMember', () => {
 
 describe('target fallbacks', () => {
   it('falls back to the playbook defaults for a column not yet migrated', () => {
-    const partial = { ...memberRow, target_workouts_per_week: null } as MemberRow;
+    const partial = {
+      ...memberRow,
+      target_workouts_per_week: null,
+      target_sleep_hours: null,
+    } as MemberRow;
 
     expect(mapMember(partial).targets.workoutsPerWeek).toBe(4);
+    expect(mapMember(partial).targets.sleepHours).toBe(8);
   });
 
   it('never yields a zero target, which would make a meter read "of 0"', () => {

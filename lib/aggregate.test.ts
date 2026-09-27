@@ -1,6 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import type { DailyLog } from '@/types/fitness';
-import { awardMedals, leaders, summarise } from './aggregate';
+import type { DailyLog, MemberTargets } from '@/types/fitness';
+import {
+  awardMedals,
+  leaders,
+  nutritionTargetScore,
+  sleepTargetScore,
+  summarise,
+} from './aggregate';
+
+const targets = (calories: number, protein: number): MemberTargets => ({
+  calories,
+  protein,
+  carbs: 300,
+  fat: 70,
+  steps: 10000,
+  stepsMin: 8000,
+  waterMl: 2500,
+  workoutsPerWeek: 4,
+});
 
 const log = (memberId: string, date: string, over: Partial<DailyLog> = {}): DailyLog => ({
   memberId,
@@ -51,6 +68,20 @@ describe('summarise', () => {
 
     expect(summaries.m1.sleepDaysLogged).toBe(2);
     expect(summaries.m1.avgSleepHours).toBe(7.5);
+  });
+
+  it('averages nutrition only across days where each value was entered', () => {
+    const summaries = summarise(
+      [
+        log('m1', '2026-09-21', { calories: 2000, proteinG: 100 }),
+        log('m1', '2026-09-22', { calories: 0, proteinG: 0 }),
+      ],
+      '2026-09-20',
+      '2026-09-25'
+    );
+
+    expect(summaries.m1.avgCalories).toBe(2000);
+    expect(summaries.m1.avgProteinG).toBe(100);
   });
 
   it('ignores days outside the window', () => {
@@ -187,5 +218,96 @@ describe('awardMedals', () => {
 
   it('does not award medals for zero scores', () => {
     expect(awardMedals({}, {})).toEqual([]);
+  });
+
+  it('ranks nutrition by closeness to each member’s own calorie and protein targets', () => {
+    const first = { ...summary(1000), avgCalories: 2000, avgProteinG: 120 };
+    const second = { ...summary(1000), avgCalories: 3000, avgProteinG: 180 };
+    const awards = awardMedals(
+      { m1: first, m2: second },
+      {},
+      { m1: targets(2000, 120), m2: targets(3000, 180) }
+    ).filter((award) => award.category === 'nutritionTarget');
+
+    expect(awards.map(({ memberId, medal, value }) => [memberId, medal, value])).toEqual([
+      ['m1', '🥇', 100],
+      ['m2', '🥇', 100],
+    ]);
+  });
+
+  it('ranks sleep by closeness to personal targets rather than most hours', () => {
+    const sevenHours = { ...summary(1000), avgSleepHours: 7 };
+    const eightHours = { ...summary(1000), avgSleepHours: 8 };
+    const awards = awardMedals(
+      { m1: sevenHours, m2: eightHours },
+      {},
+      {
+        m1: { ...targets(2000, 100), sleepHours: 7 },
+        m2: { ...targets(2000, 100), sleepHours: 10 },
+      }
+    ).filter((award) => award.category === 'avgSleepHours');
+
+    expect(awards.map(({ memberId, medal, value }) => [memberId, medal, value])).toEqual([
+      ['m1', '🥇', 100],
+      ['m2', '🥈', 80],
+    ]);
+  });
+});
+
+describe('nutritionTargetScore', () => {
+  const summary = {
+    daysLogged: 1,
+    totalSteps: 0,
+    avgSteps: 0,
+    avgWaterMl: 0,
+    avgCalories: 0,
+    avgProteinG: 0,
+    sleepDaysLogged: 0,
+    avgSleepHours: 0,
+  };
+
+  it('scores equal under and over target misses identically', () => {
+    const memberTargets = targets(2000, 100);
+    const under = nutritionTargetScore(
+      { ...summary, avgCalories: 1800, avgProteinG: 90 },
+      memberTargets
+    );
+    const over = nutritionTargetScore(
+      { ...summary, avgCalories: 2200, avgProteinG: 110 },
+      memberTargets
+    );
+
+    expect(under).toBe(90);
+    expect(over).toBe(90);
+  });
+
+  it('does not score incomplete nutrition logging', () => {
+    expect(nutritionTargetScore({ ...summary, avgCalories: 2000 }, targets(2000, 100))).toBe(0);
+  });
+});
+
+describe('sleepTargetScore', () => {
+  const summary = {
+    daysLogged: 1,
+    totalSteps: 0,
+    avgSteps: 0,
+    avgWaterMl: 0,
+    avgCalories: 0,
+    avgProteinG: 0,
+    sleepDaysLogged: 1,
+    avgSleepHours: 7,
+  };
+
+  it('uses each member’s target and treats equal under and over misses alike', () => {
+    expect(sleepTargetScore(summary, targets(2000, 100))).toBe(88);
+    expect(
+      sleepTargetScore({ ...summary, avgSleepHours: 9 }, { ...targets(2000, 100), sleepHours: 8 })
+    ).toBe(88);
+    expect(sleepTargetScore(summary, { ...targets(2000, 100), sleepHours: 7 })).toBe(100);
+  });
+
+  it('uses the default 8-hour target and does not score missing sleep', () => {
+    expect(sleepTargetScore(summary, targets(2000, 100))).toBe(88);
+    expect(sleepTargetScore({ ...summary, avgSleepHours: 0 }, targets(2000, 100))).toBe(0);
   });
 });

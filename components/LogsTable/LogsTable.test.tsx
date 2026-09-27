@@ -44,7 +44,11 @@ const summaries: Record<string, LogSummary> = {
 };
 
 const workoutCounts = { m1: 3 };
-const medals = awardMedals(summaries, workoutCounts);
+const medals = awardMedals(
+    summaries,
+    workoutCounts,
+    Object.fromEntries(members.map((member) => [member.id, member.targets]))
+);
 
 describe('LogsTable', () => {
     it('shows one accessible column chart per person with every period metric', () => {
@@ -66,9 +70,13 @@ describe('LogsTable', () => {
             .toBeInTheDocument();
         expect(screen.queryByText('Protein/day')).not.toBeInTheDocument();
         expect(screen.queryByText('kcal/day')).not.toBeInTheDocument();
+        expect(screen.getAllByText('Nutrition')).toHaveLength(2);
+        expect(screen.getByRole('img', { name: /Dillon progress:.*Nutrition 96%, gold medal/ }))
+            .toBeInTheDocument();
+        expect(screen.getByText('7.5 / 8 hours')).toBeInTheDocument();
         expect(screen.queryByText('★')).not.toBeInTheDocument();
-        expect(document.querySelectorAll('[data-medal-rank="gold"]')).toHaveLength(6);
-        expect(document.querySelectorAll('[data-medal-rank="silver"]')).toHaveLength(4);
+        expect(document.querySelectorAll('[data-medal-rank="gold"]')).toHaveLength(7);
+        expect(document.querySelectorAll('[data-medal-rank="silver"]')).toHaveLength(5);
     });
 
     it('shows daily sleep without calling it an average on the Today view', () => {
@@ -77,7 +85,11 @@ describe('LogsTable', () => {
                 members={members}
                 summaries={summaries}
                 workoutCounts={{ m1: 1 }}
-                medals={awardMedals(summaries, { m1: 1 })}
+                medals={awardMedals(
+                    summaries,
+                    { m1: 1 },
+                    Object.fromEntries(members.map((member) => [member.id, member.targets]))
+                )}
                 showAverages={false}
             />
         );
@@ -87,6 +99,8 @@ describe('LogsTable', () => {
         expect(screen.getAllByText('Water/day')).toHaveLength(2);
         expect(screen.queryByText('Protein/day')).not.toBeInTheDocument();
         expect(screen.queryByText('kcal/day')).not.toBeInTheDocument();
+        expect(screen.getAllByText('Nutrition')).toHaveLength(2);
+        expect(screen.getByText('7.5 / 8 hours')).toBeInTheDocument();
         expect(screen.getAllByText('Sleep')).toHaveLength(2);
         expect(screen.queryByText('Sleep/day')).not.toBeInTheDocument();
     });

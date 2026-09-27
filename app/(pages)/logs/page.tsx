@@ -58,6 +58,7 @@ const LogsPage = async ({ searchParams }: LogsPageProps) => {
 
   const summaries = summarise(logs, from, through);
   const workoutCounts = countWorkouts(workouts, from, through);
+  const targetsByMember = Object.fromEntries(members.map((member) => [member.id, member.targets]));
 
   return (
     <PageLayout>
@@ -69,11 +70,14 @@ const LogsPage = async ({ searchParams }: LogsPageProps) => {
         members={viewerFirst(members, viewer.memberId)}
         summaries={summaries}
         workoutCounts={workoutCounts}
-        medals={awardMedals(summaries, workoutCounts)}
+        medals={awardMedals(summaries, workoutCounts, targetsByMember)}
         showAverages={!selectedDate && period !== 'today'}
       />
 
-      <p className={styles.note}>Medals show each column&apos;s gold, silver and bronze places.</p>
+      <p className={styles.note}>
+        Medals show each column&apos;s gold, silver and bronze places. Nutrition compares each
+        person&apos;s calorie and protein averages with their own targets.
+      </p>
     </PageLayout>
   );
 };

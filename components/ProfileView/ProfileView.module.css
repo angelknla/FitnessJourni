@@ -363,6 +363,11 @@
   color: var(--profile-accent);
 }
 
+.chartControls {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .weightChart {
   min-width: 0;
   padding: 0.75rem 0.75rem 0.55rem;
@@ -373,7 +378,8 @@
 
 .weightChart svg {
   width: 100%;
-  height: 13.75rem;
+  height: auto;
+  aspect-ratio: 640 / 220;
   display: block;
   overflow: visible;
 }
@@ -487,6 +493,43 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.8rem;
+}
+
+.targetModes {
+  grid-column: 1 / -1;
+  width: fit-content;
+  display: inline-flex;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0.2rem;
+  background: var(--c-bg-alt);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-pill);
+}
+
+.targetModes button {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+  color: var(--c-ink-soft);
+  background: transparent;
+  border: 0;
+}
+
+.targetModes button[data-active="true"] {
+  color: var(--c-ink);
+  font-weight: 600;
+  background: var(--c-surface-raised);
+}
+
+.targetSplit {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.76rem;
+  color: var(--c-ink-muted);
+}
+
+.targetSplit[data-off="true"] {
+  color: var(--c-warning);
 }
 
 .accentOptions {
@@ -699,9 +742,5 @@
 
   .inlineForm button {
     width: 100%;
-  }
-
-  .weightChart svg {
-    height: 11rem;
   }
 }

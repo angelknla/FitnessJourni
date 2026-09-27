@@ -21,6 +21,7 @@ interface EditTargetsProps {
   member: Member;
   id: string;
   onSaved: () => void;
+  section?: 'macros' | 'sleep';
 }
 
 type Mode = 'grams' | 'percent';
@@ -52,7 +53,7 @@ const toNumbers = (draft: MacroDraft): MacroGrams => ({
   fat: toNumber(draft.fat),
 });
 
-export const EditTargets = ({ member, id, onSaved }: EditTargetsProps) => {
+export const EditTargets = ({ member, id, onSaved, section = 'macros' }: EditTargetsProps) => {
   const [state, formAction, isPending] = useActionState(updateTargets, initial);
   const [mode, setMode] = useState<Mode>('grams');
 
@@ -76,6 +77,43 @@ export const EditTargets = ({ member, id, onSaved }: EditTargetsProps) => {
       onSaved();
     }
   }, [state.ok, onSaved]);
+
+  if (section === 'sleep') {
+    return (
+      <form className={styles.form} action={formAction} id={id}>
+        <input type="hidden" name="memberId" value={member.id} />
+        <fieldset className={styles.fieldset}>
+          <legend className={styles.legend}>{member.name}&apos;s sleep target</legend>
+          <label className={styles.caloriesField}>
+            <span className={styles.fieldLabel}>Hours per night</span>
+            <input
+              type="number"
+              name="sleepHours"
+              inputMode="decimal"
+              min={1}
+              max={24}
+              step={0.25}
+              defaultValue={member.targets.sleepHours ?? 8}
+              required
+            />
+          </label>
+        </fieldset>
+        <div className={styles.actions}>
+          <button type="submit" className={styles.submit} disabled={isPending}>
+            {isPending ? 'Saving…' : 'Save sleep target'}
+          </button>
+          <button type="button" className={styles.cancel} onClick={onSaved}>
+            Cancel
+          </button>
+          {state.error && (
+            <p className={styles.error} role="alert">
+              {state.error}
+            </p>
+          )}
+        </div>
+      </form>
+    );
+  }
 
   const caloriesNumber = toNumber(calories);
   const gramsNumbers = toNumbers(grams);
@@ -135,7 +173,6 @@ export const EditTargets = ({ member, id, onSaved }: EditTargetsProps) => {
 
     if (next === 'percent') {
       setPercents(toDraft(percentsFromGrams(gramsNumbers)));
-      setCalories(String(kcalFromGrams(gramsNumbers)));
     } else {
       setGrams(toDraft(gramsFromPercents(caloriesNumber, percentNumbers)));
     }

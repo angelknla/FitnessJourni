@@ -50,7 +50,7 @@ describe('SleepLogger', () => {
             <SleepLogger member={member} date="2026-09-25" sleepHours={7.5} canEdit={false} />
         );
 
-        expect(screen.getByText('7.5 hours')).toBeInTheDocument();
+        expect(screen.getByText('7.5 / 8 hours')).toBeInTheDocument();
         expect(screen.getByText('Only Dillon can change this.')).toBeInTheDocument();
         expect(screen.queryByRole('button', { name: 'Update sleep' })).not.toBeInTheDocument();
     });

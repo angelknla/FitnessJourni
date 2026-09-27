@@ -1,4 +1,4 @@
-import type { DailyLog } from '@/types/fitness';
+import type { DailyLog, MemberTargets } from '@/types/fitness';
 
 export type Period = 'today' | 'week' | 'month';
 
@@ -48,6 +48,8 @@ export const summarise = (
   to: string
 ): Record<string, LogSummary> => {
   const byMember: Record<string, LogSummary> = {};
+  const calorieDaysByMember: Record<string, number> = {};
+  const proteinDaysByMember: Record<string, number> = {};
 
   for (const log of logs) {
     if (log.date < from || log.date > to || !hasContent(log)) {
@@ -67,18 +69,22 @@ export const summarise = (
     summary.avgWaterMl += log.waterMl;
     summary.avgCalories += log.calories;
     summary.avgProteinG += log.proteinG;
+    if (log.calories > 0)
+      calorieDaysByMember[log.memberId] = (calorieDaysByMember[log.memberId] ?? 0) + 1;
+    if (log.proteinG > 0)
+      proteinDaysByMember[log.memberId] = (proteinDaysByMember[log.memberId] ?? 0) + 1;
     if (log.sleepHours !== null) {
       summary.sleepDaysLogged += 1;
       summary.avgSleepHours += log.sleepHours;
     }
   }
 
-  for (const summary of Object.values(byMember)) {
+  for (const [memberId, summary] of Object.entries(byMember)) {
     const days = summary.daysLogged || 1;
     summary.avgSteps = Math.round(summary.avgSteps / days);
     summary.avgWaterMl = Math.round(summary.avgWaterMl / days);
-    summary.avgCalories = Math.round(summary.avgCalories / days);
-    summary.avgProteinG = Math.round(summary.avgProteinG / days);
+    summary.avgCalories = Math.round(summary.avgCalories / (calorieDaysByMember[memberId] || 1));
+    summary.avgProteinG = Math.round(summary.avgProteinG / (proteinDaysByMember[memberId] || 1));
     const sleepDays = summary.sleepDaysLogged || 1;
     summary.avgSleepHours = Math.round((summary.avgSleepHours / sleepDays) * 100) / 100;
   }
@@ -139,7 +145,8 @@ export type MedalCategory =
   | 'totalSteps'
   | 'avgSteps'
   | 'avgWaterMl'
-  | 'avgSleepHours';
+  | 'avgSleepHours'
+  | 'nutritionTarget';
 
 export interface MedalAward {
   memberId: string;
@@ -156,23 +163,56 @@ const podium = [
   { rank: 'bronze', medal: '🥉' },
 ] as const;
 
+const targetCloseness = (value: number, target: number): number =>
+  target > 0 ? Math.max(0, 100 - (Math.abs(value - target) / target) * 100) : 0;
+
+export const nutritionTargetScore = (
+  summary: LogSummary,
+  targets: MemberTargets | undefined
+): number => {
+  if (!targets || summary.avgCalories <= 0 || summary.avgProteinG <= 0) return 0;
+  return Math.round(
+    (targetCloseness(summary.avgCalories, targets.calories) +
+      targetCloseness(summary.avgProteinG, targets.protein)) /
+      2
+  );
+};
+
+export const sleepTargetScore = (
+  summary: LogSummary,
+  targets: MemberTargets | undefined
+): number => {
+  if (!targets || summary.avgSleepHours <= 0) return 0;
+  return Math.round(targetCloseness(summary.avgSleepHours, targets.sleepHours ?? 8));
+};
+
 const medalCategories: {
   key: MedalCategory;
   label: string;
-  value: (summary: LogSummary, workouts: number) => number;
+  value: (summary: LogSummary, workouts: number, targets?: MemberTargets) => number;
 }[] = [
   { key: 'daysLogged', label: 'Logging', value: (summary) => summary.daysLogged },
   { key: 'workouts', label: 'Workouts', value: (_summary, workouts) => workouts },
   { key: 'totalSteps', label: 'Steps', value: (summary) => summary.totalSteps },
   { key: 'avgSteps', label: 'Steps/day', value: (summary) => summary.avgSteps },
   { key: 'avgWaterMl', label: 'Water/day', value: (summary) => summary.avgWaterMl },
-  { key: 'avgSleepHours', label: 'Sleep/day', value: (summary) => summary.avgSleepHours },
+  {
+    key: 'avgSleepHours',
+    label: 'Sleep/day',
+    value: (summary, _workouts, targets) => sleepTargetScore(summary, targets),
+  },
+  {
+    key: 'nutritionTarget',
+    label: 'Nutrition',
+    value: (summary, _workouts, targets) => nutritionTargetScore(summary, targets),
+  },
 ];
 
 /** Podium awards for each category. Ties share a medal and skip the next place. */
 export const awardMedals = (
   summaries: Record<string, LogSummary>,
-  workoutCounts: Record<string, number>
+  workoutCounts: Record<string, number>,
+  targetsByMember: Record<string, MemberTargets> = {}
 ): MedalAward[] => {
   const memberIds = new Set([...Object.keys(summaries), ...Object.keys(workoutCounts)]);
   const awards: MedalAward[] = [];
@@ -181,7 +221,11 @@ export const awardMedals = (
     const scores = [...memberIds]
       .map((memberId) => ({
         memberId,
-        value: category.value(summaries[memberId] ?? emptySummary, workoutCounts[memberId] ?? 0),
+        value: category.value(
+          summaries[memberId] ?? emptySummary,
+          workoutCounts[memberId] ?? 0,
+          targetsByMember[memberId]
+        ),
       }))
       .filter((score) => score.value > 0)
       .sort(

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { MedalAward } from '@/lib/aggregate';
 import type { MedalBoard } from '@/lib/medals';
 import type { Member } from '@/types/fitness';
-import { MedalLeaderboard } from './MedalLeaderboard';
+import { MedalLeaderboard, MemberMedals } from './MedalLeaderboard';
 
 const targets = {
     calories: 2500,
@@ -43,6 +43,7 @@ const weekAwards: MedalAward[] = [
 ];
 
 const boards: MedalBoard[] = [
+    { period: 'day', label: 'Today', awards: weekAwards },
     { period: 'week', label: 'This week', awards: weekAwards },
     { period: 'month', label: 'This month', awards: [] },
 ];
@@ -60,10 +61,21 @@ describe('MedalLeaderboard', () => {
         expect(within(rows[2]).getByText('Bradley')).toBeInTheDocument();
         expect(within(rows[2]).getByText('0 pts')).toBeInTheDocument();
         expect(screen.getByText(/winner, baby!/)).toHaveTextContent(
-            "Dillon is leading this week — you're a winner, baby!"
+            "Dillon is leading today — you're a winner, baby!"
         );
+        expect(screen.getByRole('tab', { name: 'Today' })).toHaveAttribute('aria-selected', 'true');
+        expect(screen.getByRole('tab', { name: 'Week' })).toBeInTheDocument();
+        expect(screen.getByRole('tab', { name: 'Month' })).toBeInTheDocument();
         expect(document.querySelectorAll('[data-medal-rank="gold"]')).toHaveLength(2);
         expect(document.querySelectorAll('[data-medal-rank="silver"]')).toHaveLength(1);
         expect(document.querySelectorAll('[data-medal-rank="bronze"]')).toHaveLength(1);
+    });
+
+    it('shows daily medals on the profile medal shelf', () => {
+        render(<MemberMedals memberId="m1" boards={boards} />);
+
+        expect(screen.getByRole('tab', { name: 'Today' })).toHaveAttribute('aria-selected', 'true');
+        expect(screen.getByRole('tabpanel', { name: 'Today' })).toHaveTextContent('workouts');
+        expect(screen.getByRole('tabpanel', { name: 'Today' })).toHaveTextContent('totalSteps');
     });
 });

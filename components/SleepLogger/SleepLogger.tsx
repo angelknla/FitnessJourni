@@ -18,7 +18,8 @@ interface SleepLoggerProps {
 const initial: ActionState = { ok: false };
 
 const hoursFormat = new Intl.NumberFormat('en-GB', { maximumFractionDigits: 2 });
-const formatHours = (hours: number) => `${hoursFormat.format(hours)} hours`;
+const formatHours = (hours: number, target: number) =>
+    `${hoursFormat.format(hours)} / ${hoursFormat.format(target)} hours`;
 
 export const SleepLogger = ({
     member,
@@ -60,7 +61,11 @@ export const SleepLogger = ({
                             ? 'Sleep not logged today'
                             : 'Sleep not logged on this day'}
                 </span>
-                {hasSleep && <strong className={styles.duration}>{formatHours(sleepHours)}</strong>}
+                {hasSleep && (
+                    <strong className={styles.duration}>
+                        {formatHours(sleepHours, member.targets.sleepHours ?? 8)}
+                    </strong>
+                )}
             </div>
 
             {!canEdit && (

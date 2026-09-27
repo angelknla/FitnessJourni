@@ -84,7 +84,12 @@ const Homepage = async ({ searchParams }: HomepageProps) => {
       logs={logs}
       workouts={workouts}
       tallies={tallyWorkouts(workouts, date)}
-      medalBoards={buildMedalBoards(medalLogs, workouts, date)}
+      medalBoards={buildMedalBoards(
+        medalLogs,
+        workouts,
+        date,
+        Object.fromEntries(members.map((member) => [member.id, member.targets]))
+      )}
       date={date}
       today={today}
       datePickerLabel={datePickerLabel}

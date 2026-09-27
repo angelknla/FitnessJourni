@@ -28,6 +28,11 @@ const rankLabel: Record<MedalRank, string> = {
 
 const rankPoints: Record<MedalRank, number> = { gold: 5, silver: 3, bronze: 1 };
 const rankOrder: MedalRank[] = ['gold', 'silver', 'bronze'];
+const periodTabLabel: Record<MedalBoard['period'], string> = {
+    day: 'Today',
+    week: 'Week',
+    month: 'Month',
+};
 
 export const medalPoints = (awards: MedalAward[]) =>
     awards.reduce((total, award) => total + rankPoints[award.rank], 0);
@@ -62,14 +67,14 @@ const PeriodTabs = ({
                 key={board.period}
                 onClick={() => onChange(board.period)}
             >
-                {board.period === 'week' ? 'Week' : 'Month'}
+                {periodTabLabel[board.period]}
             </button>
         ))}
     </div>
 );
 
 export const MedalLeaderboard = ({ members, boards }: MedalLeaderboardProps) => {
-    const [activePeriod, setActivePeriod] = useState<MedalBoard['period']>('week');
+    const [activePeriod, setActivePeriod] = useState<MedalBoard['period']>('day');
     const board = boards.find((item) => item.period === activePeriod) ?? boards[0];
 
     if (!board) {
@@ -88,7 +93,11 @@ export const MedalLeaderboard = ({ members, boards }: MedalLeaderboardProps) => 
         )
         : [];
     const leaderNames = leaders.map((member) => member.name).join(' & ');
-    const periodPhrase = board.period === 'week' ? 'this week' : 'this month';
+    const periodPhrase = board.period === 'day'
+        ? 'today'
+        : board.period === 'week'
+            ? 'this week'
+            : 'this month';
 
     return (
         <section className={styles.board} aria-labelledby="medal-leaderboard-heading">
@@ -167,7 +176,7 @@ export const MedalLeaderboard = ({ members, boards }: MedalLeaderboardProps) => 
 };
 
 export const MemberMedals = ({ memberId, boards }: MemberMedalsProps) => {
-    const [activePeriod, setActivePeriod] = useState<MedalBoard['period']>('week');
+    const [activePeriod, setActivePeriod] = useState<MedalBoard['period']>('day');
     const board = boards.find((item) => item.period === activePeriod) ?? boards[0];
 
     if (!board) {

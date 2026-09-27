@@ -31,6 +31,8 @@ export interface MemberTargets {
   /** Floor marker on the ring — the playbook's "8k minimum". */
   stepsMin: number;
   waterMl: number;
+  /** Personal nightly sleep goal, defaulting to 8 hours. */
+  sleepHours?: number;
   /** The playbook's standard is 4 lifting sessions a week. */
   workoutsPerWeek: number;
 }
@@ -55,7 +57,7 @@ export interface MemberProfile {
 }
 
 export interface WeightMeasurement {
-  month: string;
+  date: string;
   weightKg: number;
 }
 

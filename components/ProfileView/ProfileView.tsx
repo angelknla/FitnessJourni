@@ -5,7 +5,7 @@ import { IdentityDialog } from '@components/IdentityDialog/IdentityDialog';
 import { MemberMedals } from '@components/MedalLeaderboard/MedalLeaderboard';
 import { RemoveMemberDialog } from '@components/RemoveMemberDialog/RemoveMemberDialog';
 import { avatarOptions, avatarUploadTypes, isAvatarPath } from '@data/avatarData';
-import { accentHex, accentNames } from '@data/fitnessData';
+import { accentHex, accentNames, defaultTargets } from '@data/fitnessData';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
@@ -25,6 +25,16 @@ import {
 } from '@/app/actions';
 import { lock } from '@/app/auth-actions';
 import { calculateBmi } from '@/lib/data/profile';
+import {
+    gramsFromPercents,
+    kcalFromGrams,
+    type MacroGrams,
+    type MacroKey,
+    type MacroPercents,
+    macroKeys,
+    percentsFromGrams,
+    percentTotal,
+} from '@/lib/macros';
 import type { MedalBoard } from '@/lib/medals';
 import type { Member, MemberProfile, WeightMeasurement } from '@/types/fitness';
 
@@ -35,26 +45,75 @@ interface ProfileViewProps {
     member: Member | null;
     profile: MemberProfile | null;
     measurements: WeightMeasurement[];
-    currentMonth: string;
+    currentDate: string;
     medalBoards?: MedalBoard[];
     canRemoveOthers?: boolean;
 }
 
 const initial: ActionState = { ok: false };
-const monthLabel = new Intl.DateTimeFormat('en-GB', { month: 'short', year: 'numeric' });
+const dateLabel = new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+});
+const chartDateLabel = new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: '2-digit',
+});
 const CHART_WIDTH = 640;
 const CHART_HEIGHT = 220;
 const CHART_LEFT = 44;
 const CHART_RIGHT = 14;
 const CHART_TOP = 14;
 const CHART_BOTTOM = 36;
+type ProfileMacroMode = 'grams' | 'percent';
+type WeightChartRange = 'month' | 'threeMonths' | 'sixMonths' | 'year';
+type ProfileMacroDraft = Record<MacroKey, string>;
+
+const weightChartRanges: { value: WeightChartRange; label: string; months: number }[] = [
+    { value: 'month', label: 'Month', months: 1 },
+    { value: 'threeMonths', label: '3 months', months: 3 },
+    { value: 'sixMonths', label: '6 months', months: 6 },
+    { value: 'year', label: 'Year', months: 12 },
+];
+
+const weightRangeStart = (currentDate: string, months: number) => {
+    const start = new Date(`${currentDate}T00:00:00Z`);
+    start.setUTCDate(1);
+    start.setUTCMonth(start.getUTCMonth() - (months - 1));
+    return start.toISOString().slice(0, 10);
+};
+
+const toMacroDraft = (values: MacroGrams | MacroPercents): ProfileMacroDraft => ({
+    protein: String(values.protein),
+    carbs: String(values.carbs),
+    fat: String(values.fat),
+});
+
+const toPositiveNumber = (value: string) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+};
+
+const macroDraftNumbers = (draft: ProfileMacroDraft): MacroGrams => ({
+    protein: toPositiveNumber(draft.protein),
+    carbs: toPositiveNumber(draft.carbs),
+    fat: toPositiveNumber(draft.fat),
+});
+
+const macroLabels: Record<MacroKey, string> = {
+    protein: 'Protein',
+    carbs: 'Carbs',
+    fat: 'Fat',
+};
 
 export const ProfileView = ({
     members,
     member,
     profile,
     measurements,
-    currentMonth,
+    currentDate,
     medalBoards = [],
     canRemoveOthers = false,
 }: ProfileViewProps) => {
@@ -81,28 +140,53 @@ export const ProfileView = ({
     const [accentState, accentAction, accentPending] = useActionState(saveProfileAccent, initial);
 
     const currentWeight = measurements.at(-1)?.weightKg ?? null;
-    const currentMonthMeasurement = measurements.find((item) => item.month.startsWith(currentMonth));
-    const [weightMonth, setWeightMonth] = useState(currentMonth);
+    const currentDateMeasurement = measurements.find((item) => item.date === currentDate);
+    const [weightDate, setWeightDate] = useState(currentDate);
     const [currentWeightDraft, setCurrentWeightDraft] = useState(
-        String(currentMonthMeasurement?.weightKg ?? currentWeight ?? '')
+        String(currentDateMeasurement?.weightKg ?? currentWeight ?? '')
     );
     const [monthlyWeightDraft, setMonthlyWeightDraft] = useState(
-        String(currentMonthMeasurement?.weightKg ?? currentWeight ?? '')
+        String(currentDateMeasurement?.weightKg ?? currentWeight ?? '')
     );
     const [currentWeightChanged, setCurrentWeightChanged] = useState(false);
+    const [weightChartRange, setWeightChartRange] = useState<WeightChartRange>('month');
+    const startingTargetGrams: MacroGrams = {
+        protein: member?.targets.protein ?? 0,
+        carbs: member?.targets.carbs ?? 0,
+        fat: member?.targets.fat ?? 0,
+    };
+    const [targetMacroMode, setTargetMacroMode] = useState<ProfileMacroMode>('grams');
+    const [targetCaloriesDraft, setTargetCaloriesDraft] = useState(
+        String(member?.targets.calories ?? '')
+    );
+    const [targetGramDraft, setTargetGramDraft] = useState<ProfileMacroDraft>(
+        toMacroDraft(startingTargetGrams)
+    );
+    const [targetPercentDraft, setTargetPercentDraft] = useState<ProfileMacroDraft>(
+        toMacroDraft(percentsFromGrams(startingTargetGrams))
+    );
 
     useEffect(() => {
         if (!member?.id) {
             return;
         }
 
-        const nextWeight = String(currentMonthMeasurement?.weightKg ?? currentWeight ?? '');
-        setWeightMonth(currentMonth);
+        const nextWeight = String(currentDateMeasurement?.weightKg ?? currentWeight ?? '');
+        setWeightDate(currentDate);
         setCurrentWeightDraft(nextWeight);
         setMonthlyWeightDraft(nextWeight);
         setCurrentWeightChanged(false);
         setSelectedAccent(member.accent);
-    }, [currentMonth, currentMonthMeasurement?.weightKg, currentWeight, member?.accent, member?.id]);
+        const nextGrams = {
+            protein: member.targets.protein,
+            carbs: member.targets.carbs,
+            fat: member.targets.fat,
+        };
+        setTargetMacroMode('grams');
+        setTargetCaloriesDraft(String(member.targets.calories));
+        setTargetGramDraft(toMacroDraft(nextGrams));
+        setTargetPercentDraft(toMacroDraft(percentsFromGrams(nextGrams)));
+    }, [currentDate, currentDateMeasurement?.weightKg, currentWeight, member]);
 
     useEffect(() => {
         if (avatarState.ok && avatarState.bookedAt) {
@@ -121,7 +205,13 @@ export const ProfileView = ({
     );
 
     const currentBmi = calculateBmi(currentWeight, profile?.heightCm ?? null);
-    const chartMeasurements = measurements.slice(-12);
+    const chartRangeMonths = weightChartRanges.find(
+        (range) => range.value === weightChartRange
+    )?.months ?? 1;
+    const chartStartDate = weightRangeStart(currentDate, chartRangeMonths);
+    const chartMeasurements = measurements.filter(
+        (measurement) => measurement.date >= chartStartDate && measurement.date <= currentDate
+    );
     const chartValues = [
         ...chartMeasurements.map((measurement) => measurement.weightKg),
         profile?.targetWeightKg,
@@ -133,20 +223,23 @@ export const ProfileView = ({
     const chartRange = chartMax - chartMin;
     const chartPlotWidth = CHART_WIDTH - CHART_LEFT - CHART_RIGHT;
     const chartPlotHeight = CHART_HEIGHT - CHART_TOP - CHART_BOTTOM;
-    const chartX = (index: number) =>
-        chartMeasurements.length === 1
-            ? CHART_LEFT + chartPlotWidth / 2
-            : CHART_LEFT + (index / (chartMeasurements.length - 1)) * chartPlotWidth;
+    const chartPeriodStart = new Date(`${chartStartDate}T12:00:00`).getTime();
+    const chartPeriodEnd = new Date(`${currentDate}T12:00:00`).getTime();
+    const chartPeriodDuration = Math.max(chartPeriodEnd - chartPeriodStart, 1);
+    const chartX = (date: string) =>
+        CHART_LEFT +
+        ((new Date(`${date}T12:00:00`).getTime() - chartPeriodStart) / chartPeriodDuration) *
+        chartPlotWidth;
     const chartY = (weight: number) =>
         CHART_TOP + ((chartMax - weight) / chartRange) * chartPlotHeight;
     const chartPoints = chartMeasurements
-        .map((measurement, index) => `${chartX(index)},${chartY(measurement.weightKg)}`)
+        .map((measurement) => `${chartX(measurement.date)},${chartY(measurement.weightKg)}`)
         .join(' ');
     const chartTicks = [chartMax, (chartMax + chartMin) / 2, chartMin];
     const chartLabel = `Monthly weight trend. ${chartMeasurements
         .map(
             (measurement) =>
-                `${monthLabel.format(new Date(`${measurement.month}T12:00:00`))}: ${measurement.weightKg.toFixed(1)} kilograms`
+                `${dateLabel.format(new Date(`${measurement.date}T12:00:00`))}: ${measurement.weightKg.toFixed(1)} kilograms`
         )
         .join('; ')}`;
 
@@ -201,16 +294,16 @@ export const ProfileView = ({
     const changeCurrentWeight = (value: string) => {
         setCurrentWeightDraft(value);
         setCurrentWeightChanged(true);
-        if (weightMonth === currentMonth) {
+        if (weightDate === currentDate) {
             setMonthlyWeightDraft(value);
         }
     };
 
-    const changeWeightMonth = (month: string) => {
-        setWeightMonth(month);
-        const measurement = measurements.find((item) => item.month.startsWith(month));
+    const changeWeightDate = (date: string) => {
+        setWeightDate(date);
+        const measurement = measurements.find((item) => item.date === date);
         setMonthlyWeightDraft(
-            month === currentMonth
+            date === currentDate
                 ? currentWeightDraft
                 : String(measurement?.weightKg ?? '')
         );
@@ -218,10 +311,47 @@ export const ProfileView = ({
 
     const changeMonthlyWeight = (value: string) => {
         setMonthlyWeightDraft(value);
-        if (weightMonth === currentMonth) {
+        if (weightDate === currentDate) {
             setCurrentWeightDraft(value);
             setCurrentWeightChanged(true);
         }
+    };
+
+    const targetCaloriesNumber = toPositiveNumber(targetCaloriesDraft);
+    const targetGramNumbers = macroDraftNumbers(targetGramDraft);
+    const targetPercentNumbers = macroDraftNumbers(targetPercentDraft);
+    const effectiveTargetGrams =
+        targetMacroMode === 'percent'
+            ? gramsFromPercents(targetCaloriesNumber, targetPercentNumbers)
+            : targetGramNumbers;
+    const targetSplit = percentTotal(targetPercentNumbers);
+    const targetSplitOff = targetMacroMode === 'percent' && targetSplit !== 100;
+
+    const changeTargetCalories = (value: string) => {
+        setTargetCaloriesDraft(value);
+        if (targetMacroMode === 'grams') {
+            setTargetGramDraft(toMacroDraft(gramsFromPercents(toPositiveNumber(value), targetPercentNumbers)));
+        }
+    };
+
+    const changeTargetGram = (key: MacroKey, value: string) => {
+        const next = { ...targetGramDraft, [key]: value };
+        const nextNumbers = macroDraftNumbers(next);
+        setTargetGramDraft(next);
+        setTargetCaloriesDraft(String(kcalFromGrams(nextNumbers)));
+        if (kcalFromGrams(nextNumbers) > 0) {
+            setTargetPercentDraft(toMacroDraft(percentsFromGrams(nextNumbers)));
+        }
+    };
+
+    const switchTargetMacroMode = (next: ProfileMacroMode) => {
+        if (next === targetMacroMode) return;
+        if (next === 'percent') {
+            setTargetPercentDraft(toMacroDraft(percentsFromGrams(targetGramNumbers)));
+        } else {
+            setTargetGramDraft(toMacroDraft(gramsFromPercents(targetCaloriesNumber, targetPercentNumbers)));
+        }
+        setTargetMacroMode(next);
     };
 
     return (
@@ -442,18 +572,35 @@ export const ProfileView = ({
                 <div className={styles.sectionHead}>
                     <div>
                         <p>Progress</p>
-                        <h2 id="weight-history-heading">Monthly weight</h2>
+                        <h2 id="weight-history-heading">Weight progress</h2>
                     </div>
                     {profile.targetWeightKg && <span>Goal {profile.targetWeightKg.toFixed(1)} kg</span>}
                 </div>
 
-                {measurements.length > 0 ? (
+                <div className={styles.chartControls}>
+                    <fieldset className={styles.targetModes}>
+                        <legend className="sr-only">Weight chart range</legend>
+                        {weightChartRanges.map((range) => (
+                            <button
+                                key={range.value}
+                                type="button"
+                                data-active={weightChartRange === range.value}
+                                aria-pressed={weightChartRange === range.value}
+                                onClick={() => setWeightChartRange(range.value)}
+                            >
+                                {range.label}
+                            </button>
+                        ))}
+                    </fieldset>
+                </div>
+
+                {chartMeasurements.length > 0 ? (
                     <div className={styles.weightChart}>
                         <svg
                             viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
                             role="img"
                             aria-label={chartLabel}
-                            preserveAspectRatio="none"
+                            preserveAspectRatio="xMidYMid meet"
                         >
                             {chartTicks.map((tick) => (
                                 <g key={tick}>
@@ -485,55 +632,57 @@ export const ProfileView = ({
                             {chartMeasurements.length > 1 && (
                                 <polyline className={styles.chartLine} points={chartPoints} />
                             )}
-                            {chartMeasurements.map((measurement, index) => (
+                            {chartMeasurements.map((measurement) => (
                                 <circle
                                     className={styles.chartPoint}
-                                    key={measurement.month}
-                                    cx={chartX(index)}
+                                    key={measurement.date}
+                                    cx={chartX(measurement.date)}
                                     cy={chartY(measurement.weightKg)}
                                     r="5"
                                 />
                             ))}
-                            <text className={styles.chartMonth} x={chartX(0)} y={CHART_HEIGHT - 8}>
-                                {monthLabel.format(
-                                    new Date(`${chartMeasurements[0].month}T12:00:00`)
+                            <text className={styles.chartMonth} x={chartX(chartMeasurements[0].date)} y={CHART_HEIGHT - 8}>
+                                {chartDateLabel.format(
+                                    new Date(`${chartMeasurements[0].date}T12:00:00`)
                                 )}
                             </text>
                             {chartMeasurements.length > 1 && (
                                 <text
                                     className={styles.chartMonth}
                                     data-last
-                                    x={chartX(chartMeasurements.length - 1)}
+                                    x={chartX(chartMeasurements[chartMeasurements.length - 1].date)}
                                     y={CHART_HEIGHT - 8}
                                 >
-                                    {monthLabel.format(
+                                    {chartDateLabel.format(
                                         new Date(
-                                            `${chartMeasurements[chartMeasurements.length - 1].month}T12:00:00`
+                                            `${chartMeasurements[chartMeasurements.length - 1].date}T12:00:00`
                                         )
                                     )}
                                 </text>
                             )}
                         </svg>
                         <div className={styles.chartLegend}>
-                            <span><i />Monthly weight</span>
+                            <span><i />Weight</span>
                             {profile.targetWeightKg && <span data-goal><i />Goal</span>}
                         </div>
                     </div>
                 ) : (
-                    <p className={styles.empty}>Add this month’s weight to begin tracking.</p>
+                    <p className={styles.empty}>
+                        No weights saved for this period yet.
+                    </p>
                 )}
 
                 <form className={styles.inlineForm} action={weightAction}>
                     <input type="hidden" name="memberId" value={member.id} />
-                    <label htmlFor="profile-month">
-                        <span>Month</span>
+                    <label htmlFor="profile-weight-date">
+                        <span>Date</span>
                         <input
-                            id="profile-month"
-                            type="month"
-                            name="month"
-                            max={currentMonth}
-                            value={weightMonth}
-                            onChange={(event) => changeWeightMonth(event.target.value)}
+                            id="profile-weight-date"
+                            type="date"
+                            name="date"
+                            max={currentDate}
+                            value={weightDate}
+                            onChange={(event) => changeWeightDate(event.target.value)}
                             required
                         />
                     </label>
@@ -555,7 +704,7 @@ export const ProfileView = ({
                         </span>
                     </label>
                     <button type="submit" disabled={weightPending}>
-                        {weightPending ? 'Saving…' : 'Save month'}
+                        {weightPending ? 'Saving…' : 'Save weight'}
                     </button>
                     {(weightState.error || weightState.message) && (
                         <p className={weightState.error ? styles.error : styles.success} role="status">
@@ -575,7 +724,7 @@ export const ProfileView = ({
 
                 <form className={styles.detailsForm} action={profileAction}>
                     <input type="hidden" name="memberId" value={member.id} />
-                    <input type="hidden" name="currentMonth" value={currentMonth} />
+                    <input type="hidden" name="currentDate" value={currentDate} />
                     <input
                         type="hidden"
                         name="saveCurrentWeight"
@@ -626,7 +775,7 @@ export const ProfileView = ({
                                     <span>kg</span>
                                 </span>
                                 <small id="profile-current-weight-note" className={styles.fieldNote}>
-                                    Saves to this month’s weight progress
+                                    Saves to today’s weight progress
                                 </small>
                             </label>
                         </div>
@@ -634,6 +783,9 @@ export const ProfileView = ({
                     <fieldset className={styles.detailGroup}>
                         <legend>Goals and targets</legend>
                         <div className={styles.detailFields}>
+                            <input type="hidden" name="targetProtein" value={effectiveTargetGrams.protein} />
+                            <input type="hidden" name="targetCarbs" value={effectiveTargetGrams.carbs} />
+                            <input type="hidden" name="targetFat" value={effectiveTargetGrams.fat} />
                             <label htmlFor="profile-weight-goal">
                                 <span>Weight goal</span>
                                 <span className={styles.inputUnit}>
@@ -645,10 +797,73 @@ export const ProfileView = ({
                                 <span>BMI goal</span>
                                 <input id="profile-bmi-goal" type="number" name="targetBmi" min={10} max={60} step={0.1} defaultValue={profile.targetBmi ?? ''} />
                             </label>
+                            <label htmlFor="profile-sleep-target">
+                                <span>Sleep target</span>
+                                <span className={styles.inputUnit}>
+                                    <input id="profile-sleep-target" aria-label="Sleep target" type="number" name="targetSleepHours" min={1} max={24} step={0.25} defaultValue={member.targets.sleepHours ?? defaultTargets.sleepHours} required />
+                                    <span>hours</span>
+                                </span>
+                            </label>
+                            <label htmlFor="profile-calorie-target">
+                                <span>Calorie target</span>
+                                <span className={styles.inputUnit}>
+                                    <input id="profile-calorie-target" aria-label="Calorie target" type="number" name="targetCalories" min={1} max={20000} step={1} value={targetCaloriesDraft} onChange={(event) => changeTargetCalories(event.target.value)} required />
+                                    <span>kcal</span>
+                                </span>
+                            </label>
+                            <fieldset className={styles.targetModes}>
+                                <legend className="sr-only">Enter macro targets as</legend>
+                                {(['grams', 'percent'] as ProfileMacroMode[]).map((option) => (
+                                    <button
+                                        type="button"
+                                        key={option}
+                                        data-active={targetMacroMode === option}
+                                        aria-pressed={targetMacroMode === option}
+                                        onClick={() => switchTargetMacroMode(option)}
+                                    >
+                                        {option === 'grams' ? 'Grams' : 'Percent'}
+                                    </button>
+                                ))}
+                            </fieldset>
+                            {macroKeys.map((key) => (
+                                <label htmlFor={`profile-${key}-target`} key={key}>
+                                    <span>{macroLabels[key]} target</span>
+                                    <span className={styles.inputUnit}>
+                                        <input
+                                            id={`profile-${key}-target`}
+                                            aria-label={`${macroLabels[key]} target ${targetMacroMode === 'grams' ? 'grams' : 'percentage'}`}
+                                            type="number"
+                                            inputMode="numeric"
+                                            min={targetMacroMode === 'grams' ? 1 : 0}
+                                            max={targetMacroMode === 'grams' ? 2000 : 100}
+                                            step={1}
+                                            value={targetMacroMode === 'grams' ? targetGramDraft[key] : targetPercentDraft[key]}
+                                            onChange={(event) => {
+                                                if (targetMacroMode === 'grams') {
+                                                    changeTargetGram(key, event.target.value);
+                                                } else {
+                                                    setTargetPercentDraft((current) => ({
+                                                        ...current,
+                                                        [key]: event.target.value,
+                                                    }));
+                                                }
+                                            }}
+                                            required
+                                        />
+                                        <span>{targetMacroMode === 'grams' ? 'g' : '%'}</span>
+                                    </span>
+                                </label>
+                            ))}
+                            {targetMacroMode === 'percent' && (
+                                <p className={styles.targetSplit} data-off={targetSplitOff}>
+                                    Split adds up to <strong>{targetSplit}%</strong>
+                                    {targetSplitOff ? ' — it needs to be 100%.' : '.'}
+                                </p>
+                            )}
                         </div>
                     </fieldset>
                     <div className={styles.formActions}>
-                        <button type="submit" disabled={profilePending}>
+                        <button type="submit" disabled={profilePending || targetSplitOff}>
                             {profilePending ? 'Saving…' : 'Save profile'}
                         </button>
                         {(profileState.error || profileState.message) && (

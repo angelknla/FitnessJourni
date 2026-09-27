@@ -9,6 +9,7 @@ export const defaultTargets: MemberTargets = {
   steps: 10000,
   stepsMin: 8000,
   waterMl: 2500,
+  sleepHours: 8,
   workoutsPerWeek: 4,
 };
 

@@ -53,6 +53,7 @@ interface HomeProps {
 
 const PANEL_ID = 'member-panel';
 const TARGETS_ID = 'macro-targets';
+const SLEEP_TARGET_ID = 'sleep-target';
 type SwipePhase = 'idle' | 'dragging' | 'exiting' | 'positioning' | 'resetting';
 
 const adjacentDate = (date: string, offset: number) => {
@@ -219,6 +220,7 @@ export const Home = ({
   }
   const [addOpen, setAddOpen] = useState(false);
   const [editingTargets, setEditingTargets] = useState(false);
+  const [editingSleepTarget, setEditingSleepTarget] = useState(false);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
   const pendingMemberId = useRef<string | null>(null);
@@ -276,6 +278,7 @@ export const Home = ({
     setSwipePhase('idle');
     setActiveId(id);
     setEditingTargets(false);
+    setEditingSleepTarget(false);
   };
 
   const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
@@ -357,6 +360,7 @@ export const Home = ({
       pendingMemberId.current = null;
       setActiveId(nextId);
       setEditingTargets(false);
+      setEditingSleepTarget(false);
       setSwipePhase('positioning');
       setSwipeOffset(0);
       return;
@@ -490,8 +494,8 @@ export const Home = ({
                 viewerId={viewerId}
                 editingTargets={false}
                 preview
-                onToggleTargets={() => {}}
-                onTargetsSaved={() => {}}
+                onToggleTargets={() => { }}
+                onTargetsSaved={() => { }}
               />
             </div>
             <div className={styles.carouselSlide}>
@@ -501,7 +505,10 @@ export const Home = ({
                 date={date}
                 viewerId={viewerId}
                 editingTargets={editingTargets}
-                onToggleTargets={() => setEditingTargets((open) => !open)}
+                onToggleTargets={() => {
+                  setEditingSleepTarget(false);
+                  setEditingTargets((open) => !open);
+                }}
                 onTargetsSaved={() => setEditingTargets(false)}
               />
             </div>
@@ -513,8 +520,8 @@ export const Home = ({
                 viewerId={viewerId}
                 editingTargets={false}
                 preview
-                onToggleTargets={() => {}}
-                onTargetsSaved={() => {}}
+                onToggleTargets={() => { }}
+                onTargetsSaved={() => { }}
               />
             </div>
           </div>
@@ -540,10 +547,39 @@ export const Home = ({
         <section className={styles.panel}>
           <div className={styles.workoutsHead}>
             <h2 className={styles.sectionHeading}>Sleep</h2>
-            <Link href="/logs?period=week" className={styles.planLink}>
-              See sleep logs
-            </Link>
+            <div className={styles.sleepActions}>
+              {canEdit && (
+                <button
+                  type="button"
+                  className={styles.editButton}
+                  aria-expanded={editingSleepTarget}
+                  aria-controls={SLEEP_TARGET_ID}
+                  aria-label={
+                    editingSleepTarget
+                      ? 'Stop editing sleep target'
+                      : `Edit ${active.name}'s sleep target`
+                  }
+                  onClick={() => {
+                    setEditingTargets(false);
+                    setEditingSleepTarget((open) => !open);
+                  }}
+                >
+                  {editingSleepTarget ? <CrossIcon /> : <PencilIcon />}
+                </button>
+              )}
+              <Link href="/logs?period=week" className={styles.planLink}>
+                See sleep logs
+              </Link>
+            </div>
           </div>
+          {editingSleepTarget && canEdit && (
+            <EditTargets
+              member={active}
+              id={SLEEP_TARGET_ID}
+              section="sleep"
+              onSaved={() => setEditingSleepTarget(false)}
+            />
+          )}
           <SleepLogger
             key={`${active.id}-${date}`}
             member={active}

@@ -20,9 +20,9 @@ describe('profile data', () => {
     });
   });
 
-  it('maps monthly weights and calculates BMI to one decimal place', () => {
-    expect(mapWeightMeasurement({ month_start: '2026-09-01', weight_kg: '82.4' })).toEqual({
-      month: '2026-09-01',
+  it('maps dated weights and calculates BMI to one decimal place', () => {
+    expect(mapWeightMeasurement({ measured_on: '2026-09-17', weight_kg: '82.4' })).toEqual({
+      date: '2026-09-17',
       weightKg: 82.4,
     });
     expect(calculateBmi(82.4, 182.5)).toBe(24.7);
