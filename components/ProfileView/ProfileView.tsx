@@ -145,6 +145,7 @@ export const ProfileView = ({
         saveAccountSettings,
         {}
     );
+    const [passwordOpen, setPasswordOpen] = useState(false);
 
     const currentWeight = measurements.at(-1)?.weightKg ?? null;
     const currentDateMeasurement = measurements.find((item) => item.date === currentDate);
@@ -490,6 +491,7 @@ export const ProfileView = ({
                     <div className={styles.avatarActions}>
                         <button
                             type="submit"
+                            className={styles.saveButton}
                             disabled={
                                 avatarPending ||
                                 (selectedAvatar === 'upload' && !avatarPreview && !uploadedAvatar)
@@ -534,7 +536,11 @@ export const ProfileView = ({
                         })}
                     </div>
                 </fieldset>
-                <button type="submit" disabled={accentPending || selectedAccent === member.accent}>
+                <button
+                    type="submit"
+                    className={styles.saveButton}
+                    disabled={accentPending || selectedAccent === member.accent}
+                >
                     {accentPending ? 'Saving…' : 'Save colour'}
                 </button>
                 {(accentState.error || accentState.message) && (
@@ -706,7 +712,7 @@ export const ProfileView = ({
                             <span>kg</span>
                         </span>
                     </label>
-                    <button type="submit" disabled={weightPending}>
+                    <button type="submit" className={styles.saveButton} disabled={weightPending}>
                         {weightPending ? 'Saving…' : 'Save weight'}
                     </button>
                     {(weightState.error || weightState.message) && (
@@ -866,7 +872,11 @@ export const ProfileView = ({
                         </div>
                     </fieldset>
                     <div className={styles.formActions}>
-                        <button type="submit" disabled={profilePending || targetSplitOff}>
+                        <button
+                            type="submit"
+                            className={styles.saveButton}
+                            disabled={profilePending || targetSplitOff}
+                        >
                             {profilePending ? 'Saving…' : 'Save profile'}
                         </button>
                         {(profileState.error || profileState.message) && (
@@ -896,26 +906,40 @@ export const ProfileView = ({
                                 required
                             />
                         </label>
-                        <label>
-                            <span>Current password</span>
-                            <input
-                                type="password"
-                                name="currentPassword"
-                                autoComplete="current-password"
-                            />
-                        </label>
-                        <label>
-                            <span>New password</span>
-                            <input
-                                type="password"
-                                name="newPassword"
-                                minLength={8}
-                                maxLength={128}
-                                autoComplete="new-password"
-                            />
-                        </label>
+                        <button
+                            type="button"
+                            className={styles.passwordToggle}
+                            aria-expanded={passwordOpen}
+                            onClick={() => setPasswordOpen((open) => !open)}
+                        >
+                            {passwordOpen ? 'Cancel password change' : 'Change password…'}
+                        </button>
+                        {passwordOpen && (
+                            <div className={styles.passwordFields}>
+                                <label>
+                                    <span>Current password</span>
+                                    <input
+                                        type="password"
+                                        name="currentPassword"
+                                        autoComplete="current-password"
+                                        required
+                                    />
+                                </label>
+                                <label>
+                                    <span>New password</span>
+                                    <input
+                                        type="password"
+                                        name="newPassword"
+                                        minLength={8}
+                                        maxLength={128}
+                                        autoComplete="new-password"
+                                        required
+                                    />
+                                </label>
+                            </div>
+                        )}
                         <div className={styles.accountSave}>
-                            <button type="submit" disabled={accountPending}>
+                            <button type="submit" className={styles.saveButton} disabled={accountPending}>
                                 {accountPending ? 'Saving…' : 'Save account'}
                             </button>
                             {(accountState.error || accountState.message) && (

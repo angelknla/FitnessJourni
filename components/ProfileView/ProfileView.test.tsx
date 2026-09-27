@@ -218,7 +218,8 @@ describe('ProfileView', () => {
             });
     });
 
-    it('shows immutable username and editable account fields', () => {
+    it('shows immutable username and gates password fields behind a control', async () => {
+        const user = userEvent.setup();
         render(
             <ProfileView
                 members={[member]}
@@ -233,6 +234,13 @@ describe('ProfileView', () => {
         expect(screen.getByLabelText('Username')).toBeDisabled();
         expect(screen.getByLabelText('Username')).toHaveValue('dillon');
         expect(screen.getByLabelText('Email')).toHaveValue('dillon@example.com');
+        expect(screen.queryByLabelText('Current password')).not.toBeInTheDocument();
+        expect(screen.queryByLabelText('New password')).not.toBeInTheDocument();
+
+        await user.click(screen.getByRole('button', { name: 'Change password…' }));
+
+        expect(screen.getByLabelText('Current password')).toBeRequired();
+        expect(screen.getByLabelText('New password')).toBeRequired();
         expect(screen.queryByRole('button', { name: 'Who are you?' })).not.toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Log out' })).toBeInTheDocument();
     });

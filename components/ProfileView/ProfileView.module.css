@@ -209,8 +209,6 @@
 }
 
 .avatarActions button {
-  padding: 0.45rem 1.05rem;
-  font-size: 0.88rem;
   color: #fff;
   background: var(--c-accent);
   border-color: transparent;
@@ -258,11 +256,6 @@
   margin: 0 0 0.5rem;
   font-size: 0.78rem;
   color: var(--c-ink-soft);
-}
-
-.accentPicker > button {
-  padding: 0.4rem 0.75rem;
-  font-size: 0.8rem;
 }
 
 .accentPicker > p {
@@ -641,6 +634,13 @@
   gap: 0.75rem;
 }
 
+.saveButton {
+  width: 7.25rem;
+  min-height: 2.3rem;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.84rem;
+}
+
 .success,
 .error,
 .empty,
@@ -668,10 +668,9 @@
 }
 
 .accountActions {
-  max-width: 100%;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  width: min(100%, 34rem);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.4rem;
   padding: 0.3rem;
   background: var(--c-surface-soft);
@@ -703,6 +702,31 @@
   opacity: 0.75;
 }
 
+.passwordToggle {
+  grid-column: 1 / -1;
+  width: fit-content;
+  padding: 0;
+  font-size: 0.8rem;
+  color: var(--c-accent);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.passwordToggle:hover:not(:disabled) {
+  color: color-mix(in oklab, var(--c-accent) 72%, #fff);
+  background: transparent;
+  text-decoration: underline;
+}
+
+.passwordFields {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
 .accountSave {
   grid-column: 1 / -1;
   display: flex;
@@ -713,8 +737,10 @@
 .switchUser,
 .logout,
 .removeMember {
-  padding: 0.4rem 0.7rem;
-  font-size: 0.8rem;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.65rem 0.8rem;
+  font-size: 0.86rem;
   white-space: nowrap;
   border: 0;
   border-radius: var(--r-sm);
@@ -768,7 +794,8 @@
 
   .inlineForm,
   .detailFields,
-  .accountForm {
+  .accountForm,
+  .passwordFields {
     grid-template-columns: 1fr;
   }
 
