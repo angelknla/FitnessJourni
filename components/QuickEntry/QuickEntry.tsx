@@ -50,7 +50,7 @@ export const QuickEntry = ({ member, log, date }: QuickEntryProps) => {
         aria-controls={formId}
         onClick={() => setOpen((current) => !current)}
       >
-        <span>Log {member.name}'s day</span>
+        <span>Log your day</span>
         {open ? <CrossIcon /> : <PlusIcon />}
       </button>
 

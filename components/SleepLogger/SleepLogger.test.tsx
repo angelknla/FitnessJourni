@@ -34,7 +34,7 @@ describe('SleepLogger', () => {
         );
 
         expect(screen.getByText('Sleep not logged today')).toBeInTheDocument();
-        await user.click(screen.getByRole('button', { name: "Log Dillon's sleep" }));
+        await user.click(screen.getByRole('button', { name: 'Log your sleep' }));
 
         const input = screen.getByLabelText('Hours slept');
         const save = screen.getByRole('button', { name: 'Save sleep' });
@@ -51,7 +51,7 @@ describe('SleepLogger', () => {
         );
 
         expect(screen.getByText('7.5 / 8 hours')).toBeInTheDocument();
-        expect(screen.getByText('Only Dillon can change this.')).toBeInTheDocument();
+        expect(screen.queryByText(/Only Dillon can/)).not.toBeInTheDocument();
         expect(screen.queryByRole('button', { name: 'Update sleep' })).not.toBeInTheDocument();
     });
 

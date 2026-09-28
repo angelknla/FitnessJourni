@@ -70,7 +70,7 @@ export const WorkoutLogger = ({
 
   const target = member.targets.workoutsPerWeek;
   const trainedToday = logged.length > 0;
-  const formTitle = trainedToday ? 'Log another session' : `What did ${member.name} train?`;
+  const formTitle = trainedToday ? 'Log another session' : 'What did you train?';
   const formId = `workout-log-${member.id}`;
 
   const toggle = (focus: WorkoutFocus) =>
@@ -106,14 +106,6 @@ export const WorkoutLogger = ({
             <LoggedWorkout workout={workout} canEdit={canEdit} key={workout.id} />
           ))}
         </ul>
-      )}
-
-      {!canEdit && (
-        <p className={styles.readOnly}>
-          {trainedToday
-            ? `Only ${member.name} can change these.`
-            : `Nothing logged. Only ${member.name} can log it.`}
-        </p>
       )}
 
       {canEdit && (

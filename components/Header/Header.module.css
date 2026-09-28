@@ -103,6 +103,11 @@
 }
 
 @media (max-width: 960px) {
+  .container.scrolled {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
   .logoText {
     font-size: 1.2rem;
   }

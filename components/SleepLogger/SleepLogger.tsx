@@ -68,14 +68,6 @@ export const SleepLogger = ({
                 )}
             </div>
 
-            {!canEdit && (
-                <p className={styles.readOnly}>
-                    {hasSleep
-                        ? `Only ${member.name} can change this.`
-                        : `Nothing logged. Only ${member.name} can log it.`}
-                </p>
-            )}
-
             {canEdit && (
                 <div className={styles.disclosure}>
                     <button
@@ -85,7 +77,7 @@ export const SleepLogger = ({
                         aria-controls={formId}
                         onClick={() => setFormOpen((open) => !open)}
                     >
-                        <span>{hasSleep ? 'Update sleep' : `Log ${member.name}'s sleep`}</span>
+                        <span>{hasSleep ? 'Update sleep' : 'Log your sleep'}</span>
                         {formOpen ? <CrossIcon /> : <PlusIcon />}
                     </button>
 

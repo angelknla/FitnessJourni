@@ -69,7 +69,7 @@ const setup = (viewerId: string | null) => render(<Home {...props(viewerId)} />)
 const selectedTab = () =>
   screen.getAllByRole('tab').find((tab) => tab.getAttribute('aria-selected') === 'true');
 
-const quickEntry = () => screen.queryByRole('button', { name: /Log .*'s day/ });
+const quickEntry = () => screen.queryByRole('button', { name: 'Log your day' });
 
 describe('Home', () => {
   it('defaults the date picker to today and prevents future dates', () => {
@@ -226,7 +226,7 @@ describe('Home', () => {
     const user = userEvent.setup();
     setup('m1');
 
-    const toggle = screen.getByRole('button', { name: "Log Dillon's day" });
+    const toggle = screen.getByRole('button', { name: 'Log your day' });
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByRole('spinbutton', { name: 'Steps' })).not.toBeInTheDocument();
 
@@ -239,7 +239,7 @@ describe('Home', () => {
   it('only enables Save while daily inputs differ from their loaded values', async () => {
     const user = userEvent.setup();
     setup('m1');
-    await user.click(screen.getByRole('button', { name: "Log Dillon's day" }));
+    await user.click(screen.getByRole('button', { name: 'Log your day' }));
 
     const steps = screen.getByRole('spinbutton', { name: 'Steps' });
     const save = screen.getByRole('button', { name: 'Save' });
@@ -257,7 +257,7 @@ describe('Home', () => {
   it('confirms when daily inputs are saved', async () => {
     const user = userEvent.setup();
     setup('m1');
-    await user.click(screen.getByRole('button', { name: "Log Dillon's day" }));
+    await user.click(screen.getByRole('button', { name: 'Log your day' }));
 
     const steps = screen.getByRole('spinbutton', { name: 'Steps' });
     await user.clear(steps);

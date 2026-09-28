@@ -85,7 +85,7 @@ describe('WorkoutLogger', () => {
   it('lets several areas be picked for one session', async () => {
     const user = userEvent.setup();
     setup();
-    await openForm(user, /What did Dillon train/);
+    await openForm(user, /What did you train/);
 
     await user.click(screen.getByRole('checkbox', { name: 'Push' }));
     await user.click(screen.getByRole('checkbox', { name: 'Cardio' }));
@@ -98,7 +98,7 @@ describe('WorkoutLogger', () => {
   it('cannot submit until something is picked', async () => {
     const user = userEvent.setup();
     setup();
-    await openForm(user, /What did Dillon train/);
+    await openForm(user, /What did you train/);
 
     const submit = screen.getByRole('button', { name: 'Log workout' });
     expect(submit).toBeDisabled();
