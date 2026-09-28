@@ -56,7 +56,7 @@ const Homepage = async ({ searchParams }: HomepageProps) => {
   // Resolved on the server because both metadata and data fetching are keyed by it.
   // Set TZ in the host environment if the deployed date ever disagrees with yours.
   const { date, dateLabel, today } = resolveHomeDate(requestedDate);
-  const medalDate = resolveHomeDate(requestedMedalDate).date;
+  const medalDate = requestedMedalDate ? resolveHomeDate(requestedMedalDate).date : date;
   const yesterday = fromISODate(today);
   yesterday.setDate(yesterday.getDate() - 1);
   const datePickerLabel =

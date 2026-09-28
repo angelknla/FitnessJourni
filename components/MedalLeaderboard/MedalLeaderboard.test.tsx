@@ -89,6 +89,21 @@ describe('MedalLeaderboard', () => {
         expect(document.querySelectorAll('[data-medal-rank="bronze"]')).toHaveLength(1);
     });
 
+    it('keeps a leader status visible when a period has no medals', () => {
+        render(
+            <MedalLeaderboard
+                members={members}
+                boards={boards}
+                medalDate="2026-09-27"
+                today="2026-09-27"
+            />
+        );
+
+        fireEvent.click(screen.getByRole('tab', { name: 'Month' }));
+
+        expect(screen.getByText('No one is leading this month yet.')).toBeInTheDocument();
+    });
+
     it('shows daily medals on the profile medal shelf', () => {
         render(
             <MemberMedals
@@ -124,7 +139,7 @@ describe('MedalLeaderboard', () => {
         });
     });
 
-    it('shows a selected date while keeping the period labels unchanged', () => {
+    it('highlights a selected date without highlighting a period preset', () => {
         render(
             <MedalLeaderboard
                 members={members}
@@ -143,8 +158,8 @@ describe('MedalLeaderboard', () => {
         );
     });
 
-    it('clears the selected date when choosing a preset period', () => {
-        render(
+    it('changes a preset to today without changing the Home date', () => {
+        const { rerender } = render(
             <MedalLeaderboard
                 members={members}
                 boards={[{ ...boards[0], label: '20 Sept 2026' }, ...boards.slice(1)]}
@@ -153,8 +168,49 @@ describe('MedalLeaderboard', () => {
             />
         );
 
-        fireEvent.click(screen.getByRole('tab', { name: 'Week' }));
+        fireEvent.click(screen.getByRole('tab', { name: 'Today' }));
 
-        expect(push).toHaveBeenCalledWith('/?date=2026-09-25', { scroll: false });
+        expect(push).toHaveBeenCalledWith('/?date=2026-09-25&medalDate=2026-09-27', {
+            scroll: false,
+        });
+
+        rerender(
+            <MedalLeaderboard
+                members={members}
+                boards={boards}
+                medalDate="2026-09-27"
+                today="2026-09-27"
+            />
+        );
+
+        expect(screen.getByRole('tab', { name: 'Today' })).toHaveAttribute('aria-selected', 'true');
+        expect(screen.queryByText('20 Sept')).not.toBeInTheDocument();
+    });
+
+    it('removes the Today highlight when Home changes to a historical date', () => {
+        const { rerender } = render(
+            <MedalLeaderboard
+                members={members}
+                boards={boards}
+                medalDate="2026-09-27"
+                today="2026-09-27"
+            />
+        );
+
+        expect(screen.getByRole('tab', { name: 'Today' })).toHaveAttribute('aria-selected', 'true');
+
+        rerender(
+            <MedalLeaderboard
+                members={members}
+                boards={[{ ...boards[0], label: '25 Sept 2026' }, ...boards.slice(1)]}
+                medalDate="2026-09-25"
+                today="2026-09-27"
+            />
+        );
+
+        expect(screen.getByText('25 Sept')).toBeInTheDocument();
+        expect(screen.getByRole('tab', { name: 'Today' })).toHaveAttribute('aria-selected', 'false');
+        expect(screen.getByRole('tab', { name: 'Week' })).toHaveAttribute('aria-selected', 'false');
+        expect(screen.getByRole('tab', { name: 'Month' })).toHaveAttribute('aria-selected', 'false');
     });
 });

@@ -62,7 +62,7 @@ const PeriodTabs = ({
     today,
 }: {
     boards: MedalBoard[];
-    activePeriod: MedalBoard['period'];
+    activePeriod: MedalBoard['period'] | null;
     onChange: (period: MedalBoard['period']) => void;
     label: string;
     medalDate: string;
@@ -71,16 +71,14 @@ const PeriodTabs = ({
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
-    const hasSelectedDate = medalDate !== today;
 
     const choosePeriod = (period: MedalBoard['period']) => {
         onChange(period);
         if (medalDate === today) return;
 
         const params = new URLSearchParams(searchParams.toString());
-        params.delete('medalDate');
-        const query = params.toString();
-        router.push(query ? `${pathname}?${query}` : pathname, { scroll: false });
+        params.set('medalDate', today);
+        router.push(`${pathname}?${params.toString()}`, { scroll: false });
     };
 
     return (
@@ -89,9 +87,9 @@ const PeriodTabs = ({
                 <button
                     type="button"
                     role="tab"
-                    aria-selected={!hasSelectedDate && board.period === activePeriod}
+                    aria-selected={board.period === activePeriod}
                     className={styles.tab}
-                    data-active={!hasSelectedDate && board.period === activePeriod}
+                    data-active={board.period === activePeriod}
                     key={board.period}
                     onClick={() => choosePeriod(board.period)}
                 >
@@ -102,13 +100,22 @@ const PeriodTabs = ({
     );
 };
 
-const MedalDatePicker = ({ medalDate, today }: { medalDate: string; today: string }) => {
+const MedalDatePicker = ({
+    medalDate,
+    today,
+    onChange,
+}: {
+    medalDate: string;
+    today: string;
+    onChange: () => void;
+}) => {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const selectedDate = medalDate === today ? null : medalDate;
 
     const chooseDate = (date: string) => {
+        onChange();
         const params = new URLSearchParams(searchParams.toString());
         if (date === today) params.delete('medalDate');
         else params.set('medalDate', date);
@@ -137,8 +144,12 @@ const MedalDatePicker = ({ medalDate, today }: { medalDate: string; today: strin
 };
 
 export const MedalLeaderboard = ({ members, boards, medalDate, today }: MedalLeaderboardProps) => {
-    const [activePeriod, setActivePeriod] = useState<MedalBoard['period']>('day');
-    const board = boards.find((item) => item.period === activePeriod) ?? boards[0];
+    const [activePeriod, setActivePeriod] = useState<MedalBoard['period'] | null>(
+        medalDate === today ? 'day' : null
+    );
+    const selectedPeriod = medalDate === today ? (activePeriod ?? 'day') : 'day';
+    const visibleActivePeriod = medalDate === today ? activePeriod : null;
+    const board = boards.find((item) => item.period === selectedPeriod) ?? boards[0];
 
     if (!board) {
         return null;
@@ -156,11 +167,12 @@ export const MedalLeaderboard = ({ members, boards, medalDate, today }: MedalLea
         )
         : [];
     const leaderNames = leaders.map((member) => member.name).join(' & ');
+    const historical = medalDate !== today;
     const periodPhrase = board.period === 'day'
-        ? 'today'
+        ? historical ? 'on this day' : 'today'
         : board.period === 'week'
-            ? 'this week'
-            : 'this month';
+            ? historical ? 'that week' : 'this week'
+            : historical ? 'that month' : 'this month';
 
     return (
         <section className={styles.board} aria-labelledby="medal-leaderboard-heading">
@@ -170,20 +182,28 @@ export const MedalLeaderboard = ({ members, boards, medalDate, today }: MedalLea
                 </div>
                 <PeriodTabs
                     boards={boards}
-                    activePeriod={board.period}
+                    activePeriod={visibleActivePeriod}
                     onChange={setActivePeriod}
                     label="Leaderboard period"
                     medalDate={medalDate}
                     today={today}
                 />
-                <MedalDatePicker medalDate={medalDate} today={today} />
+                <MedalDatePicker
+                    medalDate={medalDate}
+                    today={today}
+                    onChange={() => setActivePeriod(null)}
+                />
             </header>
-            {leaders.length > 0 && (
-                <p className={styles.leaderNote}>
+            <p className={styles.leaderNote}>
+                {leaders.length > 0 ? (
+                    <>
                     <strong>{leaderNames}</strong> {leaders.length > 1 ? 'are' : 'is'} leading{' '}
                     {periodPhrase} — you&apos;re {leaders.length > 1 ? 'winners' : 'a winner'}, baby!
-                </p>
-            )}
+                    </>
+                ) : (
+                    <>No one is leading {periodPhrase} yet.</>
+                )}
+            </p>
             <section className={styles.period} role="tabpanel" aria-label={board.label}>
                 <h3>{board.label}</h3>
                 <ol className={styles.ranking}>
@@ -242,8 +262,12 @@ export const MedalLeaderboard = ({ members, boards, medalDate, today }: MedalLea
 };
 
 export const MemberMedals = ({ memberId, boards, medalDate, today }: MemberMedalsProps) => {
-    const [activePeriod, setActivePeriod] = useState<MedalBoard['period']>('day');
-    const board = boards.find((item) => item.period === activePeriod) ?? boards[0];
+    const [activePeriod, setActivePeriod] = useState<MedalBoard['period'] | null>(
+        medalDate === today ? 'day' : null
+    );
+    const selectedPeriod = medalDate === today ? (activePeriod ?? 'day') : 'day';
+    const visibleActivePeriod = medalDate === today ? activePeriod : null;
+    const board = boards.find((item) => item.period === selectedPeriod) ?? boards[0];
 
     if (!board) {
         return null;
@@ -260,13 +284,17 @@ export const MemberMedals = ({ memberId, boards, medalDate, today }: MemberMedal
                 </div>
                 <PeriodTabs
                     boards={boards}
-                    activePeriod={board.period}
+                    activePeriod={visibleActivePeriod}
                     onChange={setActivePeriod}
                     label="Medal period"
                     medalDate={medalDate}
                     today={today}
                 />
-                <MedalDatePicker medalDate={medalDate} today={today} />
+                <MedalDatePicker
+                    medalDate={medalDate}
+                    today={today}
+                    onChange={() => setActivePeriod(null)}
+                />
             </header>
             <section className={styles.period} role="tabpanel" aria-label={board.label}>
                 <h3>{board.label}</h3>
