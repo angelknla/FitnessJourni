@@ -34,6 +34,8 @@ const member: Member = {
     sortOrder: 0,
     targets,
 };
+const angel: Member = { ...member, id: 'm2', name: 'Angel', accent: 'orange' };
+const bradley: Member = { ...member, id: 'm3', name: 'Bradley', accent: 'green' };
 
 describe('MessageBoard', () => {
     it('shows owner options and opens the inline message editor', async () => {
@@ -291,6 +293,79 @@ describe('MessageBoard', () => {
         }
         fireEvent.pointerDown(document.body);
         expect(screen.queryByRole('button', { name: 'Heart reaction' })).not.toBeInTheDocument();
+    });
+
+    it('shows who added each reaction on hover', async () => {
+        const user = userEvent.setup();
+        render(
+            <MessageBoard
+                members={[member, angel, bradley]}
+                viewerId="m1"
+                messages={[
+                    {
+                        id: 'post-1',
+                        memberId: 'm1',
+                        content: 'Reaction details.',
+                        createdAt: '2026-09-25T08:30:00.000Z',
+                        reactions: [
+                            { memberId: 'm1', type: 'heart' },
+                            { memberId: 'm2', type: 'heart' },
+                            { memberId: 'm3', type: 'smile' },
+                        ],
+                    },
+                ]}
+            />
+        );
+
+        const reactionTrigger = screen.getByRole('button', {
+            name: 'React to message. Heart, 2 reactions. Smile, 1 reaction',
+        });
+        await user.hover(reactionTrigger);
+
+        const details = screen.getByRole('tooltip');
+        expect(details).toHaveTextContent('Dillon, Angel');
+        expect(details).toHaveTextContent('Bradley');
+
+        await user.unhover(reactionTrigger);
+        expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+    });
+
+    it('shows reaction authors after holding the reaction pill on touch', () => {
+        vi.useFakeTimers();
+        render(
+            <MessageBoard
+                members={[member, angel]}
+                viewerId="m1"
+                messages={[
+                    {
+                        id: 'post-1',
+                        memberId: 'm1',
+                        content: 'Hold reaction details.',
+                        createdAt: '2026-09-25T08:30:00.000Z',
+                        reactions: [
+                            { memberId: 'm1', type: 'heart' },
+                            { memberId: 'm2', type: 'heart' },
+                        ],
+                    },
+                ]}
+            />
+        );
+
+        const reactionTrigger = screen.getByRole('button', {
+            name: 'React to message. Heart, 2 reactions',
+        });
+        const pointerDown = new Event('pointerdown', { bubbles: true });
+        Object.defineProperties(pointerDown, {
+            pointerType: { value: 'touch' },
+            clientX: { value: 20 },
+            clientY: { value: 20 },
+        });
+        fireEvent(reactionTrigger, pointerDown);
+        act(() => vi.advanceTimersByTime(500));
+
+        expect(screen.getByRole('tooltip')).toHaveTextContent('Dillon, Angel');
+        expect(screen.queryByRole('group', { name: 'Choose reaction' })).not.toBeInTheDocument();
+        vi.useRealTimers();
     });
 
     it('opens the reaction picker after holding a message on touch', () => {

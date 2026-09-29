@@ -91,6 +91,7 @@ const MessageBubble = ({
     message,
     author,
     replyAuthor,
+    memberById,
     own,
     viewerId,
     onReply,
@@ -98,6 +99,7 @@ const MessageBubble = ({
     message: MessagePost;
     author?: Member;
     replyAuthor?: Member;
+    memberById: Map<string, Member>;
     own: boolean;
     viewerId: string | null;
     onReply: (message: MessageReply) => void;
@@ -108,12 +110,17 @@ const MessageBubble = ({
     const [deleteState, deleteAction, isDeleting] = useActionState(deleteMessage, initial);
     const [reactionState, reactionAction, isReacting] = useActionState(reactToMessage, initial);
     const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
+    const [reactionDetailsOpen, setReactionDetailsOpen] = useState(false);
     const [canModify, setCanModify] = useState(() => canModifyMessage(message.createdAt));
     const bubbleRef = useRef<HTMLElement>(null);
     const optionsRef = useRef<HTMLSpanElement>(null);
     const reactionFormRef = useRef<HTMLFormElement>(null);
+    const reactionsRef = useRef<HTMLDivElement>(null);
     const reactionInputRef = useRef<HTMLInputElement>(null);
     const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const reactionHoldTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const reactionHoldTriggeredRef = useRef(false);
+    const reactionTouchStartRef = useRef({ x: 0, y: 0 });
     const longPressTriggeredRef = useRef(false);
     const lastTapRef = useRef(0);
     const touchStartRef = useRef({ x: 0, y: 0 });
@@ -126,17 +133,48 @@ const MessageBubble = ({
     const reactionCounts = reactionOptions
         .map((option) => ({
             ...option,
-            count: message.reactions.filter((reaction) => reaction.type === option.type).length,
+            reactors: message.reactions
+                .filter((reaction) => reaction.type === option.type)
+                .map((reaction) => memberById.get(reaction.memberId)?.name ?? 'Former member'),
         }))
-        .filter((option) => option.count > 0);
+        .filter((option) => option.reactors.length > 0);
     const reactionSummary = reactionCounts
-        .map((reaction) => `${reaction.label}, ${reaction.count} ${reaction.count === 1 ? 'reaction' : 'reactions'}`)
+        .map((reaction) => `${reaction.label}, ${reaction.reactors.length} ${reaction.reactors.length === 1 ? 'reaction' : 'reactions'}`)
         .join('. ');
 
     const clearLongPress = () => {
         if (longPressTimerRef.current) {
             clearTimeout(longPressTimerRef.current);
             longPressTimerRef.current = null;
+        }
+    };
+
+    const clearReactionHold = () => {
+        if (reactionHoldTimerRef.current) {
+            clearTimeout(reactionHoldTimerRef.current);
+            reactionHoldTimerRef.current = null;
+        }
+    };
+
+    const handleReactionPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
+        if (event.pointerType !== 'touch' || reactionCounts.length === 0) return;
+        clearReactionHold();
+        reactionHoldTriggeredRef.current = false;
+        reactionTouchStartRef.current = { x: event.clientX, y: event.clientY };
+        reactionHoldTimerRef.current = setTimeout(() => {
+            reactionHoldTriggeredRef.current = true;
+            setReactionPickerOpen(false);
+            setReactionDetailsOpen(true);
+        }, 500);
+    };
+
+    const handleReactionPointerMove = (event: ReactPointerEvent<HTMLElement>) => {
+        if (event.pointerType !== 'touch') return;
+        if (
+            Math.abs(event.clientX - reactionTouchStartRef.current.x) > 10 ||
+            Math.abs(event.clientY - reactionTouchStartRef.current.y) > 10
+        ) {
+            clearReactionHold();
         }
     };
 
@@ -252,7 +290,7 @@ const MessageBubble = ({
     }, [message.createdAt]);
 
     useEffect(() => {
-        if (!optionsOpen && !reactionPickerOpen) return;
+        if (!optionsOpen && !reactionPickerOpen && !reactionDetailsOpen) return;
 
         const handleOutsidePointer = (event: PointerEvent) => {
             const target = event.target as Node;
@@ -260,15 +298,19 @@ const MessageBubble = ({
             if (reactionPickerOpen && !reactionFormRef.current?.contains(target)) {
                 setReactionPickerOpen(false);
             }
+            if (reactionDetailsOpen && !reactionsRef.current?.contains(target)) {
+                setReactionDetailsOpen(false);
+            }
         };
 
         document.addEventListener('pointerdown', handleOutsidePointer);
         return () => document.removeEventListener('pointerdown', handleOutsidePointer);
-    }, [optionsOpen, reactionPickerOpen]);
+    }, [optionsOpen, reactionDetailsOpen, reactionPickerOpen]);
 
     useEffect(
         () => () => {
             if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+            if (reactionHoldTimerRef.current) clearTimeout(reactionHoldTimerRef.current);
         },
         []
     );
@@ -414,7 +456,7 @@ const MessageBubble = ({
                 <p>{message.content}</p>
             )}
             {(viewerId || reactionCounts.length > 0) && (
-                <div className={styles.reactions}>
+                <div ref={reactionsRef} className={styles.reactions}>
                     {viewerId ? (
                         <form ref={reactionFormRef} action={reactionAction} className={styles.reactionControl}>
                             <input type="hidden" name="messageId" value={message.id} />
@@ -425,13 +467,26 @@ const MessageBubble = ({
                                 aria-label={reactionSummary ? `React to message. ${reactionSummary}` : 'React to message'}
                                 aria-expanded={reactionPickerOpen}
                                 disabled={isReacting}
-                                onClick={() => setReactionPickerOpen((open) => !open)}
+                                onMouseEnter={() => reactionCounts.length > 0 && setReactionDetailsOpen(true)}
+                                onMouseLeave={() => setReactionDetailsOpen(false)}
+                                onPointerDown={handleReactionPointerDown}
+                                onPointerMove={handleReactionPointerMove}
+                                onPointerUp={clearReactionHold}
+                                onPointerCancel={clearReactionHold}
+                                onClick={() => {
+                                    if (reactionHoldTriggeredRef.current) {
+                                        reactionHoldTriggeredRef.current = false;
+                                        return;
+                                    }
+                                    setReactionDetailsOpen(false);
+                                    setReactionPickerOpen((open) => !open);
+                                }}
                             >
                                 {reactionCounts.length > 0 ? (
                                     reactionCounts.map((reaction) => (
                                         <span className={styles.reactionBadge} key={reaction.type}>
                                             <span aria-hidden="true">{reaction.emoji}</span>
-                                            <span>{reaction.count}</span>
+                                                <span>{reaction.reactors.length}</span>
                                         </span>
                                     ))
                                 ) : (
@@ -454,15 +509,47 @@ const MessageBubble = ({
                                     ))}
                                 </fieldset>
                             )}
+                            {reactionDetailsOpen && reactionCounts.length > 0 && (
+                                <span className={styles.reactionDetails} role="tooltip">
+                                    {reactionCounts.map((reaction) => (
+                                        <span className={styles.reactionDetailRow} key={reaction.type}>
+                                            <span aria-hidden="true">{reaction.emoji}</span>
+                                            <span>{reaction.reactors.join(', ')}</span>
+                                        </span>
+                                    ))}
+                                </span>
+                            )}
                         </form>
                     ) : (
-                        <span className={styles.reactionToggle} role="img" aria-label={reactionSummary}>
-                            {reactionCounts.map((reaction) => (
-                                <span className={styles.reactionBadge} key={reaction.type}>
-                                    <span aria-hidden="true">{reaction.emoji}</span>
-                                    <span>{reaction.count}</span>
+                        <span className={styles.reactionControl}>
+                            <span
+                                className={styles.reactionToggle}
+                                role="img"
+                                aria-label={reactionSummary}
+                                onMouseEnter={() => setReactionDetailsOpen(true)}
+                                onMouseLeave={() => setReactionDetailsOpen(false)}
+                                onPointerDown={handleReactionPointerDown}
+                                onPointerMove={handleReactionPointerMove}
+                                onPointerUp={clearReactionHold}
+                                onPointerCancel={clearReactionHold}
+                            >
+                                {reactionCounts.map((reaction) => (
+                                    <span className={styles.reactionBadge} key={reaction.type}>
+                                        <span aria-hidden="true">{reaction.emoji}</span>
+                                        <span>{reaction.reactors.length}</span>
+                                    </span>
+                                ))}
+                            </span>
+                            {reactionDetailsOpen && (
+                                <span className={styles.reactionDetails} role="tooltip">
+                                    {reactionCounts.map((reaction) => (
+                                        <span className={styles.reactionDetailRow} key={reaction.type}>
+                                            <span aria-hidden="true">{reaction.emoji}</span>
+                                            <span>{reaction.reactors.join(', ')}</span>
+                                        </span>
+                                    ))}
                                 </span>
-                            ))}
+                            )}
                         </span>
                     )}
                 </div>
@@ -680,6 +767,7 @@ export const MessageBoard = ({ members, messages, viewerId }: MessageBoardProps)
                                                 message={message}
                                                 author={author}
                                                 replyAuthor={message.replyTo ? memberById.get(message.replyTo.memberId) : undefined}
+                                                memberById={memberById}
                                                 own={own}
                                                 viewerId={viewerId}
                                                 onReply={(selected) => {
