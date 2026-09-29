@@ -13,8 +13,8 @@ export interface DataScope {
    */
   groupId: string | null;
   /**
-   * The signed-in member. They always see their own records, including anything
-   * logged before they joined this group, which nobody else in it can see.
+   * The signed-in member. They always see their own records, whichever group they
+   * are looking at.
    */
   memberId: string | null;
 }

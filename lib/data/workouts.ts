@@ -1,4 +1,5 @@
 import { startOfMonth, startOfWeek } from '@utils/date';
+import { getGroupMemberIds } from '@/lib/data/groups';
 import { type DataScope, isEmptyScope } from '@/lib/data/scope';
 import { getSupabase } from '@/lib/supabase/server';
 import type { Workout, WorkoutFocus, WorkoutTally } from '@/types/fitness';
@@ -23,14 +24,17 @@ export const mapWorkout = (row: WorkoutRow): Workout => ({
  * Everything visible from `fromDate` onwards. One pass covers today, the week and
  * the month; the counts are derived in JS rather than three round trips.
  *
- * Visible means shared with the active group or belonging to the viewer — see the
- * note in lib/data/logs.ts for why that is two reads merged here rather than one.
+ * Visible means logged by a current member of the group, or associated with it when
+ * it was created, or the viewer's own — see the note in lib/data/logs.ts for the
+ * reasoning and for why it is three reads merged here rather than one query.
  */
 export const getWorkoutsSince = async (fromDate: string, scope: DataScope): Promise<Workout[]> => {
   const supabase = getSupabase();
   if (!supabase || isEmptyScope(scope)) {
     return [];
   }
+
+  const memberIds = scope.groupId ? await getGroupMemberIds(scope.groupId) : [];
 
   const results = await Promise.all([
     ...(scope.groupId
@@ -39,6 +43,15 @@ export const getWorkoutsSince = async (fromDate: string, scope: DataScope): Prom
             .from('workouts')
             .select('*, group_workouts!inner(group_id)')
             .eq('group_workouts.group_id', scope.groupId)
+            .gte('workout_date', fromDate),
+        ]
+      : []),
+    ...(memberIds.length > 0
+      ? [
+          supabase
+            .from('workouts')
+            .select('*')
+            .in('member_id', memberIds)
             .gte('workout_date', fromDate),
         ]
       : []),

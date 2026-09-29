@@ -4,16 +4,23 @@ import { createSupabaseMock, type SupabaseMock } from '@/lib/testing/supabaseMoc
 /**
  * What a group-scoped read is allowed to ask the database for.
  *
- * Cross-group isolation is decided by the filters on these queries, so this
- * asserts the filters themselves: a group read is always narrowed by group id, the
- * viewer's own half is narrowed to them, and Personal mode never asks for anything
- * shared at all.
+ * Cross-group isolation is decided by the filters on these queries, so this asserts
+ * the filters themselves: a group read covers its current members and the records
+ * associated with it, the viewer's own half is narrowed to them, and Personal mode
+ * never asks for anything shared at all.
  */
 
 let supabase: SupabaseMock;
 
 vi.mock('@/lib/supabase/server', () => ({
   getSupabase: () => supabase.client,
+}));
+
+/** The group's current members, which a group read now also covers. */
+let groupMemberIds: string[] = [];
+
+vi.mock('@/lib/data/groups', () => ({
+  getGroupMemberIds: async () => groupMemberIds,
 }));
 
 import { getLogsForDate, getLogsSince } from './logs';
@@ -27,18 +34,26 @@ const opsOf = (table: string) => supabase.callsTo(table).map((call) => call.ops)
 
 beforeEach(() => {
   supabase = createSupabaseMock();
+  groupMemberIds = ['m1', 'm2'];
 });
 
 describe('shared records in a group', () => {
-  it('narrows the group read to that group, and the personal read to the viewer', async () => {
+  it('reads the association, the current members, and the viewer', async () => {
     await getLogsSince('2026-09-01', { groupId: 'g1', memberId: 'm1' });
 
-    const [shared, own] = opsOf('daily_logs');
-    expect(shared).toEqual(
+    const [associated, members, own] = opsOf('daily_logs');
+    expect(associated).toEqual(
       expect.arrayContaining([
         ['select', '*, group_daily_logs!inner(group_id)'],
         ['eq', 'group_daily_logs.group_id', 'g1'],
         ['gte', 'log_date', '2026-09-01'],
+      ])
+    );
+    // Everything logged by whoever is in the group now, whenever they logged it.
+    expect(members).toEqual(
+      expect.arrayContaining([
+        ['select', '*'],
+        ['in', 'member_id', ['m1', 'm2']],
       ])
     );
     expect(own).toEqual(
@@ -47,6 +62,30 @@ describe('shared records in a group', () => {
         ['eq', 'member_id', 'm1'],
       ])
     );
+  });
+
+  it('shows a member their group-mates’ history, not only what came after joining', async () => {
+    // The whole point of the app: your group sees your numbers. A member who
+    // joined today still has their earlier days read for the group.
+    groupMemberIds = ['m1', 'newcomer'];
+
+    await getLogsSince('2026-01-01', { groupId: 'g1', memberId: 'm1' });
+
+    const byMembers = opsOf('daily_logs').find((ops) => ops.some(([name]) => name === 'in'));
+    expect(byMembers).toEqual(expect.arrayContaining([['in', 'member_id', ['m1', 'newcomer']]]));
+  });
+
+  it('still reads the association, so a former member’s days survive their leaving', async () => {
+    groupMemberIds = [];
+
+    await getLogsSince('2026-01-01', { groupId: 'g1', memberId: 'm1' });
+
+    const calls = opsOf('daily_logs');
+    expect(
+      calls.some((ops) => ops.some(([, column]) => column === 'group_daily_logs.group_id'))
+    ).toBe(true);
+    // Nobody is in the group, so there is no membership query to make.
+    expect(calls.some((ops) => ops.some(([name]) => name === 'in'))).toBe(false);
   });
 
   it('never reads a group other than the active one', async () => {
@@ -70,7 +109,12 @@ describe('shared records in a group', () => {
     expect(opsOf('workouts')[0]).toEqual(
       expect.arrayContaining([['eq', 'group_workouts.group_id', 'g1']])
     );
+    expect(opsOf('workouts')[1]).toEqual(
+      expect.arrayContaining([['in', 'member_id', ['m1', 'm2']]])
+    );
     expect(opsOf('runs')[0]).toEqual(expect.arrayContaining([['eq', 'group_runs.group_id', 'g1']]));
+    // A run belongs to whoever logged it, so membership is matched on created_by.
+    expect(opsOf('runs')[1]).toEqual(expect.arrayContaining([['in', 'created_by', ['m1', 'm2']]]));
   });
 
   it('attributes a run by who logged it, not by who attended', async () => {

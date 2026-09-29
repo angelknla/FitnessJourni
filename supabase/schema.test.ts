@@ -116,10 +116,12 @@ describe('record visibility', () => {
     expect(flat).toContain('run_id uuid not null references public.runs (id) on delete cascade');
   });
 
-  it('records the association rather than deriving it from membership', () => {
-    // The comment matters as much as the table: this is the reason joining does
-    // not expose history and leaving does not retract it.
-    expect(schema).toMatch(/AT THE MOMENT IT WAS\s*--\s*CREATED/);
+  it('documents both halves of the rule, not just the association', () => {
+    // The comment matters as much as the tables: current membership is what makes
+    // a group see your history, and these rows are what keep a former member's
+    // days visible after they leave.
+    expect(schema).toMatch(/belongs to that group right now/);
+    expect(schema).toMatch(/former member's days visible after/);
   });
 });
 

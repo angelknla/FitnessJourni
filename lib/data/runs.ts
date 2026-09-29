@@ -1,4 +1,5 @@
 import { startOfMonth, startOfWeek } from '@utils/date';
+import { getGroupMemberIds } from '@/lib/data/groups';
 import { type DataScope, isEmptyScope } from '@/lib/data/scope';
 import { getSupabase } from '@/lib/supabase/server';
 import type { GroupRun, RunTally } from '@/types/fitness';
@@ -24,10 +25,9 @@ export const mapRun = (row: RunRow): GroupRun => ({
 });
 
 /*
- * A run is visible when it was shared with the active group at the time it was
- * logged, or when the viewer logged it. Attendance does not grant visibility on
- * its own: the run belongs to the groups its author was in, which is what keeps a
- * run out of a group the author has since joined.
+ * A run is visible when its logger is a current member of the group, when it was
+ * associated with the group as it was logged, or when the viewer logged it.
+ * Attendance alone does not grant visibility — a run belongs to whoever logged it.
  */
 const sharedWithGroup = '*, run_attendees(member_id), group_runs!inner(group_id)';
 
@@ -59,6 +59,8 @@ export const getRunsSince = async (fromDate: string, scope: DataScope): Promise<
     return [];
   }
 
+  const memberIds = scope.groupId ? await getGroupMemberIds(scope.groupId) : [];
+
   const results = await Promise.all([
     ...(scope.groupId
       ? [
@@ -66,6 +68,15 @@ export const getRunsSince = async (fromDate: string, scope: DataScope): Promise<
             .from('runs')
             .select(sharedWithGroup)
             .eq('group_runs.group_id', scope.groupId)
+            .gte('run_date', fromDate),
+        ]
+      : []),
+    ...(memberIds.length > 0
+      ? [
+          supabase
+            .from('runs')
+            .select('*, run_attendees(member_id)')
+            .in('created_by', memberIds)
             .gte('run_date', fromDate),
         ]
       : []),
@@ -93,6 +104,8 @@ export const getLatestRuns = async (scope: DataScope, limit = 3): Promise<GroupR
    * Each read takes `limit` and the slice happens after merging: the newest three
    * of the union are not necessarily the newest three of either half.
    */
+  const memberIds = scope.groupId ? await getGroupMemberIds(scope.groupId) : [];
+
   const results = await Promise.all([
     ...(scope.groupId
       ? [
@@ -100,6 +113,17 @@ export const getLatestRuns = async (scope: DataScope, limit = 3): Promise<GroupR
             .from('runs')
             .select(sharedWithGroup)
             .eq('group_runs.group_id', scope.groupId)
+            .order('run_date', { ascending: false })
+            .order('created_at', { ascending: false })
+            .limit(limit),
+        ]
+      : []),
+    ...(memberIds.length > 0
+      ? [
+          supabase
+            .from('runs')
+            .select('*, run_attendees(member_id)')
+            .in('created_by', memberIds)
             .order('run_date', { ascending: false })
             .order('created_at', { ascending: false })
             .limit(limit),

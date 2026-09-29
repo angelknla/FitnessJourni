@@ -1,3 +1,4 @@
+import { getGroupMemberIds } from '@/lib/data/groups';
 import { type DataScope, isEmptyScope } from '@/lib/data/scope';
 import { getSupabase } from '@/lib/supabase/server';
 import type { DailyLog } from '@/types/fitness';
@@ -41,14 +42,19 @@ export const emptyLog = (memberId: string, date: string): DailyLog => ({
 });
 
 /*
- * A log is visible when it was shared with the active group, or when it is the
- * viewer's own.
+ * A log is visible to a group when EITHER of these holds:
  *
- * That is two reads merged in JS rather than one query. PostgREST cannot express
- * "shared with this group OR mine" across an embedded resource, and hiding the
- * rule in a database view would put it somewhere the tests cannot reach. The
- * viewer's own half is what keeps their pre-join days readable to them; no other
- * member of the group has a visibility row for those, so no one else sees them.
+ *   * its author is a member of that group right now — the point of the app is
+ *     that your group sees your numbers, so joining shows them your history too;
+ *   * or it carries an association row from when it was created, which is what
+ *     keeps a former member's days visible after they leave rather than rewriting
+ *     past comparisons the moment somebody goes.
+ *
+ * Plus the viewer's own, always.
+ *
+ * Three reads merged in JS rather than one query: PostgREST cannot express that
+ * OR across an embedded resource, and hiding the rule in a database view would put
+ * it somewhere the tests cannot reach.
  */
 const sharedWithGroup = '*, group_daily_logs!inner(group_id)';
 
@@ -79,6 +85,8 @@ export const getLogsForDate = async (
     return {};
   }
 
+  const memberIds = scope.groupId ? await getGroupMemberIds(scope.groupId) : [];
+
   const results = await Promise.all([
     ...(scope.groupId
       ? [
@@ -88,6 +96,9 @@ export const getLogsForDate = async (
             .eq('group_daily_logs.group_id', scope.groupId)
             .eq('log_date', date),
         ]
+      : []),
+    ...(memberIds.length > 0
+      ? [supabase.from('daily_logs').select('*').in('member_id', memberIds).eq('log_date', date)]
       : []),
     ...(scope.memberId
       ? [
@@ -117,6 +128,8 @@ export const getLogsSince = async (fromDate: string, scope: DataScope): Promise<
     return [];
   }
 
+  const memberIds = scope.groupId ? await getGroupMemberIds(scope.groupId) : [];
+
   const results = await Promise.all([
     ...(scope.groupId
       ? [
@@ -124,6 +137,15 @@ export const getLogsSince = async (fromDate: string, scope: DataScope): Promise<
             .from('daily_logs')
             .select(sharedWithGroup)
             .eq('group_daily_logs.group_id', scope.groupId)
+            .gte('log_date', fromDate),
+        ]
+      : []),
+    ...(memberIds.length > 0
+      ? [
+          supabase
+            .from('daily_logs')
+            .select('*')
+            .in('member_id', memberIds)
             .gte('log_date', fromDate),
         ]
       : []),

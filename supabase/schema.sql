@@ -532,17 +532,22 @@ create index if not exists group_join_requests_group_idx
 -- ----------------------------------------------------------------------------
 -- Record visibility
 --
--- Personal activity is recorded once, not once per group. These association
--- tables record which groups a record was shared with AT THE MOMENT IT WAS
--- CREATED, which is what makes the two hard rules possible at the same time:
+-- Personal activity is recorded once, not once per group. A record is visible to
+-- a group when EITHER of these holds:
 --
---   * joining a group does not expose anything logged before joining, because
---     no row was written for a group that did not yet contain the author;
---   * leaving a group does not retract what was already shared, because the
---     rows survive the membership that produced them.
+--   * its author belongs to that group right now. Sharing your numbers with the
+--     people you train with is the point of the app, so joining a group shows
+--     them your history as well as what you log next;
+--   * or one of these association tables says it was shared with that group when
+--     it was created. That is what keeps a former member's days visible after
+--     they leave, instead of rewriting past comparisons the moment someone goes.
 --
--- Deriving visibility from current membership instead would get both wrong.
--- Activity logged in Personal mode has no rows here at all, and stays private.
+-- Current membership alone would get the second case wrong, and these rows alone
+-- would get the first wrong — hence both. The rows are written on creation and
+-- never on edit, so correcting an old day does not change who it belongs to.
+--
+-- Activity logged in Personal mode has no rows here, and stays private until its
+-- author joins a group.
 -- ----------------------------------------------------------------------------
 create table if not exists public.group_daily_logs (
   group_id     uuid not null references public.groups (id) on delete cascade,

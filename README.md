@@ -86,18 +86,24 @@ Joining always needs two parties. An owner or admin invites by username and the 
 accepts; or someone enters a join code and an owner or admin approves the request. Neither route
 adds anybody on its own.
 
-**How visibility works.** Personal activity is recorded once, not once per group. When a log, workout
-or run is created, a row is written associating it with every group its author belonged to *at that
-moment* (`group_daily_logs`, `group_workouts`, `group_runs`). That single decision is what makes both
-rules hold at once:
+**How visibility works.** Personal activity is recorded once, not once per group. A record is visible
+to a group when **either** of these holds:
 
-- joining a group exposes nothing logged beforehand — no row exists for a group that did not yet
-  contain the author;
-- leaving or being removed retracts nothing already shared — the rows outlive the membership, so the
-  people still there keep seeing the days that person was part of.
+- its author belongs to that group right now. Sharing your numbers with the people you train with is
+  the point of the app, so joining a group shows them your history as well as what you log next;
+- or an association row says it was shared with that group when it was created (`group_daily_logs`,
+  `group_workouts`, `group_runs`). That is what keeps a former member's days visible after they
+  leave, rather than rewriting past comparisons the moment somebody goes.
 
-Deriving visibility from current membership instead would get both of those wrong. Editing a record
-never re-shares it, which is why a day logged in Personal mode stays private even after joining.
+Current membership alone would get the second case wrong, and the association rows alone would get
+the first wrong — hence both. The rows are written on creation and never on edit, so correcting an
+old day does not change which groups it belongs to. Activity logged in Personal mode has no rows and
+stays private until its author joins a group.
+
+**Runs are the exception.** A log or a workout is yours, shared with your group; a run is an *event*.
+The Running page lists only the runs the viewer was actually on, because one they were not on is
+somebody else's outing rather than their record of it. *Runs by person* stays group-wide, so someone
+who has not run yet still sees what everyone else has done.
 
 Chat, sessions and their reactions and RSVPs belong to one group outright, carry its id, and are
 deleted with it. Deleting a group keeps every member's own logs, workouts and runs and removes only
