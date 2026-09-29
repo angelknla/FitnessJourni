@@ -1,6 +1,12 @@
 'use client';
 
-import { ChevronRightIcon, CrossIcon, GroupIcon, SwitchIcon } from '@components/Icons/Icons';
+import {
+  BinIcon,
+  ChevronRightIcon,
+  CrossIcon,
+  GroupIcon,
+  SwitchIcon,
+} from '@components/Icons/Icons';
 import { useActionState, useEffect, useState } from 'react';
 import {
   changeGroupMemberRole,
@@ -277,7 +283,6 @@ export const GroupsPanel = ({
                     <span className={styles.groupName}>{group.name}</span>
                     {current && <span className={styles.currentChip}>Current</span>}
                     <span className={styles.groupMeta}>
-                      {roleLabels[role]} ·{' '}
                       {group.memberCount === 1 ? '1 member' : `${group.memberCount} members`}
                     </span>
                   </button>
@@ -417,18 +422,26 @@ export const GroupsPanel = ({
                                       type="submit"
                                       className={styles.danger}
                                       disabled={removing}
+                                      aria-label={`Confirm removing ${person.name}`}
                                     >
-                                      Confirm remove
+                                      Confirm
                                     </button>
                                   </form>
                                 ) : (
+                                  /*
+                                   * Icon-only: three worded actions do not fit one row
+                                   * on a 360px phone. The name is in the label, which
+                                   * also tells a screen reader which row it belongs to.
+                                   */
                                   <button
                                     type="button"
-                                    className={styles.quiet}
+                                    className={`${styles.quiet} ${styles.iconOnly}`}
                                     onClick={() => setConfirming(removeKey)}
                                     disabled={busy}
+                                    aria-label={`Remove ${person.name}`}
+                                    title={`Remove ${person.name}`}
                                   >
-                                    Remove
+                                    <BinIcon size={14} />
                                   </button>
                                 ))}
                             </div>

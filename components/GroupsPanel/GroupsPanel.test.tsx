@@ -135,13 +135,14 @@ const groupToggle = (name: string) =>
     ) as HTMLElement;
 
 describe('the current group', () => {
-  it('names it, with the viewer’s role and the member count', () => {
+  it('names it with the member count, and nothing that would wrap on a phone', () => {
     renderPanel({ role: 'admin' });
 
     const toggle = groupToggle('Nine Elms');
     expect(toggle).toHaveTextContent('Nine Elms');
-    expect(toggle).toHaveTextContent('Admin');
     expect(toggle).toHaveTextContent('3 members');
+    // The viewer's own role is shown against their name inside, not repeated here.
+    expect(toggle).not.toHaveTextContent('Admin');
     expect(screen.getByText('The originals')).toBeInTheDocument();
   });
 
@@ -204,11 +205,10 @@ describe('the other groups', () => {
     expect(screen.queryByRole('button', { name: 'Switch to Nine Elms' })).not.toBeInTheDocument();
   });
 
-  it('shows its own role and member count on the header', () => {
+  it('shows its own member count on the header', () => {
     renderPanel({ memberships: [membership('owner'), other] });
 
     const toggle = groupToggle('Battersea');
-    expect(toggle).toHaveTextContent('Member');
     expect(toggle).toHaveTextContent('2 members');
     expect(within(toggle).queryByText('Current')).not.toBeInTheDocument();
   });
@@ -327,6 +327,8 @@ describe('what an owner may do', () => {
     expect(screen.getByRole('button', { name: 'Make admin' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Remove admin' })).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'Make owner' })).toHaveLength(2);
+    // The bin is labelled per person rather than a bare "Remove".
+    expect(screen.getAllByRole('button', { name: /^Remove (Dillon|Pani)$/ })).toHaveLength(2);
     expect(screen.getByRole('button', { name: 'New code' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Group settings' })).toBeInTheDocument();
   });
@@ -387,10 +389,9 @@ describe('what an admin may do', () => {
     renderPanel({ role: 'admin', viewerId: 'dillon' });
 
     // Pani is the only removable person: not the owner, and not Dillon himself.
-    const removes = screen.getAllByRole('button', { name: 'Remove' });
+    const removes = screen.getAllByRole('button', { name: /^Remove (Angel|Dillon|Pani)$/ });
     expect(removes).toHaveLength(1);
-    const row = removes[0].closest('li') as HTMLElement;
-    expect(row.textContent).toContain('Pani');
+    expect(removes[0]).toHaveAccessibleName('Remove Pani');
   });
 
   it('can leave', () => {
@@ -406,7 +407,9 @@ describe('what a plain member may do', () => {
 
     expect(screen.getByRole('button', { name: 'Leave Nine Elms' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Group settings' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Remove' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /^Remove (Angel|Dillon|Pani)$/ })
+    ).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Make admin' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'New code' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Delete group' })).not.toBeInTheDocument();
@@ -418,9 +421,11 @@ describe('destructive actions', () => {
     const user = userEvent.setup();
     renderPanel({ role: 'owner', viewerId: 'angel' });
 
-    await user.click(screen.getAllByRole('button', { name: 'Remove' })[0]);
+    // Named after the person, so this cannot accidentally match "Remove admin".
+    await user.click(screen.getByRole('button', { name: 'Remove Pani' }));
 
-    expect(screen.getByRole('button', { name: 'Confirm remove' })).toBeInTheDocument();
+    // Named after the person, so a screen reader is not asked to confirm "Confirm".
+    expect(screen.getByRole('button', { name: /^Confirm removing / })).toBeInTheDocument();
   });
 
   it('confirm before leaving', async () => {

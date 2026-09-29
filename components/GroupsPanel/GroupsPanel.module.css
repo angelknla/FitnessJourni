@@ -216,9 +216,10 @@
 
 .rowText {
   min-width: 0;
+  flex: 1 1 auto;
   display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .rowText strong {
@@ -234,6 +235,9 @@
 }
 
 .rowText small {
+  /* Far right where the row is full width, beside the name where it is not. */
+  flex: 0 0 auto;
+  margin-left: auto;
   font-size: 0.76rem;
   color: var(--c-ink-muted);
 }
@@ -316,6 +320,12 @@
 .quiet svg,
 .danger svg {
   flex: 0 0 auto;
+}
+
+/* A square control with no label: the icon carries it, aria-label names it. */
+.iconOnly {
+  width: 2.1rem;
+  padding-inline: 0;
 }
 
 .primary:focus-visible,
@@ -549,7 +559,44 @@
   }
 
   .rowActions {
+    width: 100%;
+    flex-wrap: nowrap;
     justify-content: flex-start;
+  }
+
+  /* Each worded action takes an equal share; the bin keeps its square. */
+  .rowActions > form {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+  }
+
+  .rowActions > form > button,
+  .rowActions > button {
+    width: 100%;
+  }
+
+  .rowActions > button {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .rowActions > .iconOnly {
+    flex: 0 0 auto;
+    width: 1.95rem;
+  }
+
+  /* Three actions have to share ~300px on a 360px phone. */
+  .primary,
+  .quiet,
+  .danger {
+    padding-inline: 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  .iconOnly {
+    width: 1.95rem;
+    padding-inline: 0;
   }
 
   .form label,
