@@ -373,6 +373,15 @@ export const respondToInvitation = async (
   const response = toText(formData.get('response'));
 
   if (!invitationId || (response !== 'accept' && response !== 'decline')) {
+    /*
+     * Worth a line in the log. A refusal the person sees but the server never
+     * records is the hardest kind to support — this branch in particular means the
+     * form posted without its hidden fields, which is never the person's doing.
+     */
+    console.error(
+      '[respondToInvitation] missing fields:',
+      JSON.stringify({ invitationId, response, member: session.memberId })
+    );
     return fail('Choose whether to accept or decline.');
   }
 
@@ -395,6 +404,10 @@ export const respondToInvitation = async (
       return fail('Could not decline that invitation.');
     }
     if (!data || data.length === 0) {
+      console.error(
+        '[respondToInvitation] decline matched nothing:',
+        JSON.stringify({ invitationId, member: session.memberId })
+      );
       return fail(GONE);
     }
 
@@ -412,6 +425,11 @@ export const respondToInvitation = async (
     return fail('Could not accept that invitation.');
   }
   if (data !== 'ok') {
+    // The code says which guard refused; without it a support question is guesswork.
+    console.error(
+      '[respondToInvitation] accept refused:',
+      JSON.stringify({ code: data, invitationId, member: session.memberId })
+    );
     return fail(explain(String(data)));
   }
 
