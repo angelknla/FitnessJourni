@@ -24,8 +24,8 @@
   border-radius: var(--r-xl);
   box-shadow:
     inset 0 1px 0 color-mix(in oklab, var(--member-accent) 18%, transparent),
-    0 10px 26px rgb(0 0 0 / 24%);
-  transform: perspective(70rem) rotateX(0.35deg) translateZ(0);
+    var(--card-shadow);
+  transform: var(--card-transform);
   transform-origin: top center;
 }
 
@@ -36,7 +36,7 @@
   height: 1px;
   pointer-events: none;
   background: linear-gradient(90deg, transparent, var(--member-accent), transparent);
-  opacity: 0.65;
+  opacity: var(--surface-top-glint-opacity, 0.65);
 }
 
 .cardHead {

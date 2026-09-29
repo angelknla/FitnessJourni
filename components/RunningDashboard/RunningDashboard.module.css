@@ -22,8 +22,8 @@
     var(--c-surface);
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 7%),
-    0 14px 34px rgb(0 0 0 / 28%);
-  transform: perspective(70rem) rotateX(0.35deg) translateZ(0);
+    var(--card-shadow);
+  transform: var(--card-transform);
   transform-origin: top center;
   animation: highlights-arrive 0.6s var(--ease-flow) backwards;
 }
@@ -37,7 +37,7 @@
   height: 1px;
   pointer-events: none;
   background: linear-gradient(90deg, transparent, var(--c-good), transparent);
-  opacity: 0.65;
+  opacity: var(--surface-top-glint-opacity, 0.65);
 }
 
 @keyframes highlights-arrive {
@@ -207,9 +207,9 @@
   border-radius: var(--r-xl);
   box-shadow:
     inset 0 1px 0 color-mix(in oklab, var(--person-accent) 25%, transparent),
-    0 14px 34px rgb(0 0 0 / 28%),
+    var(--card-shadow),
     0 0 22px color-mix(in oklab, var(--person-accent) 4%, transparent);
-  transform: perspective(70rem) rotateX(0.35deg) translateZ(0);
+  transform: var(--card-transform);
   transform-origin: top center;
 }
 
@@ -220,7 +220,7 @@
   height: 1px;
   pointer-events: none;
   background: linear-gradient(90deg, transparent, var(--person-accent), transparent);
-  opacity: 0.65;
+  opacity: var(--surface-top-glint-opacity, 0.65);
 }
 
 .tallyName,
@@ -475,9 +475,9 @@
   border-radius: var(--r-xl);
   box-shadow:
     inset 0 1px 0 color-mix(in oklab, var(--c-good) 21%, transparent),
-    0 14px 34px rgb(0 0 0 / 28%),
+    var(--card-shadow),
     0 0 22px color-mix(in oklab, var(--c-good) 4%, transparent);
-  transform: perspective(70rem) rotateX(0.35deg) translateZ(0);
+  transform: var(--card-transform);
   transform-origin: top center;
 }
 

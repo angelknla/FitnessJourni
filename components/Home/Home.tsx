@@ -340,7 +340,8 @@ export const Home = ({
     const next = tabOrder[(index + offset + tabOrder.length) % tabOrder.length];
     if (next) {
       const direction = deltaX < 0 ? -1 : 1;
-      const width = carouselRef.current?.clientWidth ?? window.innerWidth;
+      const slide = carouselRef.current?.querySelector<HTMLElement>('[data-carousel-slide]');
+      const width = slide?.clientWidth || carouselRef.current?.clientWidth || window.innerWidth;
       pendingMemberId.current = next.id;
       setSwipePhase('exiting');
       setSwipeOffset(direction * (width + 10));
@@ -489,7 +490,7 @@ export const Home = ({
             style={{ '--swipe-offset': `${swipeOffset}px` } as CSSProperties}
             onTransitionEnd={handleSwipeTransitionEnd}
           >
-            <div className={styles.carouselSlide}>
+            <div className={styles.carouselSlide} data-carousel-slide>
               <MemberSummary
                 member={previousMember}
                 log={logs[previousMember.id] ?? emptyLog(previousMember.id, date)}

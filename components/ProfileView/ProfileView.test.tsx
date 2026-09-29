@@ -70,6 +70,32 @@ beforeAll(() => {
 });
 
 describe('ProfileView', () => {
+    it('switches and persists the selected appearance', async () => {
+        const user = userEvent.setup();
+        window.localStorage.clear();
+        delete document.documentElement.dataset.theme;
+
+        render(
+            <ProfileView
+                members={[member]}
+                member={member}
+                profile={profile}
+                measurements={[]}
+                currentDate="2026-09-27"
+            />
+        );
+
+        expect(screen.getByRole('button', { name: 'Light' })).toHaveAttribute('aria-pressed', 'true');
+        await user.click(screen.getByRole('button', { name: 'Dark' }));
+
+        expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
+        expect(window.localStorage.getItem('fitnessjourni-theme')).toBe('dark');
+        expect(screen.getByRole('button', { name: 'Dark' })).toHaveAttribute('aria-pressed', 'true');
+
+        delete document.documentElement.dataset.theme;
+        window.localStorage.clear();
+    });
+
     it('switches weight progress between month and year views', async () => {
         const user = userEvent.setup();
         render(

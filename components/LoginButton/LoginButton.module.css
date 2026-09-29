@@ -43,14 +43,14 @@
   border-radius: var(--r-xl);
   background:
     var(--surface-metal-wash), linear-gradient(145deg, rgb(255 255 255 / 6%), transparent 46%),
-    rgb(20 20 22 / 96%);
+    var(--c-glass-strong);
   color: var(--c-ink);
   width: min(23rem, calc(100vw - 2rem));
   max-height: calc(100dvh - 2rem);
   overflow-y: auto;
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 12%),
-    0 18px 48px rgb(0 0 0 / 42%),
+    var(--dialog-shadow),
     0 0 20px rgb(255 255 255 / 2%);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
@@ -63,12 +63,33 @@
   height: 1px;
   pointer-events: none;
   background: linear-gradient(90deg, transparent, var(--c-ink), transparent);
-  opacity: 0.42;
+  opacity: var(--surface-top-glint-opacity, 0.42);
 }
 
 .dialog::backdrop {
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--dialog-backdrop);
   backdrop-filter: blur(3px);
+}
+
+:global(:root[data-theme="light"]) .trigger,
+:global(:root[data-theme="light"]) .primaryTrigger,
+:global(:root[data-theme="light"]) .submit {
+  background: var(--control-surface);
+  box-shadow: var(--control-shadow);
+}
+
+:global(:root[data-theme="light"]) .trigger:hover:not(:disabled),
+:global(:root[data-theme="light"]) .primaryTrigger:hover:not(:disabled),
+:global(:root[data-theme="light"]) .submit:hover:not(:disabled) {
+  background: var(--control-surface-hover);
+}
+
+:global(:root[data-theme="light"]) .closeButton {
+  background: var(--control-surface);
+  border-color: var(--c-border-strong);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .form {
@@ -91,8 +112,7 @@
   color: var(--c-ink-soft);
   border-color: color-mix(in oklab, #fff 18%, var(--c-border));
   background:
-    linear-gradient(145deg, rgb(255 255 255 / 10%), rgb(255 255 255 / 3%)),
-    rgb(255 255 255 / 2%);
+    linear-gradient(145deg, rgb(255 255 255 / 10%), rgb(255 255 255 / 3%)), rgb(255 255 255 / 2%);
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 12%),
     0 2px 7px rgb(0 0 0 / 12%);
@@ -190,8 +210,7 @@
   color: var(--c-ink-soft);
   border-color: color-mix(in oklab, #fff 18%, var(--c-border));
   background:
-    linear-gradient(145deg, rgb(255 255 255 / 9%), rgb(255 255 255 / 3%)),
-    rgb(255 255 255 / 2%);
+    linear-gradient(145deg, rgb(255 255 255 / 9%), rgb(255 255 255 / 3%)), rgb(255 255 255 / 2%);
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 11%),
     0 2px 7px rgb(0 0 0 / 10%);
@@ -203,8 +222,7 @@
   color: var(--c-ink);
   border-color: color-mix(in oklab, #fff 30%, var(--c-border));
   background:
-    linear-gradient(145deg, rgb(255 255 255 / 13%), rgb(255 255 255 / 5%)),
-    rgb(255 255 255 / 3%);
+    linear-gradient(145deg, rgb(255 255 255 / 13%), rgb(255 255 255 / 5%)), rgb(255 255 255 / 3%);
 }
 
 .alternatives {
@@ -226,20 +244,18 @@
   font-weight: 600;
   line-height: 1.4;
   color: var(--c-ink);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 12%),
-    0 5px 13px rgb(0 0 0 / 19%);
+  box-shadow: var(--control-shadow);
 }
 
 .existingAccount {
   color: var(--c-ink);
   border-color: color-mix(in oklab, var(--c-ink) 20%, var(--c-border));
-  background: linear-gradient(180deg, rgb(255 255 255 / 6%), rgb(255 255 255 / 2%));
+  background: var(--control-surface);
 }
 
 .existingAccount:hover:not(:disabled) {
   border-color: color-mix(in oklab, var(--c-ink) 32%, var(--c-border-strong));
-  background: linear-gradient(180deg, rgb(255 255 255 / 10%), rgb(255 255 255 / 4%));
+  background: var(--control-surface-hover);
 }
 
 .newAccount {

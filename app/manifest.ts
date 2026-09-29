@@ -6,8 +6,8 @@ const manifest = (): MetadataRoute.Manifest => ({
   description: 'Shared daily tracking and training sessions',
   start_url: '/',
   display: 'standalone',
-  background_color: '#0b0b0c',
-  theme_color: '#0b0b0c',
+  background_color: '#edf7fc',
+  theme_color: '#edf7fc',
   icons: [
     {
       src: '/fitnessjourni-icon-192-v2.png',

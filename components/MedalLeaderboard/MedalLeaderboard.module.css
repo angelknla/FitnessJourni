@@ -17,16 +17,16 @@
   background:
     var(--surface-metal-wash),
     linear-gradient(145deg, color-mix(in oklab, var(--c-warning) 9%, transparent), transparent 42%),
-    rgb(20 20 22 / 94%);
+    var(--c-glass);
   border: 1px solid color-mix(in oklab, var(--c-warning) 24%, var(--c-border));
   border-radius: var(--r-xl);
   box-shadow:
     inset 0 1px 0 color-mix(in oklab, var(--c-warning) 25%, transparent),
-    0 14px 34px rgb(0 0 0 / 28%),
+    var(--card-shadow),
     0 0 22px color-mix(in oklab, var(--c-warning) 4%, transparent);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  transform: perspective(70rem) rotateX(0.35deg) translateZ(0);
+  transform: var(--card-transform);
   transform-origin: top center;
 }
 
@@ -37,7 +37,7 @@
   height: 1px;
   pointer-events: none;
   background: linear-gradient(90deg, transparent, var(--c-warning), transparent);
-  opacity: 0.65;
+  opacity: var(--surface-top-glint-opacity, 0.65);
 }
 
 .heading p {
@@ -275,10 +275,19 @@
   font-size: 0.62rem;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  color: var(--c-bg);
+  color: var(--c-member-ink);
   background: var(--c-ink);
   border: 1px solid var(--c-surface-soft);
   border-radius: var(--r-pill);
+}
+
+:global(:root[data-theme="light"]) .medalCount strong {
+  color: var(--c-ink);
+  background: #fff;
+  border-color: color-mix(in oklab, var(--c-warning) 58%, var(--c-border));
+  box-shadow:
+    inset 0 1px 0 #fff,
+    0 1px 4px rgb(111 77 0 / 18%);
 }
 
 .none,

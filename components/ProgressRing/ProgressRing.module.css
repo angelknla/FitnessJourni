@@ -61,6 +61,25 @@
   height: 100%;
   display: block;
   overflow: visible;
+  transition: filter 0.3s var(--ease-flow);
+}
+
+:global(:root[data-theme="light"]) .ringBox {
+  filter: none;
+}
+
+:global(:root[data-theme="light"]) .svg {
+  filter: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :global(:root[data-theme="light"]) .ring:hover .ringBox {
+    filter: none;
+  }
+
+  :global(:root[data-theme="light"]) .ring:hover .svg {
+    filter: none;
+  }
 }
 
 .track {
@@ -71,6 +90,10 @@
   stroke: var(--member-accent);
   filter: drop-shadow(0 0 3px color-mix(in oklab, var(--member-accent) 48%, transparent));
   transition: stroke-dasharray 0.5s var(--ease-flow);
+}
+
+:global(:root[data-theme="light"]) .fill {
+  filter: none;
 }
 
 /* Overshooting a budget is worth flagging; overshooting a goal is not. */

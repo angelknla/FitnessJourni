@@ -4,6 +4,8 @@ import { SessionBanner } from '@components/SessionBanner/SessionBanner';
 import { toISODate } from '@utils/date';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import { cookies } from 'next/headers';
+import Script from 'next/script';
 import { getMembers } from '@/lib/data/members';
 import { getHasUnreadMessages } from '@/lib/data/messages';
 import { getHasUnreadSessions, getUpcomingSessions, nextSession } from '@/lib/data/sessions';
@@ -17,6 +19,19 @@ import '@/styles/globals.css';
 import styles from './page.module.css';
 
 const inter = Inter({ subsets: ['latin'] });
+
+const themeInitializer = `
+try {
+  const storedTheme = localStorage.getItem('fitnessjourni-theme');
+  const theme = storedTheme === 'light' || storedTheme === 'dark'
+    ? storedTheme
+    : document.documentElement.dataset.theme;
+  if (theme === 'light' || theme === 'dark') {
+    document.documentElement.dataset.theme = theme;
+    document.cookie = 'fitnessjourni-theme=' + theme + '; Path=/; Max-Age=31536000; SameSite=Lax';
+  }
+} catch {}
+`;
 
 export const metadata: Metadata = {
   title: 'FitnessJourni',
@@ -73,7 +88,10 @@ const RootLayout = async ({ children }: LayoutProps) => {
    * layout that declines to render `children` does not stop the page executing —
    * its fetched data still lands in the RSC payload for anyone to read.
    */
-  const locked = !(await isUnlocked());
+  const [unlocked, cookieStore] = await Promise.all([isUnlocked(), cookies()]);
+  const locked = !unlocked;
+  const savedTheme = cookieStore.get('fitnessjourni-theme')?.value;
+  const theme = savedTheme === 'light' || savedTheme === 'dark' ? savedTheme : 'light';
   const configured = isSupabaseConfigured();
 
   /*
@@ -97,7 +115,12 @@ const RootLayout = async ({ children }: LayoutProps) => {
       ]);
 
   return (
-    <html lang="en" data-scroll-behavior="smooth">
+    <html lang="en" data-scroll-behavior="smooth" data-theme={theme} suppressHydrationWarning>
+      <head>
+        <Script id="theme-initializer" strategy="beforeInteractive">
+          {themeInitializer}
+        </Script>
+      </head>
       <body className={inter.className}>
         <div className={styles.appWrapper}>
           <Header

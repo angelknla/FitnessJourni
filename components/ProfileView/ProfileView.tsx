@@ -72,6 +72,9 @@ const CHART_BOTTOM = 36;
 type ProfileMacroMode = 'grams' | 'percent';
 type WeightChartRange = 'month' | 'threeMonths' | 'sixMonths' | 'year';
 type ProfileMacroDraft = Record<MacroKey, string>;
+type Theme = 'light' | 'dark';
+
+const THEME_STORAGE_KEY = 'fitnessjourni-theme';
 
 const weightChartRanges: { value: WeightChartRange; label: string; months: number }[] = [
     { value: 'month', label: 'Month', months: 1 },
@@ -146,6 +149,7 @@ export const ProfileView = ({
         {}
     );
     const [passwordOpen, setPasswordOpen] = useState(false);
+    const [theme, setTheme] = useState<Theme>('light');
 
     const currentWeight = measurements.at(-1)?.weightKg ?? null;
     const currentDateMeasurement = measurements.find((item) => item.date === currentDate);
@@ -203,6 +207,13 @@ export const ProfileView = ({
         }
     }, [avatarState.ok, avatarState.bookedAt]);
 
+    useEffect(() => {
+        const activeTheme = document.documentElement.dataset.theme;
+        if (activeTheme === 'light' || activeTheme === 'dark') {
+            setTheme(activeTheme);
+        }
+    }, []);
+
     useEffect(
         () => () => {
             if (avatarPreview) {
@@ -257,6 +268,14 @@ export const ProfileView = ({
             router.push('/');
             router.refresh();
         });
+
+    const selectTheme = (nextTheme: Theme) => {
+        setTheme(nextTheme);
+        document.documentElement.dataset.theme = nextTheme;
+        try {
+            window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+        } catch { }
+    };
 
     if (!member || !profile) {
         return (
@@ -890,6 +909,21 @@ export const ProfileView = ({
 
             <section className={styles.account} aria-labelledby="account-heading">
                 <h2 id="account-heading">Account</h2>
+                <fieldset className={styles.appearance}>
+                    <legend>Appearance</legend>
+                    <div className={styles.themeOptions}>
+                        {(['light', 'dark'] as const).map((option) => (
+                            <button
+                                key={option}
+                                type="button"
+                                aria-pressed={theme === option}
+                                onClick={() => selectTheme(option)}
+                            >
+                                {option.charAt(0).toUpperCase() + option.slice(1)}
+                            </button>
+                        ))}
+                    </div>
+                </fieldset>
                 {account && (
                     <form className={styles.accountForm} action={accountAction}>
                         <label>

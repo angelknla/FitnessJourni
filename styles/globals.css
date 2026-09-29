@@ -1,9 +1,12 @@
 /* ================================================================
-   DESIGN TOKENS — dark-only, system-dark feel: near-black layered
-   surfaces, restrained lines, one UI accent used sparingly.
-   ================================================================ */
+  DESIGN TOKENS — dark by default, with a user-selected light theme.
+  ================================================================ */
 :root {
   color-scheme: dark;
+
+  --page-background:
+    linear-gradient(135deg, rgb(57 135 229 / 7%) 0%, transparent 32rem),
+    linear-gradient(315deg, rgb(25 158 112 / 5%) 0%, transparent 28rem), var(--c-bg);
 
   /* Surfaces — --c-surface is the validated chart surface (#141416).
      Changing it means re-running the palette validator. */
@@ -13,6 +16,21 @@
   --c-surface-soft: #18181b;
   --c-surface-raised: #1c1c20;
   --c-surface-hover: #232328;
+  --c-glass: rgb(20 20 22 / 94%);
+  --c-glass-strong: rgb(20 20 22 / 96%);
+
+  --control-surface: linear-gradient(180deg, rgb(255 255 255 / 6%), rgb(255 255 255 / 2%));
+  --control-surface-hover: linear-gradient(180deg, rgb(255 255 255 / 10%), rgb(255 255 255 / 4%));
+  --control-shadow: inset 0 1px 0 rgb(255 255 255 / 12%), 0 5px 13px rgb(0 0 0 / 19%);
+  --dialog-backdrop: rgb(0 0 0 / 60%);
+  --dialog-shadow: 0 18px 48px rgb(0 0 0 / 42%);
+  --card-shadow: 0 14px 34px rgb(0 0 0 / 28%);
+  --card-shadow-hover: 0 20px 44px rgb(0 0 0 / 36%);
+  --row-shadow: 0 8px 22px rgb(0 0 0 / 20%);
+  --row-shadow-hover: 0 14px 30px rgb(0 0 0 / 30%);
+  --card-transform: perspective(70rem) rotateX(0.35deg) translateZ(0);
+  --card-hover-transform: perspective(60rem) translateY(-4px) rotateX(0.7deg);
+  --card-hover-transform-subtle: perspective(60rem) translateY(-2px) rotateX(0.5deg);
 
   --surface-metal-wash:
     linear-gradient(
@@ -40,6 +58,7 @@
   /* The one UI accent (slot 1). Used for focus, links and primary actions. */
   --c-accent: #3987e5;
   --c-accent-ink: #0b0b0c;
+  --c-member-ink: #0b0b0c;
 
   /* ---- Categorical member slots ----------------------------------
      The eight dark steps validated as a set against --c-surface for
@@ -90,6 +109,67 @@
   --ease-flow: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+:root[data-theme="light"] {
+  color-scheme: light;
+  --surface-top-glint-opacity: 0;
+
+  --page-background:
+    linear-gradient(135deg, rgb(17 126 238 / 24%) 0%, transparent 32rem),
+    linear-gradient(315deg, rgb(0 188 135 / 18%) 0%, transparent 30rem),
+    linear-gradient(118deg, transparent 24%, rgb(226 55 132 / 7%) 52%, transparent 74%), var(--c-bg);
+
+  --c-bg: #edf7fc;
+  --c-bg-alt: #fbfdff;
+  --c-surface: #ffffff;
+  --c-surface-soft: #e0f0f8;
+  --c-surface-raised: #d4e9f5;
+  --c-surface-hover: #c4e0ef;
+  --c-glass: rgb(255 255 255 / 96%);
+  --c-glass-strong: rgb(255 255 255 / 98%);
+
+  --control-surface: linear-gradient(135deg, #fff, var(--c-bg-alt));
+  --control-surface-hover: linear-gradient(135deg, #fff, var(--c-surface-soft));
+  --control-shadow: inset 0 1px 0 #fff, var(--shadow-sm);
+  --dialog-backdrop: rgb(29 61 84 / 26%);
+  --dialog-shadow: 0 18px 48px rgb(11 91 151 / 18%);
+  --card-shadow: 0 8px 24px rgb(11 91 151 / 12%);
+  --card-shadow-hover: 0 12px 28px rgb(11 91 151 / 16%);
+  --row-shadow: 0 4px 14px rgb(11 91 151 / 10%);
+  --row-shadow-hover: 0 7px 18px rgb(11 91 151 / 14%);
+  --card-transform: none;
+  --card-hover-transform: translateY(-2px);
+  --card-hover-transform-subtle: translateY(-1px);
+
+  --surface-metal-wash:
+    linear-gradient(118deg, rgb(255 255 255 / 88%), transparent 36%),
+    linear-gradient(145deg, rgb(0 132 255 / 8%), transparent 46%),
+    linear-gradient(315deg, rgb(0 196 140 / 6%), transparent 50%);
+
+  --c-ink: #17202a;
+  --c-ink-soft: #354454;
+  --c-ink-muted: #58697a;
+  --c-border: rgb(17 100 161 / 18%);
+  --c-border-strong: rgb(17 100 161 / 31%);
+  --c-accent: #086fce;
+  --c-accent-ink: #ffffff;
+
+  --accent-blue: #0b72db;
+  --accent-orange: #ed4f12;
+  --accent-aqua: #009c76;
+  --accent-yellow: #ce8200;
+  --accent-magenta: #df347b;
+  --accent-green: #00a148;
+  --accent-violet: #765ce8;
+  --accent-red: #e44451;
+
+  --meter-track: color-mix(in oklab, var(--member-accent) 62%, var(--c-surface));
+
+  --shadow-sm: 0 1px 3px rgb(11 91 151 / 16%);
+  --shadow-md: 0 8px 24px rgb(11 91 151 / 18%);
+  --shadow-lg: 0 20px 48px rgb(11 91 151 / 22%);
+  --shadow-float: 0 1px 0 rgb(255 255 255 / 88%) inset, 0 12px 32px rgb(11 91 151 / 18%);
+}
+
 *,
 *::before,
 *::after {
@@ -108,9 +188,7 @@ body {
   /* clip rather than hidden: no scroll container, so the page can never gain a
      horizontal scrollbar even if a descendant misbehaves. */
   overflow-x: clip;
-  background:
-    linear-gradient(135deg, rgb(57 135 229 / 7%) 0%, transparent 32rem),
-    linear-gradient(315deg, rgb(25 158 112 / 5%) 0%, transparent 28rem), var(--c-bg);
+  background: var(--page-background);
   background-attachment: fixed;
   color: var(--c-ink);
   font-family: var(--font-sans);
