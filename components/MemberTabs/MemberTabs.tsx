@@ -19,6 +19,8 @@ interface MemberTabsProps {
   panelId: string;
   /** The active group, or null for someone who belongs to none yet. */
   activeGroupName?: string | null;
+  /** The active group's picture, if it has one. */
+  activeGroupImage?: string | null;
   /** Invitations plus join requests waiting on this person. */
   pendingGroupCount?: number;
 }
@@ -31,6 +33,7 @@ export const MemberTabs = ({
   addOpen,
   panelId,
   activeGroupName = null,
+  activeGroupImage = null,
   pendingGroupCount = 0,
 }: MemberTabsProps) => {
   const listRef = useRef<HTMLDivElement>(null);
@@ -150,7 +153,11 @@ export const MemberTabs = ({
        * tab strip, so Home shows it on the date row instead — see .groupSlot.
        */}
       <div className={styles.groupSlot}>
-        <GroupBadge groupName={activeGroupName} pendingCount={pendingGroupCount} />
+        <GroupBadge
+          groupName={activeGroupName}
+          imagePath={activeGroupImage}
+          pendingCount={pendingGroupCount}
+        />
       </div>
 
       <button

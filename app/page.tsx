@@ -133,6 +133,7 @@ const Homepage = async ({ searchParams }: HomepageProps) => {
       viewerId={viewer.memberId}
       personalMode={!activeGroup}
       activeGroupName={activeGroup?.name ?? null}
+      activeGroupImage={activeGroup?.imagePath ?? null}
       pendingGroupCount={pending.invitations + pending.requests}
     />
   );

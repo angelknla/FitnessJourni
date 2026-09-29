@@ -424,6 +424,13 @@ alter table public.groups drop constraint if exists groups_name_length_check;
 alter table public.groups add constraint groups_name_length_check
   check (char_length(trim(name)) between 2 and 40);
 
+/*
+ * A group's picture, as a public storage URL. Null means no picture, and the UI
+ * falls back to the two-figure icon rather than to a placeholder image — a group
+ * without a photo is a normal state, not a missing asset.
+ */
+alter table public.groups add column if not exists avatar_path text;
+
 alter table public.groups drop constraint if exists groups_description_length_check;
 alter table public.groups add constraint groups_description_length_check
   check (description is null or char_length(description) <= 200);
@@ -1195,3 +1202,46 @@ begin
   end loop;
 end;
 $$;
+
+-- ----------------------------------------------------------------------------
+-- Group pictures — one deterministic object per group, so uploading again uses
+-- upsert and this bucket cannot accumulate several covers for one group.
+--
+-- Separate from profile-avatars so a group's image and a person's cannot collide.
+-- Who may upload is decided in the Server Action against group_members, which is
+-- the only place the acting member's role is known.
+-- ----------------------------------------------------------------------------
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'group-images',
+  'group-images',
+  true,
+  5242880,
+  array['image/jpeg', 'image/png', 'image/webp']
+)
+on conflict (id) do update set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists group_images_select on storage.objects;
+drop policy if exists group_images_insert on storage.objects;
+drop policy if exists group_images_update on storage.objects;
+drop policy if exists group_images_delete on storage.objects;
+
+create policy group_images_select on storage.objects
+  for select to anon, authenticated
+  using (bucket_id = 'group-images');
+
+create policy group_images_insert on storage.objects
+  for insert to anon, authenticated
+  with check (bucket_id = 'group-images');
+
+create policy group_images_update on storage.objects
+  for update to anon, authenticated
+  using (bucket_id = 'group-images')
+  with check (bucket_id = 'group-images');
+
+create policy group_images_delete on storage.objects
+  for delete to anon, authenticated
+  using (bucket_id = 'group-images');

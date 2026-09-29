@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Member, MemberProfile } from '@/types/fitness';
@@ -481,5 +481,42 @@ describe('the identity panels', () => {
     await user.click(screen.getByRole('button', { name: 'Choose profile picture' }));
     await user.click(screen.getByRole('button', { name: 'Close profile picture chooser' }));
     expect(document.getElementById('avatar-picker')).toBeNull();
+  });
+
+  it('lets the picture itself be replaced without opening the chooser', () => {
+    renderProfile();
+
+    const field = screen.getByLabelText('Change your profile picture');
+    expect(field).toHaveAttribute('type', 'file');
+    expect(field).toHaveAttribute('accept', 'image/jpeg,image/png,image/webp');
+
+    // A label pointing at it, so tapping the photo opens the dialog with no
+    // script of ours, and the field stays keyboard reachable.
+    const label = document.querySelector(`label[for="${field.id}"]`);
+    expect(label).toBeInTheDocument();
+  });
+
+  it('uploads as soon as a file is chosen', async () => {
+    const user = userEvent.setup();
+    renderProfile();
+
+    const field = screen.getByLabelText('Change your profile picture') as HTMLInputElement;
+    const submit = vi.fn();
+    // requestSubmit is what the change handler calls; jsdom does not implement it.
+    (field.form as HTMLFormElement).requestSubmit = submit;
+
+    await user.upload(field, new File(['x'], 'me.png', { type: 'image/png' }));
+
+    // The handler shrinks the file first, so the submit lands a microtask later.
+    await waitFor(() => expect(submit).toHaveBeenCalledTimes(1));
+  });
+
+  it('still offers the chooser, for the preset avatars and a deliberate save', async () => {
+    const user = userEvent.setup();
+    renderProfile();
+
+    await user.click(screen.getByRole('button', { name: 'Choose profile picture' }));
+
+    expect(screen.getByRole('button', { name: 'Save picture' })).toBeInTheDocument();
   });
 });

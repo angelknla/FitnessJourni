@@ -1,10 +1,11 @@
 'use client';
 
-import { ChevronRightIcon, CrossIcon, GroupIcon, UploadIcon } from '@components/Icons/Icons';
+import { CrossIcon, GroupIcon, PencilIcon, SwitchIcon, UploadIcon } from '@components/Icons/Icons';
 import { MemberMedals } from '@components/MedalLeaderboard/MedalLeaderboard';
 import { RemoveMemberDialog } from '@components/RemoveMemberDialog/RemoveMemberDialog';
 import { avatarOptions, avatarUploadTypes, isAvatarPath } from '@data/avatarData';
 import { accentHex, accentNames, defaultTargets } from '@data/fitnessData';
+import { replaceInputFile, shrinkImage } from '@utils/image';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -380,19 +381,52 @@ export const ProfileView = ({
   return (
     <div className={styles.profile} style={{ '--profile-accent': accent } as CSSProperties}>
       <section className={styles.identity} aria-labelledby="profile-name">
-        <div className={styles.avatar}>
-          {member.avatarPath ? (
-            <Image
-              src={member.avatarPath}
-              alt=""
-              width={88}
-              height={88}
-              unoptimized={member.avatarPath.startsWith('http://')}
-            />
-          ) : (
-            member.name.charAt(0).toUpperCase()
-          )}
-        </div>
+        {/*
+         * The picture is its own uploader: the label opens the file dialog and
+         * choosing a file submits at once, so changing your photo does not mean
+         * opening the chooser first. The chooser below still offers the preset
+         * avatars and a deliberate Save.
+         */}
+        <form action={avatarAction} className={styles.avatarFrame}>
+          <input type="hidden" name="memberId" value={member.id} />
+          <input
+            id="avatar-direct"
+            className={styles.directInput}
+            type="file"
+            name="avatarFile"
+            accept={avatarUploadTypes.join(',')}
+            aria-label="Change your profile picture"
+            onChange={async (event) => {
+              const input = event.currentTarget;
+              const chosen = input.files?.[0];
+              if (!chosen) return;
+              // Shrunk first, so the form posts the small version.
+              replaceInputFile(input, await shrinkImage(chosen));
+              input.form?.requestSubmit();
+            }}
+          />
+          <label
+            htmlFor="avatar-direct"
+            className={styles.avatar}
+            title="Change your profile picture"
+          >
+            {member.avatarPath ? (
+              <Image
+                src={member.avatarPath}
+                alt=""
+                /* Drawn at 88px; 3x wants ~264 device pixels. */
+                width={264}
+                height={264}
+                unoptimized={member.avatarPath.startsWith('http://')}
+              />
+            ) : (
+              member.name.charAt(0).toUpperCase()
+            )}
+          </label>
+          <span className={styles.editAvatar} aria-hidden="true">
+            <PencilIcon size={12} />
+          </span>
+        </form>
         <div className={styles.identityDetails}>
           <div>
             <p>Your profile</p>
@@ -413,7 +447,7 @@ export const ProfileView = ({
                 {activeGroupName ?? 'Personal (no group)'}
               </span>
               <span className={styles.currentGroupChevron}>
-                <ChevronRightIcon size={13} />
+                <SwitchIcon size={13} />
               </span>
             </Link>
           </div>
@@ -552,12 +586,18 @@ export const ProfileView = ({
                   name="avatarFile"
                   accept={avatarUploadTypes.join(',')}
                   onClick={() => setSelectedAvatar('upload')}
-                  onChange={(event) => {
-                    const file = event.currentTarget.files?.[0];
-                    setAvatarPreview(file ? URL.createObjectURL(file) : null);
-                    if (file) {
-                      setSelectedAvatar('upload');
+                  onChange={async (event) => {
+                    const input = event.currentTarget;
+                    const chosen = input.files?.[0];
+                    if (!chosen) {
+                      setAvatarPreview(null);
+                      return;
                     }
+                    // The preview shows the file that will actually be uploaded.
+                    const shrunk = await shrinkImage(chosen);
+                    replaceInputFile(input, shrunk);
+                    setAvatarPreview(URL.createObjectURL(shrunk));
+                    setSelectedAvatar('upload');
                   }}
                 />
               </div>

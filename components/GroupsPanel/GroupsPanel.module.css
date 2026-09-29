@@ -163,6 +163,122 @@
   display: none;
 }
 
+/* ---- The group's picture and description ----------------------------------
+   Roughly thirty/seventy, with the description taking the larger share: it is
+   the part people actually read, and a picture that dominated the panel would
+   push the members below the fold on a phone. */
+.info {
+  display: grid;
+  grid-template-columns: 3fr 7fr;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+/*
+ * A circle, and square whatever the upload was. Capped so half of a wide panel
+ * does not become a 400px disc, and centred in its half so the 50/50 split holds.
+ */
+/*
+ * The wrapper carries the sizing and the pencil; the circle inside carries the
+ * clipping. They cannot be one element: `overflow: hidden` on the circle is what
+ * crops the picture, and it would crop the pencil off too.
+ */
+.infoPicture {
+  position: relative;
+  width: 100%;
+  max-width: 7rem;
+  justify-self: center;
+}
+
+.infoImage {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  color: var(--c-ink-muted);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 50%;
+}
+
+/* The picture is the control. */
+.infoImageButton {
+  padding: 0;
+  cursor: pointer;
+  transition: border-color 0.2s var(--ease-flow);
+}
+
+.infoImageButton:hover {
+  border-color: color-mix(in oklab, var(--c-accent) 55%, transparent);
+}
+
+/*
+ * The file input stays in the layout and keeps its focus, so the picture is
+ * reachable by keyboard — display:none would take it out of the tab order. The
+ * ring is drawn on the circle next to it, which is what a person actually sees.
+ */
+.pictureInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.pictureInput:focus-visible + .infoImage {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 3px;
+}
+
+/*
+ * Sat on the circle's edge at about five o'clock. 85% of the box is where a
+ * circle's edge crosses the 45-degree diagonal, so this lands on the stroke
+ * rather than floating out at the bounding box's corner.
+ */
+.editPicture {
+  position: absolute;
+  top: 85%;
+  left: 85%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--c-accent);
+  background: var(--c-surface);
+  border: 1px solid color-mix(in oklab, var(--c-accent) 45%, var(--c-border));
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow-sm);
+  pointer-events: none;
+}
+
+.infoImageButton:hover + .editPicture {
+  color: var(--c-accent-ink);
+  background: var(--c-accent);
+  border-color: transparent;
+}
+
+.infoImage img {
+  width: 100%;
+  height: 100%;
+  min-width: 100%;
+  min-height: 100%;
+  aspect-ratio: 1 / 1;
+  display: block;
+  object-fit: cover;
+  object-position: center;
+  border-radius: inherit;
+}
+
+.noDescription {
+  font-style: italic;
+  opacity: 0.8;
+}
+
 /* ---- Sub-blocks inside an open group --------------------------------------- */
 .section {
   display: flex;
@@ -451,6 +567,85 @@
 .panelClose:focus-visible {
   outline: 2px solid var(--c-accent);
   outline-offset: 2px;
+}
+
+/* ---- Picture chooser ------------------------------------------------------ */
+.pictureRow {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.picturePreview {
+  flex: 0 0 auto;
+  width: 4rem;
+  height: 4rem;
+  min-width: 4rem;
+  min-height: 4rem;
+  aspect-ratio: 1 / 1;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  color: var(--c-ink-muted);
+  background: var(--c-surface-soft);
+  border: 1px solid var(--c-border);
+  border-radius: 50%;
+}
+
+.picturePreview img {
+  width: 100%;
+  height: 100%;
+  min-width: 100%;
+  min-height: 100%;
+  aspect-ratio: 1 / 1;
+  display: block;
+  object-fit: cover;
+  object-position: center;
+  border-radius: inherit;
+}
+
+.pictureControls {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fileLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--c-ink-muted);
+}
+
+.fileLabel input {
+  width: 100%;
+  font-size: 0.78rem;
+  color: var(--c-ink-soft);
+}
+
+/* The native file button, brought in line with the app's control pills. */
+.fileLabel input::file-selector-button {
+  margin-right: 0.5rem;
+  padding: 0.3rem 0.6rem;
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--c-ink-soft);
+  background: var(--control-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-pill);
+  cursor: pointer;
+}
+
+.pictureActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
 }
 
 /* ---- Forms ---------------------------------------------------------------- */

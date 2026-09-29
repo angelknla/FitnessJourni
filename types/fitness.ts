@@ -166,6 +166,8 @@ export interface FitnessGroup {
   description: string | null;
   /** Short, human-friendly and regeneratable, e.g. `N7K4-P2Q9`. */
   joinCode: string;
+  /** Uploaded group picture, or null to fall back to the two-figure icon. */
+  imagePath: string | null;
   /** Counted from accepted memberships, never stored. */
   memberCount: number;
   createdAt: string;
@@ -216,6 +218,8 @@ export interface ActiveGroup {
   id: string;
   name: string;
   role: GroupRole;
+  /** Shown on the badge in place of the icon when the group has a picture. */
+  imagePath: string | null;
 }
 
 /** How many answers are waiting on this person, for the header's quiet marker. */

@@ -2,12 +2,14 @@ const remotePatterns = [];
 
 try {
   const supabaseUrl = new URL(process.env.SUPABASE_URL);
-  remotePatterns.push({
-    protocol: supabaseUrl.protocol.slice(0, -1),
-    hostname: supabaseUrl.hostname,
-    port: supabaseUrl.port,
-    pathname: '/storage/v1/object/public/profile-avatars/**',
-  });
+  for (const bucket of ['profile-avatars', 'group-images']) {
+    remotePatterns.push({
+      protocol: supabaseUrl.protocol.slice(0, -1),
+      hostname: supabaseUrl.hostname,
+      port: supabaseUrl.port,
+      pathname: `/storage/v1/object/public/${bucket}/**`,
+    });
+  }
 } catch {
   // The app still builds without Supabase credentials and shows its setup notice.
 }

@@ -59,6 +59,8 @@ interface HomeProps {
   personalMode?: boolean;
   /** The active group's name, or null in Personal mode. */
   activeGroupName?: string | null;
+  /** The active group's picture, if it has one. */
+  activeGroupImage?: string | null;
   /** Group invitations and join requests waiting on this person. */
   pendingGroupCount?: number;
 }
@@ -196,6 +198,7 @@ export const Home = ({
   viewerId,
   personalMode = false,
   activeGroupName = null,
+  activeGroupImage = null,
   pendingGroupCount = 0,
 }: HomeProps) => {
   const router = useRouter();
@@ -468,7 +471,11 @@ export const Home = ({
 
           {/* Phone only; on desktop the same badge sits with the member tabs. */}
           <div className={styles.badgeSlot}>
-            <GroupBadge groupName={activeGroupName} pendingCount={pendingGroupCount} />
+            <GroupBadge
+              groupName={activeGroupName}
+              imagePath={activeGroupImage}
+              pendingCount={pendingGroupCount}
+            />
           </div>
         </div>
         <h1 className={styles.date}>{dateLabel}</h1>
@@ -482,6 +489,7 @@ export const Home = ({
         addOpen={addOpen}
         panelId={PANEL_ID}
         activeGroupName={activeGroupName}
+        activeGroupImage={activeGroupImage}
         pendingGroupCount={pendingGroupCount}
       />
 

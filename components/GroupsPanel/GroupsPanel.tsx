@@ -5,8 +5,12 @@ import {
   ChevronRightIcon,
   CrossIcon,
   GroupIcon,
+  PencilIcon,
   SwitchIcon,
 } from '@components/Icons/Icons';
+import { avatarUploadTypes } from '@data/avatarData';
+import { replaceInputFile, shrinkImage } from '@utils/image';
+import Image from 'next/image';
 import { useActionState, useEffect, useState } from 'react';
 import {
   changeGroupMemberRole,
@@ -20,6 +24,7 @@ import {
   requestGroupAccess,
   respondToInvitation,
   reviewJoinRequest,
+  saveGroupImage,
   switchActiveGroup,
   transferGroupOwnership,
   updateGroupDetails,
@@ -41,6 +46,7 @@ import {
   roleLabels,
 } from '@/lib/groups';
 import type {
+  FitnessGroup,
   GroupInvitation,
   GroupJoinRequest,
   GroupMemberRole,
@@ -111,6 +117,22 @@ const autoGrow = (element: HTMLTextAreaElement | null) => {
   element.style.height = `${element.scrollHeight + border}px`;
 };
 
+/** The group's picture, or the two-figure icon when it has none. */
+const GroupPicture = ({ group }: { group: FitnessGroup }) =>
+  group.imagePath ? (
+    <Image
+      src={group.imagePath}
+      alt={`${group.name} group picture`}
+      /* Drawn at up to 112px, so a 3x phone wants ~336 device pixels. These are
+         the size Next matches a variant against, not the size it is shown at. */
+      width={336}
+      height={336}
+      unoptimized={group.imagePath.startsWith('http://')}
+    />
+  ) : (
+    <GroupIcon size={34} />
+  );
+
 /** One shared status line per block, so a refusal appears next to what caused it. */
 const Status = ({ state }: { state: GroupActionState }) =>
   state.error || state.message ? (
@@ -145,6 +167,7 @@ export const GroupsPanel = ({
   const [removeState, removeAction, removing] = useActionState(removeGroupMember, initial);
   const [leaveState, leaveAction, leaving] = useActionState(leaveGroup, initial);
   const [codeState, codeAction, regenerating] = useActionState(regenerateGroupCode, initial);
+  const [imageState, imageAction, savingImage] = useActionState(saveGroupImage, initial);
   const [deleteState, deleteAction, deleting] = useActionState(deleteGroup, initial);
 
   /* The current group is open to begin with; the rest are collapsed. */
@@ -289,7 +312,68 @@ export const GroupsPanel = ({
                 </h2>
 
                 <div id={`group-${group.id}`} className={styles.groupBody} hidden={!open}>
-                  {group.description && <p className={styles.description}>{group.description}</p>}
+                  {/* Picture and description share the width; the icon stands in
+                      for a group that has no picture. */}
+                  <div className={styles.info}>
+                    {canEditGroupDetails(role) ? (
+                      /*
+                       * The picture is its own uploader: the label opens the file
+                       * dialog, and choosing a file submits immediately, so the
+                       * quick path is one tap and a pick. The fuller control — with
+                       * Remove — still lives in Group settings below.
+                       */
+                      <form action={imageAction} className={styles.infoPicture}>
+                        <input type="hidden" name="groupId" value={group.id} />
+                        <input
+                          id={`picture-${group.id}`}
+                          className={styles.pictureInput}
+                          type="file"
+                          name="image"
+                          accept={avatarUploadTypes.join(',')}
+                          aria-label={`Change ${group.name} group picture`}
+                          onChange={async (event) => {
+                            const input = event.currentTarget;
+                            const chosen = input.files?.[0];
+                            if (!chosen) return;
+                            // Shrunk first, so the form posts the small version.
+                            replaceInputFile(input, await shrinkImage(chosen));
+                            input.form?.requestSubmit();
+                          }}
+                        />
+                        {/* A label rather than a button: it opens the native file
+                            dialog without any script of ours. */}
+                        <label
+                          htmlFor={`picture-${group.id}`}
+                          className={`${styles.infoImage} ${styles.infoImageButton}`}
+                          title="Change group picture"
+                        >
+                          <GroupPicture group={group} />
+                        </label>
+                        <span className={styles.editPicture} aria-hidden="true">
+                          <PencilIcon size={11} />
+                        </span>
+                      </form>
+                    ) : (
+                      <div className={styles.infoPicture}>
+                        <div className={styles.infoImage}>
+                          <GroupPicture group={group} />
+                        </div>
+                      </div>
+                    )}
+                    <p className={styles.description}>
+                      {group.description || (
+                        <span className={styles.noDescription}>No description yet.</span>
+                      )}
+                    </p>
+                  </div>
+
+                  {savingImage ? (
+                    <p className={styles.hint} role="status">
+                      Saving picture…
+                    </p>
+                  ) : (
+                    <Status state={imageState} />
+                  )}
 
                   {!current && (
                     <form action={switchAction} className={styles.inlineForm}>
@@ -527,6 +611,12 @@ export const GroupsPanel = ({
                         )}
                       </div>
 
+                      {/*
+                       * The picture is its own form: it posts a file, and keeping it
+                       * apart means saving the name does not re-upload the image and
+                       * a failed upload does not lose typed text.
+                       */}
+
                       {showSettingsFor === group.id && (
                         <form
                           id={`settings-${group.id}`}
@@ -569,6 +659,70 @@ export const GroupsPanel = ({
                             {savingDetails ? 'Saving…' : 'Save details'}
                           </button>
                           <Status state={detailsState} />
+                        </form>
+                      )}
+                      {showSettingsFor === group.id && (
+                        <form action={imageAction} className={styles.panel}>
+                          <div className={styles.panelHead}>
+                            <h3>Group picture</h3>
+                          </div>
+                          <input type="hidden" name="groupId" value={group.id} />
+                          <div className={styles.pictureRow}>
+                            <div className={styles.picturePreview}>
+                              {group.imagePath ? (
+                                <Image
+                                  src={group.imagePath}
+                                  alt=""
+                                  width={192}
+                                  height={192}
+                                  unoptimized={group.imagePath.startsWith('http://')}
+                                />
+                              ) : (
+                                <GroupIcon size={26} />
+                              )}
+                            </div>
+                            <div className={styles.pictureControls}>
+                              <label className={styles.fileLabel}>
+                                <span>Choose an image</span>
+                                <input
+                                  type="file"
+                                  name="image"
+                                  accept={avatarUploadTypes.join(',')}
+                                  onChange={async (event) => {
+                                    const input = event.currentTarget;
+                                    const chosen = input.files?.[0];
+                                    if (chosen) {
+                                      replaceInputFile(input, await shrinkImage(chosen));
+                                    }
+                                  }}
+                                />
+                              </label>
+                              <div className={styles.pictureActions}>
+                                <button
+                                  type="submit"
+                                  className={styles.primary}
+                                  disabled={savingImage}
+                                >
+                                  {savingImage ? 'Saving…' : 'Save picture'}
+                                </button>
+                                {group.imagePath && (
+                                  <button
+                                    type="submit"
+                                    name="remove"
+                                    value="true"
+                                    className={styles.quiet}
+                                    disabled={savingImage}
+                                  >
+                                    Remove
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <p className={styles.hint}>
+                            JPEG, PNG or WebP up to 5 MB. Without one, the group shows the
+                            two-figure icon. Tapping the picture above uploads straight away.
+                          </p>
                         </form>
                       )}
 

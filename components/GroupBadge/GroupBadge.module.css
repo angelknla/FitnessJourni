@@ -44,6 +44,26 @@
   color: var(--c-accent);
 }
 
+/*
+ * A circle whatever was uploaded. Every dimension is pinned and object-fit crops,
+ * because a wide or tall source with only one axis set stretches into an oval —
+ * the same trap the profile avatar fell into.
+ */
+.image {
+  flex: 0 0 auto;
+  width: 1.15rem;
+  height: 1.15rem;
+  min-width: 1.15rem;
+  min-height: 1.15rem;
+  max-width: 1.15rem;
+  max-height: 1.15rem;
+  aspect-ratio: 1 / 1;
+  display: block;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 50%;
+}
+
 .name {
   overflow: hidden;
   text-overflow: ellipsis;

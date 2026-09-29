@@ -1,5 +1,11 @@
 'use server';
 
+import {
+  AVATAR_UPLOAD_MAX_BYTES,
+  avatarUploadTypes,
+  GROUP_IMAGE_BUCKET,
+  groupImageObjectPath,
+} from '@data/avatarData';
 import { revalidatePath } from 'next/cache';
 import { isValidUsername, normalizeUsername } from '@/lib/account';
 import { findAccountByUsername } from '@/lib/data/accounts';
@@ -147,6 +153,12 @@ const revalidateGroupScope = () => {
 const revalidateGroupPages = () => {
   revalidatePath('/groups');
   revalidatePath('/profile');
+  /*
+   * Home too: the badge there carries the group's name, its picture and the
+   * pending marker, so a new picture or an answered request goes stale on it
+   * otherwise. Revalidating the layout alone does not re-render the page.
+   */
+  revalidatePath('/');
   revalidatePath('/', 'layout');
 };
 
@@ -747,6 +759,99 @@ export const regenerateGroupCode = async (
 
   revalidateGroupPages();
   return ok('New code ready. The old one no longer works.', { joinCode: result.join_code });
+};
+
+/**
+ * The group's picture. Upload replaces whatever was there; removing clears both the
+ * column and the object, and the UI falls back to the two-figure icon.
+ *
+ * Only an owner or admin, checked here and re-checked nowhere else — this is the one
+ * group mutation with no plpgsql function behind it, because a single column update
+ * has no invariant to cross.
+ */
+export const saveGroupImage = async (
+  _prev: GroupActionState,
+  formData: FormData
+): Promise<GroupActionState> => {
+  const session = await requireMember();
+  if (isRefusal(session)) return session;
+
+  const groupId = toText(formData.get('groupId'));
+  const role = await requireRole(groupId, session.memberId, canEditGroupDetails);
+  if (isRefusal(role)) return role;
+
+  const remove = toText(formData.get('remove')) === 'true';
+  const entry = formData.get('image');
+  const image = entry instanceof File && entry.size > 0 ? entry : null;
+  const objectPath = groupImageObjectPath(groupId);
+
+  if (remove) {
+    const { error } = await session.supabase
+      .from('groups')
+      .update({ avatar_path: null, updated_at: new Date().toISOString() })
+      .eq('id', groupId);
+
+    if (error) {
+      console.error('[saveGroupImage:remove]', error.message);
+      return fail('Could not remove that picture.');
+    }
+
+    // The column is what the app reads, so a failure here is worth knowing about
+    // but not worth failing the action the person asked for.
+    const { error: objectError } = await session.supabase.storage
+      .from(GROUP_IMAGE_BUCKET)
+      .remove([objectPath]);
+    if (objectError) {
+      console.error('[saveGroupImage:object]', objectError.message);
+    }
+
+    revalidateGroupPages();
+    return ok('Group picture removed.');
+  }
+
+  if (!image) {
+    return fail('Choose a picture to upload.');
+  }
+  if (!avatarUploadTypes.includes(image.type as (typeof avatarUploadTypes)[number])) {
+    return fail('Upload a JPEG, PNG or WebP image.');
+  }
+  if (image.size > AVATAR_UPLOAD_MAX_BYTES) {
+    return fail('Group pictures must be 5 MB or smaller.');
+  }
+
+  const { error: uploadError } = await session.supabase.storage
+    .from(GROUP_IMAGE_BUCKET)
+    .upload(objectPath, image, {
+      cacheControl: '3600',
+      contentType: image.type,
+      upsert: true,
+    });
+
+  if (uploadError) {
+    console.error('[saveGroupImage:upload]', uploadError.message);
+    return fail('Could not upload that picture.');
+  }
+
+  const { publicUrl } = session.supabase.storage
+    .from(GROUP_IMAGE_BUCKET)
+    .getPublicUrl(objectPath).data;
+
+  /*
+   * Versioned, because the object path is deterministic: without this the browser
+   * and the image optimiser would both keep serving the picture it replaced.
+   */
+  const { error } = await session.supabase
+    .from('groups')
+    .update({ avatar_path: `${publicUrl}?v=${Date.now()}`, updated_at: new Date().toISOString() })
+    .eq('id', groupId);
+
+  if (error) {
+    console.error('[saveGroupImage]', error.message);
+    return fail('Could not save that picture.');
+  }
+
+  revalidateGroupPages();
+  return ok('Group picture saved.');
 };
 
 export const deleteGroup = async (

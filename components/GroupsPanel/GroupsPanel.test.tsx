@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type {
@@ -23,6 +23,7 @@ vi.mock('@/app/group-actions', () => ({
   removeGroupMember: vi.fn(async () => ({ ok: true })),
   leaveGroup: vi.fn(async () => ({ ok: true })),
   regenerateGroupCode: vi.fn(async () => ({ ok: true })),
+  saveGroupImage: vi.fn(async () => ({ ok: true })),
   deleteGroup: vi.fn(async () => ({ ok: true })),
 }));
 
@@ -50,6 +51,7 @@ const group = {
   name: 'Nine Elms',
   description: 'The originals',
   joinCode: 'N7K4-P2Q9',
+  imagePath: null,
   memberCount: 3,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
@@ -500,5 +502,125 @@ describe('managing a group', () => {
     await user.click(screen.getByRole('button', { name: 'Group settings' }));
     await user.click(screen.getByRole('button', { name: 'Close group settings' }));
     expect(screen.queryByLabelText('Group name')).not.toBeInTheDocument();
+  });
+});
+
+describe('the group picture', () => {
+  it('falls back to the two-figure icon when there is none', () => {
+    const { container } = renderPanel({ role: 'owner' });
+
+    expect(container.querySelector('[class*="infoImage"] svg')).toBeInTheDocument();
+    expect(container.querySelector('[class*="infoImage"] img')).not.toBeInTheDocument();
+  });
+
+  it('shows the picture beside the description once there is one', () => {
+    const withPicture: GroupMembership = {
+      ...membership('owner'),
+      group: { ...group, imagePath: 'https://example.test/cover.png?v=1' },
+    };
+    const { container } = renderPanel({ memberships: [withPicture] });
+
+    const image = container.querySelector('[class*="infoImage"] img');
+    expect(image).toHaveAttribute('alt', 'Nine Elms group picture');
+    expect(container.querySelector('[class*="infoImage"] svg')).not.toBeInTheDocument();
+  });
+
+  it('says so plainly when a group has no description', () => {
+    const withoutDescription: GroupMembership = {
+      ...membership('owner'),
+      group: { ...group, description: null },
+    };
+    renderPanel({ memberships: [withoutDescription] });
+
+    expect(screen.getByText('No description yet.')).toBeInTheDocument();
+  });
+
+  it('is choosable from group settings by an owner', async () => {
+    const user = userEvent.setup();
+    renderPanel({ role: 'owner' });
+
+    await user.click(screen.getByRole('button', { name: 'Group settings' }));
+
+    const field = screen.getByLabelText('Choose an image');
+    expect(field).toHaveAttribute('type', 'file');
+    expect(field).toHaveAttribute('accept', 'image/jpeg,image/png,image/webp');
+    expect(screen.getByRole('button', { name: 'Save picture' })).toBeInTheDocument();
+  });
+
+  it('is choosable by an admin too', async () => {
+    const user = userEvent.setup();
+    renderPanel({ role: 'admin', viewerId: 'dillon' });
+
+    await user.click(screen.getByRole('button', { name: 'Group settings' }));
+
+    expect(screen.getByLabelText('Choose an image')).toBeInTheDocument();
+  });
+
+  it('is not offered to a plain member at all', () => {
+    renderPanel({ role: 'member', viewerId: 'pani' });
+
+    expect(screen.queryByRole('button', { name: 'Group settings' })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Choose an image')).not.toBeInTheDocument();
+  });
+
+  it('offers removal only when there is a picture to remove', async () => {
+    const user = userEvent.setup();
+    renderPanel({ role: 'owner' });
+    await user.click(screen.getByRole('button', { name: 'Group settings' }));
+    expect(screen.queryByRole('button', { name: 'Remove' })).not.toBeInTheDocument();
+
+    const withPicture: GroupMembership = {
+      ...membership('owner'),
+      group: { ...group, imagePath: 'https://example.test/cover.png?v=1' },
+    };
+    renderPanel({ memberships: [withPicture] });
+    await user.click(screen.getAllByRole('button', { name: 'Group settings' })[1]);
+
+    expect(screen.getByRole('button', { name: 'Remove' })).toBeInTheDocument();
+  });
+
+  it('is its own uploader — the picture opens a file dialog directly', () => {
+    renderPanel({ role: 'owner' });
+
+    const field = screen.getByLabelText('Change Nine Elms group picture');
+    expect(field).toHaveAttribute('type', 'file');
+    expect(field).toHaveAttribute('accept', 'image/jpeg,image/png,image/webp');
+
+    // A label pointing at it, so a tap on the circle opens the dialog with no
+    // script of ours, and the field stays keyboard reachable.
+    const label = document.querySelector(`label[for="${field.id}"]`);
+    expect(label).toBeInTheDocument();
+    expect(label?.querySelector('svg, img')).toBeInTheDocument();
+  });
+
+  it('submits as soon as a file is chosen, with no separate save step', async () => {
+    const user = userEvent.setup();
+    renderPanel({ role: 'owner' });
+
+    const field = screen.getByLabelText('Change Nine Elms group picture') as HTMLInputElement;
+    const submit = vi.fn();
+    // requestSubmit is what the change handler calls; jsdom does not implement it.
+    (field.form as HTMLFormElement).requestSubmit = submit;
+
+    await user.upload(field, new File(['x'], 'cover.png', { type: 'image/png' }));
+
+    // The handler shrinks the file first, so the submit lands a microtask later.
+    await waitFor(() => expect(submit).toHaveBeenCalledTimes(1));
+  });
+
+  it('is not a control at all for someone who cannot change it', () => {
+    renderPanel({ role: 'member', viewerId: 'pani' });
+
+    expect(screen.queryByRole('button', { name: /group picture$/ })).not.toBeInTheDocument();
+  });
+
+  it('marks the picture as editable with a decoration, not a second button', () => {
+    const { container } = renderPanel({ role: 'admin', viewerId: 'dillon' });
+
+    const pencil = container.querySelector('[class*="editPicture"]');
+    expect(pencil).toBeInTheDocument();
+    // aria-hidden, so the circle is the only thing announced for one action.
+    expect(pencil).toHaveAttribute('aria-hidden', 'true');
+    expect(pencil?.tagName).toBe('SPAN');
   });
 });

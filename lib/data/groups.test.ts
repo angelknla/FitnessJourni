@@ -1,4 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createSupabaseMock, type SupabaseMock } from '@/lib/testing/supabaseMock';
+
+/** Null stands for an unconfigured deployment, which some of these exercise. */
+let supabase: SupabaseMock | null;
+
+vi.mock('@/lib/supabase/server', () => ({
+  getSupabase: () => supabase?.client ?? null,
+}));
+
 import {
   type GroupInvitationRow,
   type GroupJoinRequestRow,
@@ -13,6 +22,10 @@ import {
   mapInvitation,
   mapJoinRequest,
 } from './groups';
+
+beforeEach(() => {
+  supabase = null;
+});
 
 const groupRow: GroupRow = {
   id: 'g1',
@@ -118,5 +131,53 @@ describe('reads without a configured client', () => {
     // Which is the whole reason it returns null instead of throwing: a member with
     // no groups is a supported state, not a failure.
     await expect(getActiveGroup('nobody')).resolves.toBeNull();
+  });
+});
+
+/**
+ * The columns a read actually asks for.
+ *
+ * A mapper can be perfectly correct and the feature still broken: avatar_path was
+ * mapped, typed and rendered while the select had never been updated to fetch it,
+ * so every other test passed and the picture silently stayed the icon. This asserts
+ * the query, which is the part that was wrong.
+ */
+describe('what the membership read selects', () => {
+  it('asks for every column the group is mapped from', async () => {
+    supabase = createSupabaseMock({ group_members: { data: [] } });
+
+    await getMemberships('m1');
+
+    const select = (supabase as SupabaseMock)
+      .callsTo('group_members')
+      .flatMap((call) => call.ops)
+      .find(([name]) => name === 'select')?.[1] as string;
+
+    for (const column of [
+      'id',
+      'name',
+      'description',
+      'join_code',
+      'avatar_path',
+      'created_at',
+      'updated_at',
+    ]) {
+      expect(select).toContain(column);
+    }
+    expect(select).toContain('role');
+    expect(select).toContain('joined_at');
+  });
+
+  it('joins the group inline, so a membership without one cannot appear', async () => {
+    supabase = createSupabaseMock({ group_members: { data: [] } });
+
+    await getMemberships('m1');
+
+    const select = (supabase as SupabaseMock)
+      .callsTo('group_members')
+      .flatMap((call) => call.ops)
+      .find(([name]) => name === 'select')?.[1] as string;
+
+    expect(select).toContain('groups!inner');
   });
 });

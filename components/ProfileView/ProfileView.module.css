@@ -14,8 +14,19 @@
   gap: 0.9rem;
 }
 
-.avatar {
+/*
+ * The frame holds the sizing and the pencil; the circle inside holds the clipping.
+ * They cannot be one element — `overflow: hidden` is what crops the photo, and it
+ * would crop the pencil off with it.
+ */
+.avatarFrame {
   grid-area: avatar;
+  position: relative;
+  width: 5.5rem;
+  height: 5.5rem;
+}
+
+.avatar {
   width: 5.5rem;
   height: 5.5rem;
   min-width: 5.5rem;
@@ -204,11 +215,13 @@
   gap: 0.75rem;
 }
 
-.avatarActions button {
-  color: #fff;
-  background: var(--c-accent);
-  border-color: transparent;
-}
+/*
+ * No colour of its own. This used to fill the save button with the accent and set
+ * white text, which outlived the change to the shared .saveButton treatment and
+ * left white text on a white surface in light theme — `.avatarActions button` is
+ * one specificity step above `.saveButton`, so it won and nothing looked wrong
+ * until you tried to read it.
+ */
 
 .accentPicker {
   position: relative;
@@ -1075,4 +1088,58 @@
 .detailGroup,
 .account {
   scroll-margin-top: 5.5rem;
+}
+
+/* ---- The profile picture as a direct uploader ---------------------------- */
+.avatar {
+  cursor: pointer;
+  transition: border-color 0.2s var(--ease-flow);
+}
+
+/*
+ * Kept in the layout rather than display:none, so the picture stays reachable by
+ * keyboard; the ring is drawn on the circle beside it, which is what is seen.
+ */
+.directInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.directInput:focus-visible + .avatar {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 3px;
+}
+
+/*
+ * On the circle's edge at about five o'clock: 85% of the box is where a circle
+ * crosses the 45-degree diagonal, so it sits on the stroke rather than floating
+ * out at the bounding box's corner.
+ */
+.editAvatar {
+  position: absolute;
+  top: 85%;
+  left: 85%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  width: 1.55rem;
+  height: 1.55rem;
+  color: var(--profile-accent, var(--c-accent));
+  background: var(--c-surface);
+  border: 1px solid color-mix(in oklab, var(--profile-accent, var(--c-accent)) 45%, var(--c-border));
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow-sm);
+  pointer-events: none;
+}
+
+.avatar:hover + .editAvatar {
+  color: var(--c-member-ink);
+  background: var(--profile-accent, var(--c-accent));
+  border-color: transparent;
 }

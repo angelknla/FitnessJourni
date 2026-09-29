@@ -16,6 +16,7 @@ export interface GroupRow {
   name: string;
   description: string | null;
   join_code: string;
+  avatar_path?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -52,6 +53,7 @@ export const mapGroup = (row: GroupRow, memberCount: number): FitnessGroup => ({
   name: row.name,
   description: row.description?.trim() || null,
   joinCode: row.join_code,
+  imagePath: row.avatar_path ?? null,
   memberCount,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
@@ -99,7 +101,7 @@ export const getMemberships = cache(async (memberId: string): Promise<GroupMembe
   const { data, error } = await supabase
     .from('group_members')
     .select(
-      'role, joined_at, groups!inner(id, name, description, join_code, created_at, updated_at)'
+      'role, joined_at, groups!inner(id, name, description, join_code, avatar_path, created_at, updated_at)'
     )
     .eq('member_id', memberId)
     .order('joined_at', { ascending: true });
@@ -190,7 +192,12 @@ export const getActiveGroup = cache(async (memberId: string): Promise<ActiveGrou
   const chosen =
     memberships.find((membership) => membership.group.id === storedId) ?? memberships[0];
 
-  return { id: chosen.group.id, name: chosen.group.name, role: chosen.role };
+  return {
+    id: chosen.group.id,
+    name: chosen.group.name,
+    role: chosen.role,
+    imagePath: chosen.group.imagePath,
+  };
 });
 
 /**
