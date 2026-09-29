@@ -5,7 +5,6 @@ import { CrossIcon, EyeIcon, EyeOffIcon } from '@components/Icons/Icons';
 import { useRouter } from 'next/navigation';
 import { useActionState, useCallback, useEffect, useRef, useState } from 'react';
 import {
-  claimLegacyAccount,
   type IdentityState,
   loginWithCredentials,
   type UnlockState,
@@ -21,8 +20,7 @@ interface LoginButtonProps {
 
 const initialUnlock: UnlockState = {};
 const initialIdentity: IdentityState = {};
-type Mode = 'login' | 'passcode' | 'legacy' | 'create';
-type EnrollmentIntent = 'legacy' | 'create';
+type Mode = 'login' | 'passcode' | 'create';
 
 export const LoginButton = ({ variant = 'header' }: LoginButtonProps) => {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -35,24 +33,21 @@ export const LoginButton = ({ variant = 'header' }: LoginButtonProps) => {
     unlockEnrollment,
     initialUnlock
   );
-  const [claimState, claimAction, claimPending] = useActionState(
-    claimLegacyAccount,
-    initialIdentity
-  );
   const [mode, setMode] = useState<Mode>('login');
-  const [enrollmentIntent, setEnrollmentIntent] = useState<EnrollmentIntent>('legacy');
+  const [login, setLogin] = useState('');
+  const [password, setPassword] = useState('');
   const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
-    if (loginState.ok || claimState.ok) {
+    if (loginState.ok) {
       dialogRef.current?.close();
       router.replace('/');
     }
-  }, [claimState.ok, loginState.ok, router]);
+  }, [loginState.ok, router]);
 
   useEffect(() => {
-    if (unlockState.ok) setMode(enrollmentIntent);
-  }, [enrollmentIntent, unlockState.ok]);
+    if (unlockState.ok) setMode('create');
+  }, [unlockState.ok]);
 
   const close = useCallback(() => {
     dialogRef.current?.close();
@@ -60,17 +55,12 @@ export const LoginButton = ({ variant = 'header' }: LoginButtonProps) => {
     setRevealed(false);
   }, []);
 
-  const startEnrollment = (intent: EnrollmentIntent) => {
-    setEnrollmentIntent(intent);
-    setMode(unlockState.ok ? intent : 'passcode');
-  };
-
   const finishNewAccount = useCallback(() => {
     dialogRef.current?.close();
     router.replace('/');
   }, [router]);
 
-  const passwordField = (autoComplete: 'current-password' | 'new-password') => (
+  const passwordField = (
     <label className={styles.field}>
       <span className={styles.label}>Password</span>
       <span className={styles.inputWrap}>
@@ -78,9 +68,10 @@ export const LoginButton = ({ variant = 'header' }: LoginButtonProps) => {
           className={styles.input}
           type={revealed ? 'text' : 'password'}
           name="password"
-          minLength={autoComplete === 'new-password' ? 8 : undefined}
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
           maxLength={128}
-          autoComplete={autoComplete}
+          autoComplete="current-password"
           required
         />
         <button
@@ -121,34 +112,45 @@ export const LoginButton = ({ variant = 'header' }: LoginButtonProps) => {
         </button>
         {mode === 'login' && (
           <form className={styles.form} action={loginAction}>
-            <h2 className={styles.title} id="login-heading">Log in</h2>
+            <h2 className={styles.title} id="login-heading">
+              Log in
+            </h2>
             <p className={styles.body}>Use your username or email and your own password.</p>
             <label className={styles.field}>
               <span className={styles.label}>Username or email</span>
-              <input name="login" autoCapitalize="none" autoComplete="username" required />
+              <input
+                name="login"
+                value={login}
+                onChange={(event) => setLogin(event.target.value)}
+                autoCapitalize="none"
+                autoComplete="username"
+                required
+              />
             </label>
-            {passwordField('current-password')}
-            {loginState.error && <p className={styles.error} role="alert">{loginState.error}</p>}
+            {passwordField}
+            {loginState.error && (
+              <p className={styles.error} role="alert">
+                {loginState.error}
+              </p>
+            )}
             <div className={styles.actions}>
-              <button type="button" className={styles.cancel} onClick={close}>Cancel</button>
-              <button type="submit" className={styles.submit} disabled={loginPending}>
+              <button type="button" className={styles.cancel} onClick={close}>
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className={styles.submit}
+                disabled={loginPending || !login.trim() || !password}
+              >
                 {loginPending ? 'Logging in…' : 'Log in'}
               </button>
             </div>
             <div className={styles.alternatives}>
               <button
                 type="button"
-                className={styles.existingAccount}
-                aria-label="Set up existing account"
-                onClick={() => startEnrollment('legacy')}
-              >
-                Existing account
-              </button>
-              <button
-                type="button"
                 className={styles.newAccount}
                 aria-label="Create new user"
-                onClick={() => startEnrollment('create')}
+                onClick={() => setMode(unlockState.ok ? 'create' : 'passcode')}
               >
                 New user
               </button>
@@ -158,17 +160,23 @@ export const LoginButton = ({ variant = 'header' }: LoginButtonProps) => {
 
         {mode === 'passcode' && (
           <form className={styles.form} action={unlockAction}>
-            <h2 className={styles.title} id="login-heading">Enter app passcode</h2>
-            <p className={styles.body}>
-              Required before {enrollmentIntent === 'create' ? 'creating a user' : 'claiming an existing user'}.
-            </p>
+            <h2 className={styles.title} id="login-heading">
+              Enter app passcode
+            </h2>
+            <p className={styles.body}>Required before creating a user.</p>
             <label className={styles.field}>
               <span className={styles.label}>App passcode</span>
               <input type="password" name="passcode" autoComplete="off" required />
             </label>
-            {unlockState.error && <p className={styles.error} role="alert">{unlockState.error}</p>}
+            {unlockState.error && (
+              <p className={styles.error} role="alert">
+                {unlockState.error}
+              </p>
+            )}
             <div className={styles.actions}>
-              <button type="button" className={styles.cancel} onClick={() => setMode('login')}>Back</button>
+              <button type="button" className={styles.cancel} onClick={() => setMode('login')}>
+                Back
+              </button>
               <button type="submit" className={styles.submit} disabled={unlockPending}>
                 {unlockPending ? 'Checking…' : 'Continue'}
               </button>
@@ -176,51 +184,14 @@ export const LoginButton = ({ variant = 'header' }: LoginButtonProps) => {
           </form>
         )}
 
-        {mode === 'legacy' && (
-          <form className={styles.form} action={claimAction}>
-            <h2 className={styles.title} id="login-heading">Set up existing account</h2>
-            <p className={styles.body}>Choose your current display name. Your existing data stays with you.</p>
-            {unlockState.legacyMembers?.length ? (
-              <>
-                <label className={styles.field}>
-                  <span className={styles.label}>Current user</span>
-                  <select name="memberId" required defaultValue="">
-                    <option value="" disabled>Select your name</option>
-                    {unlockState.legacyMembers.map((member) => (
-                      <option value={member.id} key={member.id}>{member.name}</option>
-                    ))}
-                  </select>
-                </label>
-                <label className={styles.field}>
-                  <span className={styles.label}>Username</span>
-                  <input name="username" minLength={3} maxLength={30} autoCapitalize="none" autoComplete="username" required />
-                </label>
-                <label className={styles.field}>
-                  <span className={styles.label}>Email</span>
-                  <input type="email" name="email" autoComplete="email" required />
-                </label>
-                {passwordField('new-password')}
-                {claimState.error && <p className={styles.error} role="alert">{claimState.error}</p>}
-                <div className={styles.actions}>
-                  <button type="button" className={styles.cancel} onClick={() => setMode('login')}>Back</button>
-                  <button type="submit" className={styles.submit} disabled={claimPending}>
-                    {claimPending ? 'Saving…' : 'Create login'}
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <p className={styles.body}>Every existing user already has login details.</p>
-                <button type="button" onClick={() => setMode('login')}>Back to login</button>
-              </>
-            )}
-          </form>
-        )}
-
         {mode === 'create' && (
           <div className={styles.form}>
-            <h2 className={styles.title} id="login-heading">Create new user</h2>
-            <p className={styles.body}>Your display name is what friends will see throughout the app.</p>
+            <h2 className={styles.title} id="login-heading">
+              Create new user
+            </h2>
+            <p className={styles.body}>
+              Your display name is what friends will see throughout the app.
+            </p>
             <MemberCreateForm
               members={unlockState.members ?? []}
               embedded

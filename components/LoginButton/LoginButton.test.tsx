@@ -5,7 +5,6 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 vi.mock('@/app/auth-actions', () => ({
   loginWithCredentials: vi.fn(async () => ({})),
   unlockEnrollment: vi.fn(async () => ({})),
-  claimLegacyAccount: vi.fn(async () => ({})),
 }));
 vi.mock('@/app/actions', () => ({ addMember: vi.fn(async () => ({ ok: false })) }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: vi.fn() }) }));
@@ -42,7 +41,9 @@ describe('LoginButton', () => {
     expect(screen.getByRole('dialog', { hidden: true })).toHaveAttribute('open');
     expect(screen.getByLabelText('Username or email')).toBeRequired();
     expect(screen.getAllByRole('button', { name: 'Log in' })).toHaveLength(2);
-    expect(screen.getByRole('button', { name: 'Set up existing account' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Set up existing account' })
+    ).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Create new user' })).toBeInTheDocument();
     expect(screen.queryByText('Visitor')).not.toBeInTheDocument();
   });
@@ -54,6 +55,22 @@ describe('LoginButton', () => {
     await user.click(screen.getByRole('button', { name: 'Log in' }));
 
     expect(screen.getByLabelText('Password')).toHaveAttribute('type', 'password');
+  });
+
+  it('enables login only after both credentials are entered', async () => {
+    const user = userEvent.setup();
+    render(<LoginButton />);
+
+    await user.click(screen.getByRole('button', { name: 'Log in' }));
+
+    const submit = screen.getAllByRole('button', { name: 'Log in' })[1];
+    expect(submit).toBeDisabled();
+
+    await user.type(screen.getByLabelText('Username or email'), 'dillon');
+    expect(submit).toBeDisabled();
+
+    await user.type(screen.getByLabelText('Password'), 'secret-phrase');
+    expect(submit).toBeEnabled();
   });
 
   it('can be dismissed without guessing', async () => {
@@ -76,7 +93,7 @@ describe('LoginButton', () => {
     expect(screen.getByRole('dialog', { hidden: true })).not.toHaveAttribute('open');
   });
 
-  it('requires the app passcode before either enrollment path', async () => {
+  it('requires the app passcode before creating a user', async () => {
     const user = userEvent.setup();
     render(<LoginButton />);
 

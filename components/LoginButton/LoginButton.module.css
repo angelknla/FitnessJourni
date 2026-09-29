@@ -227,9 +227,6 @@
 
 .alternatives {
   width: 100%;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.6rem;
   padding-top: 0.8rem;
   border-top: 1px solid var(--c-border);
 }
@@ -245,17 +242,6 @@
   line-height: 1.4;
   color: var(--c-ink);
   box-shadow: var(--control-shadow);
-}
-
-.existingAccount {
-  color: var(--c-ink);
-  border-color: color-mix(in oklab, var(--c-ink) 20%, var(--c-border));
-  background: var(--control-surface);
-}
-
-.existingAccount:hover:not(:disabled) {
-  border-color: color-mix(in oklab, var(--c-ink) 32%, var(--c-border-strong));
-  background: var(--control-surface-hover);
 }
 
 .newAccount {

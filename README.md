@@ -56,10 +56,9 @@ changed without invalidating the session.
 
 `APP_PASSCODE` is required only for enrollment:
 
-- Existing members select **Set up existing account**, enter the app passcode, choose their old
-  display name, and create login details. Their original member ID keeps all historical data intact.
 - New members select **Create new user**, enter the app passcode, then create their profile and login.
-- Credentialed members are excluded from the legacy account picker.
+
+Every existing member already has login details and can log in directly.
 
 There is no visitor mode or account switching. Every page requires a signed member session, and
 every member-owned Server Action checks that session before writing. Username is permanent; email

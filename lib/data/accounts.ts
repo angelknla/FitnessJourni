@@ -74,19 +74,6 @@ export const getCredentialByLogin = async (login: string): Promise<CredentialRow
   return (data as CredentialRow | null) ?? null;
 };
 
-export const getCredentialMemberIds = async (): Promise<Set<string>> => {
-  const supabase = getSupabase();
-  if (!supabase) return new Set();
-
-  const { data, error } = await supabase.from('member_credentials').select('member_id');
-  if (error) {
-    console.error('[accounts] credential list failed:', error.message);
-    return new Set();
-  }
-
-  return new Set((data as { member_id: string }[]).map((row) => row.member_id));
-};
-
 export const createCredentials = async (
   memberId: string,
   username: string,

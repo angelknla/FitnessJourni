@@ -5,7 +5,6 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 vi.mock('@/app/auth-actions', () => ({
   loginWithCredentials: vi.fn(async () => ({})),
   unlockEnrollment: vi.fn(async () => ({})),
-  claimLegacyAccount: vi.fn(async () => ({})),
   lock: vi.fn(async () => undefined),
 }));
 vi.mock('@/app/actions', () => ({ addMember: vi.fn(async () => ({ ok: false })) }));

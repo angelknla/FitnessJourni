@@ -4,7 +4,6 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('@/app/auth-actions', () => ({
   loginWithCredentials: vi.fn(async () => ({})),
   unlockEnrollment: vi.fn(async () => ({})),
-  claimLegacyAccount: vi.fn(async () => ({})),
 }));
 vi.mock('@/app/actions', () => ({ addMember: vi.fn(async () => ({ ok: false })) }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: vi.fn() }) }));

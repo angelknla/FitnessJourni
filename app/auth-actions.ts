@@ -1,7 +1,14 @@
 'use server';
 
-import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
+import {
+  hashPassword,
+  isValidEmail,
+  isValidPassword,
+  normalizeEmail,
+  verifyPassword,
+} from '@/lib/account';
 import {
   COOKIE_MAX_AGE,
   COOKIE_NAME,
@@ -11,23 +18,12 @@ import {
   VIEWER_COOKIE,
 } from '@/lib/auth';
 import {
-  hashPassword,
-  isValidEmail,
-  isValidPassword,
-  isValidUsername,
-  normalizeEmail,
-  normalizeUsername,
-  verifyPassword,
-} from '@/lib/account';
-import {
-  createCredentials,
-  getCredentialByMemberId,
   getCredentialByLogin,
-  getCredentialMemberIds,
+  getCredentialByMemberId,
   updateCredentials,
 } from '@/lib/data/accounts';
 import { getMembers } from '@/lib/data/members';
-import { hasEnrollmentAccess, isUnlocked, readViewer } from '@/lib/session';
+import { isUnlocked, readViewer } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
 import type { AccentName } from '@/types/fitness';
 
@@ -37,7 +33,6 @@ export interface UnlockState {
   ok?: boolean;
   error?: string;
   members?: { id: string; name: string; accent: AccentName }[];
-  legacyMembers?: { id: string; name: string; accent: AccentName }[];
 }
 
 const setAuthenticatedCookies = async (memberId: string) => {
@@ -97,12 +92,10 @@ export const unlockEnrollment = async (
     });
   }
 
-  const [members, credentialIds] = await Promise.all([getMembers(), getCredentialMemberIds()]);
-  const options = members.map(({ id, name, accent }) => ({ id, name, accent }));
+  const members = await getMembers();
   return {
     ok: true,
-    members: options,
-    legacyMembers: options.filter((member) => !credentialIds.has(member.id)),
+    members: members.map(({ id, name, accent }) => ({ id, name, accent })),
   };
 };
 
@@ -113,7 +106,9 @@ export const loginWithCredentials = async (
   if (!isSupabaseConfigured()) {
     return { error: 'Account login is unavailable until a Supabase server key is configured.' };
   }
-  const login = String(formData.get('login') ?? '').trim().toLowerCase();
+  const login = String(formData.get('login') ?? '')
+    .trim()
+    .toLowerCase();
   const password = String(formData.get('password') ?? '');
   if (!login || !password) return { error: 'Enter your username or email and password.' };
 
@@ -126,37 +121,6 @@ export const loginWithCredentials = async (
   if (!(await setAuthenticatedCookies(credential.member_id))) {
     return { error: 'Login is unavailable until APP_PASSCODE is configured.' };
   }
-  return { ok: true };
-};
-
-export const claimLegacyAccount = async (
-  _prev: IdentityState,
-  formData: FormData
-): Promise<IdentityState> => {
-  if (!isSupabaseConfigured()) {
-    return { error: 'Account login is unavailable until a Supabase server key is configured.' };
-  }
-  if (!(await hasEnrollmentAccess())) return { error: 'Enter the app passcode first.' };
-
-  const memberId = String(formData.get('memberId') ?? '');
-  const username = normalizeUsername(String(formData.get('username') ?? ''));
-  const email = normalizeEmail(String(formData.get('email') ?? ''));
-  const password = String(formData.get('password') ?? '');
-  if (!isValidUsername(username)) {
-    return { error: 'Use 3–30 lowercase letters, numbers, dots, dashes or underscores.' };
-  }
-  if (!isValidEmail(email)) return { error: 'Enter a valid email address.' };
-  if (!isValidPassword(password)) return { error: 'Use a password between 8 and 128 characters.' };
-
-  const [members, credentialIds] = await Promise.all([getMembers(), getCredentialMemberIds()]);
-  if (!members.some((member) => member.id === memberId) || credentialIds.has(memberId)) {
-    return { error: 'That legacy account is no longer available.' };
-  }
-
-  const error = await createCredentials(memberId, username, email, await hashPassword(password));
-  if (error) return { error };
-
-  await setAuthenticatedCookies(memberId);
   return { ok: true };
 };
 
