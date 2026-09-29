@@ -88,6 +88,7 @@
   /* ---- Status (fixed, never themed, never used for identity) ---- */
   --c-good: #0ca30c;
   --c-warning: #fab219;
+  --c-warning-ink: var(--c-warning);
   --c-serious: #ec835a;
   --c-critical: #d03b3b;
 
@@ -114,11 +115,12 @@
   --surface-top-glint-opacity: 0;
 
   --page-background:
-    linear-gradient(135deg, rgb(17 126 238 / 24%) 0%, transparent 32rem),
-    linear-gradient(315deg, rgb(0 188 135 / 18%) 0%, transparent 30rem),
-    linear-gradient(118deg, transparent 24%, rgb(226 55 132 / 7%) 52%, transparent 74%), var(--c-bg);
+    linear-gradient(118deg, rgb(255 255 255 / 76%) 0%, rgb(255 255 255 / 18%) 34%, transparent 58%),
+    linear-gradient(135deg, rgb(17 126 238 / 10%) 0%, transparent 34rem),
+    linear-gradient(315deg, rgb(0 188 135 / 7%) 0%, transparent 32rem),
+    linear-gradient(118deg, transparent 28%, rgb(226 55 132 / 3%) 54%, transparent 76%), var(--c-bg);
 
-  --c-bg: #edf7fc;
+  --c-bg: #f3f7fa;
   --c-bg-alt: #fbfdff;
   --c-surface: #ffffff;
   --c-surface-soft: #e0f0f8;
@@ -152,6 +154,7 @@
   --c-border-strong: rgb(17 100 161 / 31%);
   --c-accent: #086fce;
   --c-accent-ink: #ffffff;
+  --c-warning-ink: #7b4f00;
 
   --accent-blue: #0b72db;
   --accent-orange: #ed4f12;
