@@ -262,6 +262,12 @@
 .quiet,
 .danger {
   min-height: 2.1rem;
+  /* inline-flex so any of these can carry a leading icon without it sitting on a
+     different baseline from the label. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
   padding: 0.4rem 0.75rem;
   font-size: 0.8rem;
   font-weight: 600;
@@ -304,6 +310,12 @@
 .danger:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+.primary svg,
+.quiet svg,
+.danger svg {
+  flex: 0 0 auto;
 }
 
 .primary:focus-visible,

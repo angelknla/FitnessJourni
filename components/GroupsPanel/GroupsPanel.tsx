@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronRightIcon, CrossIcon, GroupIcon } from '@components/Icons/Icons';
+import { ChevronRightIcon, CrossIcon, GroupIcon, SwitchIcon } from '@components/Icons/Icons';
 import { useActionState, useEffect, useState } from 'react';
 import {
   changeGroupMemberRole,
@@ -290,6 +290,7 @@ export const GroupsPanel = ({
                     <form action={switchAction} className={styles.inlineForm}>
                       <input type="hidden" name="groupId" value={group.id} />
                       <button type="submit" className={styles.primary} disabled={switching}>
+                        <SwitchIcon />
                         Switch to {group.name}
                       </button>
                       <span className={styles.hint}>
