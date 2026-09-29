@@ -2,7 +2,7 @@
 
 import { BinIcon, CrossIcon, PlusIcon } from '@components/Icons/Icons';
 import { workoutFocuses, workoutFocusLabels } from '@data/fitnessData';
-import { useActionState, useState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { type ActionState, deleteWorkout, logWorkout } from '@/app/actions';
 import type { Member, Workout, WorkoutFocus } from '@/types/fitness';
 
@@ -72,6 +72,13 @@ export const WorkoutLogger = ({
   const trainedToday = logged.length > 0;
   const formTitle = trainedToday ? 'Log another session' : 'What did you train?';
   const formId = `workout-log-${member.id}`;
+
+  useEffect(() => {
+    if (state.ok && state.bookedAt) {
+      setPicked([]);
+      setFormOpen(false);
+    }
+  }, [state.ok, state.bookedAt]);
 
   const toggle = (focus: WorkoutFocus) =>
     setPicked((current) =>
@@ -148,12 +155,7 @@ export const WorkoutLogger = ({
 
               <label className={styles.noteField}>
                 <span className={styles.noteLabel}>Note (optional)</span>
-                <input
-                  type="text"
-                  name="note"
-                  maxLength={200}
-                  placeholder="Felt strong on bench"
-                />
+                <input type="text" name="note" maxLength={200} placeholder="Felt strong on bench" />
               </label>
 
               <div className={styles.actions}>
@@ -165,7 +167,9 @@ export const WorkoutLogger = ({
                   {isPending ? 'Logging…' : 'Log workout'}
                 </button>
 
-                {picked.length > 0 && <span className={styles.picked}>{picked.length} selected</span>}
+                {picked.length > 0 && (
+                  <span className={styles.picked}>{picked.length} selected</span>
+                )}
 
                 {state.error && (
                   <p className={styles.error} role="alert">

@@ -1,7 +1,7 @@
 'use client';
 
 import { CrossIcon, PlusIcon } from '@components/Icons/Icons';
-import { useActionState, useEffect, useState } from 'react';
+import { useActionState, useEffect, useRef, useState } from 'react';
 import { type ActionState, saveDailyLog } from '@/app/actions';
 import type { DailyLog, Member } from '@/types/fitness';
 
@@ -33,22 +33,53 @@ export const QuickEntry = ({ member, log, date }: QuickEntryProps) => {
   const [state, formAction, isPending] = useActionState(saveDailyLog, initial);
   const [open, setOpen] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const returnScrollRef = useRef<number | null>(null);
   const formId = `daily-log-${member.id}`;
 
   useEffect(() => {
-    if (state.ok) {
+    if (state.ok && state.bookedAt) {
       setDirty(false);
+      setOpen(false);
     }
-  }, [state]);
+  }, [state.ok, state.bookedAt]);
+
+  useEffect(() => {
+    if (open) {
+      if (returnScrollRef.current === null) return;
+
+      const frame = requestAnimationFrame(() => {
+        wrapperRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+
+      return () => cancelAnimationFrame(frame);
+    }
+
+    if (returnScrollRef.current === null) return;
+
+    const returnScroll = returnScrollRef.current;
+    returnScrollRef.current = null;
+
+    const frame = requestAnimationFrame(() => {
+      window.scrollTo({ top: returnScroll, behavior: 'smooth' });
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [open]);
 
   return (
-    <div className={styles.wrapper}>
+    <div className={styles.wrapper} ref={wrapperRef}>
       <button
         type="button"
         className={styles.toggle}
         aria-expanded={open}
         aria-controls={formId}
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => {
+          if (!open && window.matchMedia('(max-width: 599px)').matches) {
+            returnScrollRef.current = window.scrollY;
+          }
+          setOpen((current) => !current);
+        }}
       >
         <span>Log your day</span>
         {open ? <CrossIcon /> : <PlusIcon />}

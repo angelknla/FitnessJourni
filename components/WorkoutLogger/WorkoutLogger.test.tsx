@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { Member, Workout } from '@/types/fitness';
 
 vi.mock('@/app/actions', () => ({
-  logWorkout: vi.fn(async () => ({ ok: false })),
+  logWorkout: vi.fn(async () => ({ ok: true, bookedAt: Date.now() })),
   deleteWorkout: vi.fn(async () => ({ ok: false })),
 }));
 
@@ -105,6 +105,21 @@ describe('WorkoutLogger', () => {
 
     await user.click(screen.getByRole('checkbox', { name: 'Legs' }));
     expect(submit).toBeEnabled();
+  });
+
+  it('closes the form after a workout is saved', async () => {
+    const user = userEvent.setup();
+    setup();
+    await openForm(user, /What did you train/);
+
+    await user.click(screen.getByRole('checkbox', { name: 'Legs' }));
+    await user.click(screen.getByRole('button', { name: 'Log workout' }));
+
+    expect(await screen.findByRole('button', { name: 'What did you train?' })).toHaveAttribute(
+      'aria-expanded',
+      'false'
+    );
+    expect(screen.queryByRole('checkbox', { name: 'Legs' })).not.toBeInTheDocument();
   });
 
   it('shows a multi-focus session as one entry', () => {

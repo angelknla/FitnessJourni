@@ -10,6 +10,10 @@
   gap: 1.5rem;
 }
 
+:global(:root[data-theme="light"]) .dashboard {
+  --c-good: #79d568;
+}
+
 .highlights {
   position: relative;
   display: grid;

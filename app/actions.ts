@@ -450,7 +450,7 @@ export const saveDailyLog = async (
   }
 
   revalidatePath('/');
-  return { ok: true, message: 'Data saved.' };
+  return { ok: true, message: 'Data saved.', bookedAt: Date.now() };
 };
 
 export const saveSleep = async (_prev: ActionState, formData: FormData): Promise<ActionState> => {
@@ -615,9 +615,14 @@ export const addMember = async (_prev: ActionState, formData: FormData): Promise
   );
   if (credentialError) {
     if (avatarFile) {
-      await supabase.storage.from(AVATAR_UPLOAD_BUCKET).remove([avatarObjectPath(data.id as string)]);
+      await supabase.storage
+        .from(AVATAR_UPLOAD_BUCKET)
+        .remove([avatarObjectPath(data.id as string)]);
     }
-    await supabase.from('members').delete().eq('id', data.id as string);
+    await supabase
+      .from('members')
+      .delete()
+      .eq('id', data.id as string);
     return fail(credentialError);
   }
 
@@ -626,11 +631,11 @@ export const addMember = async (_prev: ActionState, formData: FormData): Promise
     VIEWER_COOKIE,
     await createViewerToken(data.id as string, process.env.APP_PASSCODE as string),
     {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    maxAge: COOKIE_MAX_AGE,
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: COOKIE_MAX_AGE,
     }
   );
 
@@ -1053,7 +1058,7 @@ export const logWorkout = async (_prev: ActionState, formData: FormData): Promis
 
   revalidatePath('/');
   revalidatePath('/workouts');
-  return ok;
+  return { ok: true, bookedAt: Date.now() };
 };
 
 export const deleteWorkout = async (

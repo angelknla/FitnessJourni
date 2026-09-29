@@ -1,11 +1,11 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { DailyLog, Member, MemberTargets } from '@/types/fitness';
 
 // Mocked so the real modules (and next/cache with them) stay out of jsdom.
 vi.mock('@/app/actions', () => ({
-  saveDailyLog: vi.fn(async () => ({ ok: true, message: 'Data saved.' })),
+  saveDailyLog: vi.fn(async () => ({ ok: true, message: 'Data saved.', bookedAt: Date.now() })),
   saveSleep: vi.fn(async () => ({ ok: true })),
   updateTargets: vi.fn(async () => ({ ok: false })),
   logWorkout: vi.fn(async () => ({ ok: false })),
@@ -236,6 +236,36 @@ describe('Home', () => {
     expect(screen.getByRole('spinbutton', { name: 'Steps' })).toBeInTheDocument();
   });
 
+  it('centres the full daily input section when it opens on mobile', async () => {
+    const user = userEvent.setup();
+    const scrollIntoView = vi.fn();
+    HTMLElement.prototype.scrollIntoView = scrollIntoView;
+    vi.mocked(window.matchMedia).mockReturnValueOnce({ matches: true } as MediaQueryList);
+    setup('m1');
+
+    await user.click(screen.getByRole('button', { name: 'Log your day' }));
+
+    await waitFor(() => {
+      expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' });
+    });
+  });
+
+  it('restores the trigger position when daily inputs close on mobile', async () => {
+    const user = userEvent.setup();
+    const scrollTo = vi.fn();
+    window.scrollTo = scrollTo;
+    vi.mocked(window.matchMedia).mockReturnValueOnce({ matches: true } as MediaQueryList);
+    setup('m1');
+
+    const toggle = screen.getByRole('button', { name: 'Log your day' });
+    await user.click(toggle);
+    await user.click(toggle);
+
+    await waitFor(() => {
+      expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
+    });
+  });
+
   it('only enables Save while daily inputs differ from their loaded values', async () => {
     const user = userEvent.setup();
     setup('m1');
@@ -254,7 +284,7 @@ describe('Home', () => {
     expect(save).toBeDisabled();
   });
 
-  it('confirms when daily inputs are saved', async () => {
+  it('closes daily inputs after they are saved', async () => {
     const user = userEvent.setup();
     setup('m1');
     await user.click(screen.getByRole('button', { name: 'Log your day' }));
@@ -264,7 +294,11 @@ describe('Home', () => {
     await user.type(steps, '9500');
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
-    expect(await screen.findByRole('status')).toHaveTextContent('Data saved.');
+    expect(await screen.findByRole('button', { name: 'Log your day' })).toHaveAttribute(
+      'aria-expanded',
+      'false'
+    );
+    expect(screen.queryByRole('spinbutton', { name: 'Steps' })).not.toBeInTheDocument();
   });
 
   it('turns another person’s tab read-only without showing a redundant notice', async () => {
