@@ -7,11 +7,15 @@
 .identity {
   display: grid;
   grid-template-columns: 5.5rem minmax(0, 1fr);
-  align-items: stretch;
-  gap: 0.75rem;
+  grid-template-areas:
+    "avatar details"
+    "actions actions";
+  align-items: center;
+  gap: 0.9rem;
 }
 
 .avatar {
+  grid-area: avatar;
   width: 5.5rem;
   height: 5.5rem;
   min-width: 5.5rem;
@@ -30,13 +34,14 @@
   border-radius: 50%;
 }
 
+/* Beside the avatar, centred against it — the name and the group only. */
 .identityDetails {
+  grid-area: details;
   min-width: 0;
-  min-height: 5.5rem;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 0.35rem;
+  justify-content: center;
+  gap: 0.1rem;
 }
 
 .avatar img {
@@ -50,15 +55,6 @@
   border-radius: inherit;
 }
 
-.chooseAvatar {
-  width: fit-content;
-  padding: 0.4rem 0.7rem;
-  font-size: 0.8rem;
-  color: var(--c-ink-soft);
-  background: var(--c-surface-raised);
-  border-radius: var(--r-sm);
-}
-
 .avatarPicker {
   display: flex;
   flex-direction: column;
@@ -69,21 +65,21 @@
   border-radius: var(--r-sm);
 }
 
-.avatarPickerHead {
+.panelHead {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
 }
 
-.avatarPickerHead h3 {
+.panelHead h3 {
   margin: 0;
   font-size: 0.82rem;
   font-weight: 600;
   color: var(--c-ink-soft);
 }
 
-.closeAvatarPicker {
+.panelClose {
   width: 1.9rem;
   height: 1.9rem;
   display: grid;
@@ -94,7 +90,7 @@
   border-color: transparent;
 }
 
-.closeAvatarPicker:hover {
+.panelClose:hover {
   color: var(--c-ink);
   background: var(--c-surface-raised);
   border-color: var(--c-border);
@@ -634,11 +630,55 @@
   gap: 0.75rem;
 }
 
+/* ---- Primary actions ----------------------------------------------------
+   Matched to the login modal's submit (components/LoginButton), so committing a
+   change looks the same wherever it happens. Kept in step by the tokens rather
+   than by copying values: both are accent mixed into the control surface. */
+.saveButton,
+.themeOptions button[aria-pressed="true"] {
+  color: var(--c-ink);
+  border: 1px solid color-mix(in oklab, var(--c-accent) 54%, var(--c-border-strong));
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--c-accent) 18%, rgb(255 255 255 / 7%)),
+    color-mix(in oklab, var(--c-accent) 10%, rgb(255 255 255 / 2%))
+  );
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 12%),
+    0 5px 13px color-mix(in oklab, var(--c-accent) 10%, rgb(0 0 0 / 19%));
+}
+
+.saveButton:hover:not(:disabled),
+.themeOptions button[aria-pressed="true"]:hover:not(:disabled) {
+  color: var(--c-ink);
+  border-color: color-mix(in oklab, var(--c-accent) 70%, var(--c-border-strong));
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--c-accent) 23%, rgb(255 255 255 / 10%)),
+    color-mix(in oklab, var(--c-accent) 14%, rgb(255 255 255 / 4%))
+  );
+}
+
+/* In light theme the login button drops the tinted gradient for the plain control
+   surface, keeping only the accent border. Copied too, or these would be the one
+   blue-filled control on an otherwise white page. */
+:global(:root[data-theme="light"]) .saveButton,
+:global(:root[data-theme="light"]) .themeOptions button[aria-pressed="true"] {
+  background: var(--control-surface);
+  box-shadow: var(--control-shadow);
+}
+
+:global(:root[data-theme="light"]) .saveButton:hover:not(:disabled),
+:global(:root[data-theme="light"]) .themeOptions button[aria-pressed="true"]:hover:not(:disabled) {
+  background: var(--control-surface-hover);
+}
+
 .saveButton {
   width: 7.25rem;
   min-height: 2.3rem;
   padding: 0.45rem 0.75rem;
   font-size: 0.84rem;
+  font-weight: 600;
 }
 
 .success,
@@ -667,15 +707,14 @@
   border-top: 1px solid var(--c-border);
 }
 
+/* Two plain controls side by side. The segmented track this used to sit in was
+   the only tinted panel in Account, and read as a surface rather than a pair of
+   buttons. */
 .accountActions {
   width: min(100%, 34rem);
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.4rem;
-  padding: 0.3rem;
-  background: var(--c-surface-soft);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-md);
+  gap: 0.5rem;
 }
 
 .appearance {
@@ -718,10 +757,10 @@
   border-radius: calc(var(--r-sm) - 2px);
 }
 
+/* The pressed toggle shares the primary treatment above; only its radius
+   differs, because it sits inside a segmented track. */
 .themeOptions button[aria-pressed="true"] {
-  color: var(--c-ink);
-  background: var(--c-surface-raised);
-  box-shadow: var(--shadow-sm);
+  border-radius: calc(var(--r-sm) - 2px);
 }
 
 .accountForm {
@@ -780,40 +819,69 @@
   gap: 0.7rem;
 }
 
-.switchUser,
-.logout,
-.removeMember {
+.switchUser {
   width: 100%;
   min-height: 2.75rem;
   padding: 0.65rem 0.8rem;
   font-size: 0.86rem;
-  white-space: nowrap;
   border: 0;
   border-radius: var(--r-sm);
-}
-
-.switchUser {
   background: var(--c-surface-raised);
 }
 
-.logout {
-  color: var(--c-critical);
-  background: transparent;
-}
-
+/*
+ * The same pill as .identityAction, in red. Red text and a red-tinted border are
+ * enough to mark these as the destructive pair — a filled red button would be the
+ * loudest thing in Profile, and neither of these is the action anyone came for.
+ */
+.logout,
 .removeMember {
+  min-height: 2.2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.42rem 0.8rem;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  white-space: normal;
   color: var(--c-critical);
-  background: transparent;
+  background: var(--control-surface);
+  border: 1px solid color-mix(in oklab, var(--c-critical) 30%, var(--c-border));
+  border-radius: var(--r-pill);
+  box-shadow: none;
+  cursor: pointer;
+  transition:
+    color 0.2s var(--ease-flow),
+    border-color 0.2s var(--ease-flow);
 }
 
+/* Filling the grid; the standalone one in the account-unavailable state does not. */
+.accountActions .logout,
+.accountActions .removeMember {
+  width: 100%;
+}
+
+.logout:hover:not(:disabled),
 .removeMember:hover:not(:disabled) {
-  color: #fff;
-  background: color-mix(in oklab, var(--c-critical) 35%, transparent);
+  background: color-mix(in oklab, var(--c-critical) 10%, var(--control-surface-hover));
+  border-color: color-mix(in oklab, var(--c-critical) 58%, transparent);
+  box-shadow: none;
+  transform: none;
 }
 
-.logout:hover:not(:disabled) {
-  color: #fff;
-  background: color-mix(in oklab, var(--c-critical) 35%, transparent);
+.logout:focus-visible,
+.removeMember:focus-visible {
+  outline: 2px solid var(--c-critical);
+  outline-offset: 2px;
+}
+
+.logout:disabled,
+.removeMember:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .visitor {
@@ -848,4 +916,163 @@
   .inlineForm button {
     width: 100%;
   }
+}
+
+/* ---- Identity actions ---------------------------------------------------
+   Both controls are the same thing to the eye — a quiet pill on the control
+   surface — because they sit side by side and neither is the primary action.
+   One rule for both so they cannot drift apart. */
+.identityAction {
+  /* inline-flex with an explicit line-height rather than leaving it to the
+     defaults: a <button> and an <a> disagree about both, which left these
+     three pixels different in height. */
+  min-height: 2.2rem;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.42rem 0.6rem;
+  text-align: center;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--c-ink-soft);
+  text-decoration: none;
+  white-space: normal;
+  background: var(--control-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  transition:
+    color 0.2s var(--ease-flow),
+    border-color 0.2s var(--ease-flow);
+}
+
+/* Open panel marked on its own button, so which of the four is showing is
+   visible without reading the panel below. */
+.identityAction[aria-expanded="true"] {
+  color: var(--profile-accent);
+  border-color: color-mix(in oklab, var(--profile-accent) 55%, transparent);
+  background: color-mix(in oklab, var(--profile-accent) 10%, var(--c-surface-raised));
+}
+
+.identityAction:hover {
+  color: var(--c-ink);
+  border-color: var(--c-border-strong);
+}
+
+.identityAction:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
+/* Two by two. None of the four is the primary action, so they get equal weight
+   and equal width rather than each hugging its own label. */
+.identityActions {
+  grid-area: actions;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+/* ---- Current group ------------------------------------------------------
+   Which group this account shares with. Needs to beat `.identity p`, which
+   upper-cases the eyebrow above it — a group's name is a name, not a label. */
+.identity .currentGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.38rem;
+  /* Clear of the name above it: two different facts, not one stacked label. */
+  margin: 0.6rem 0 0;
+  /* Close to the name above it: which group you are in is nearly as important as
+     who you are, since it decides what every other page shows. */
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-transform: none;
+  color: var(--c-ink-soft);
+  text-decoration: none;
+}
+
+/* Says what the name beside it is. Without this the group reads as just another
+   line of the person's details rather than as the one they are currently in. */
+.currentGroupLabel {
+  flex: 0 0 auto;
+  padding: 0.12rem 0.4rem;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--profile-accent);
+  background: color-mix(in oklab, var(--profile-accent) 13%, transparent);
+  border-radius: var(--r-pill);
+}
+
+.currentGroupName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A chevron rather than an underline: it says "this goes somewhere" without
+   putting a rule through the group's name. Matches the badge on Home. */
+.currentGroupChevron {
+  flex: 0 0 auto;
+  display: inline-flex;
+  color: var(--c-ink-muted);
+  transition: transform 0.2s var(--ease-flow);
+}
+
+.identity .currentGroup:hover .currentGroupChevron {
+  color: var(--profile-accent);
+  transform: translateX(2px);
+}
+
+.identity .currentGroup:hover {
+  color: var(--c-ink);
+}
+
+.identity .currentGroup:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 3px;
+  border-radius: var(--r-sm);
+}
+
+/* The group icon scales with the text it sits against. */
+.identity .currentGroup svg {
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+  color: var(--profile-accent);
+}
+
+/* The achievements panel wraps a component that brings its own heading, so the
+   close control is positioned over it rather than given a head of its own —
+   inset to match the card's own padding rather than sitting on its corner. */
+.medalsPanel {
+  position: relative;
+}
+
+.medalsPanel .panelClose {
+  position: absolute;
+  top: 0.8rem;
+  right: 0.8rem;
+  z-index: 1;
+}
+
+/*
+ * .accentPicker is a wrapping flex row of swatches, so the head would otherwise
+ * line up as one more item among them. Its own full-width row puts the title and
+ * the close control at the top, where the picture chooser's already are.
+ */
+.accentPicker .panelHead {
+  flex-basis: 100%;
+}
+
+/* Jump targets clear the fixed header instead of hiding under it. */
+.detailGroup,
+.account {
+  scroll-margin-top: 5.5rem;
 }

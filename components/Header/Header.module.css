@@ -98,7 +98,7 @@
 
 @media (max-width: 480px) {
   .inner {
-    padding: 1rem 1.6rem;
+    padding-block: 1rem;
   }
 }
 
@@ -310,8 +310,16 @@
     font-size: 1rem;
   }
 
+  /* Matches the content column's gutter (1.5rem from 600px up), so the controls
+     here and the page below share a right edge. */
   .inner {
-    padding-inline: 1.1rem;
+    padding-inline: 1.5rem;
+  }
+}
+
+@media (max-width: 599px) {
+  .inner {
+    padding-inline: 1rem;
   }
 }
 
@@ -325,8 +333,10 @@
   }
 
   /* Must sit after the 960 rule above, not in the earlier 480 block: both match
-     at this width, and the last one wins. */
+     at this width, and the last one wins. The content column's gutter is 1rem
+     here, and these have to agree for the group badge to line up under the
+     profile control. */
   .inner {
-    padding-inline: 0.85rem;
+    padding-inline: 1rem;
   }
 }

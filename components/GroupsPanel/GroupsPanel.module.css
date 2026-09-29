@@ -1,0 +1,551 @@
+/* ============================================================================
+   Groups
+   Soft surfaces rather than rules. An earlier pass separated everything with a
+   border and ended up a grid of boxes; here each group is one rounded card, the
+   lists inside it are separated by space, and the only hard lines left are the
+   ones that actually divide two different kinds of thing.
+   ============================================================================ */
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+
+/* A titled block that is not a group: invitations, your requests, another group. */
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.block h2 {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-ink-muted);
+}
+
+/* ---- One group: the same pill as the triggers at the bottom of the page, in
+   collapsible form, with its contents in the panel below it ------------------ */
+.groupList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.groupHeading {
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* Same surface, border, radius and open-state tint as .panelTrigger — full width
+   and left-aligned, because it labels a section rather than sitting in a row. */
+.groupToggle {
+  width: 100%;
+  min-height: 2.6rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.85rem;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: left;
+  color: var(--c-ink-soft);
+  background: var(--control-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-pill);
+  box-shadow: none;
+  cursor: pointer;
+  transition:
+    color 0.2s var(--ease-flow),
+    border-color 0.2s var(--ease-flow);
+}
+
+.groupToggle:hover:not(:disabled) {
+  color: var(--c-ink);
+  background: var(--control-surface-hover);
+  border-color: var(--c-border-strong);
+  box-shadow: none;
+  transform: none;
+}
+
+.groupToggle:active:not(:disabled) {
+  box-shadow: none;
+  transform: none;
+}
+
+/*
+ * Deliberately no tint when open. On a control this wide an accent fill reads as a
+ * stuck hover state; the rotated chevron and the panel below already say it is
+ * open, and the CURRENT chip says which group you are in.
+ */
+
+.groupToggle:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
+.groupToggle > svg {
+  flex: 0 0 auto;
+  color: currentcolor;
+  opacity: 0.75;
+}
+
+.chevron {
+  display: inline-flex;
+  color: currentcolor;
+  opacity: 0.75;
+  transition: transform 0.2s var(--ease-flow);
+}
+
+.chevron[data-open] {
+  transform: rotate(90deg);
+}
+
+.groupName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--c-ink);
+}
+
+.groupMeta {
+  margin-left: auto;
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--c-ink-muted);
+}
+
+.currentChip {
+  flex-shrink: 0;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--c-accent);
+  background: color-mix(in oklab, var(--c-accent) 14%, transparent);
+  border-radius: var(--r-pill);
+}
+
+/* The open group's contents, in the same soft panel a trigger reveals. */
+.groupBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1rem;
+  background: var(--c-surface-soft);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+}
+
+/*
+ * `display: flex` above beats the user-agent's `[hidden] { display: none }`, so
+ * without this the collapsed body stays on screen — the attribute would hide it
+ * from assistive technology and nothing else. Any author `display` needs this pair.
+ */
+.groupBody[hidden] {
+  display: none;
+}
+
+/* ---- Sub-blocks inside an open group --------------------------------------- */
+.section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.section h3 {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-ink-muted);
+}
+
+.section > ul {
+  width: 100%;
+}
+
+.description,
+.empty,
+.hint {
+  margin: 0;
+  max-width: 60ch;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--c-ink-muted);
+}
+
+/* ---- Rows: spaced and softly inset, not ruled ------------------------------ */
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.7rem;
+  background: var(--c-surface);
+  border-radius: var(--r-md);
+}
+
+.rowText {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.rowText strong {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  color: var(--c-ink);
+}
+
+.rowText strong svg {
+  color: var(--c-ink-muted);
+}
+
+.rowText small {
+  font-size: 0.76rem;
+  color: var(--c-ink-muted);
+}
+
+.you {
+  padding: 0.05rem 0.35rem;
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-ink-muted);
+  background: var(--c-surface-raised);
+  border-radius: var(--r-pill);
+}
+
+.rowActions {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+/* ---- Actions --------------------------------------------------------------- */
+.primary,
+.quiet,
+.danger {
+  min-height: 2.1rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: inherit;
+  white-space: nowrap;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+}
+
+.primary {
+  color: var(--c-accent-ink);
+  background: var(--c-accent);
+  border: 1px solid transparent;
+}
+
+.quiet {
+  color: var(--c-ink-soft);
+  background: var(--control-surface);
+  border: 1px solid var(--c-border);
+}
+
+.danger {
+  color: #fff;
+  background: var(--c-critical);
+  border: 1px solid transparent;
+}
+
+.primary:hover:not(:disabled),
+.danger:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.quiet:hover:not(:disabled) {
+  color: var(--c-ink);
+  border-color: var(--c-border-strong);
+}
+
+.primary:disabled,
+.quiet:disabled,
+.danger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.primary:focus-visible,
+.quiet:focus-visible,
+.danger:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
+/* ---- Trigger and panel, as Profile's picture and colour choosers do it -----
+   Repeated rather than shared because CSS modules cannot import a class; the
+   tokens are the same, so the two stay in step through those. */
+.triggerRow {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.triggerRow .panelTrigger {
+  width: 100%;
+}
+
+.panelTrigger {
+  min-height: 2.2rem;
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.42rem 0.8rem;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--c-ink-soft);
+  background: var(--control-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-pill);
+  box-shadow: none;
+  cursor: pointer;
+  transition:
+    color 0.2s var(--ease-flow),
+    border-color 0.2s var(--ease-flow);
+}
+
+.panelTrigger:hover:not(:disabled) {
+  color: var(--c-ink);
+  background: var(--control-surface-hover);
+  border-color: var(--c-border-strong);
+  box-shadow: none;
+  transform: none;
+}
+
+/* Which one is open, without having to read the panel below it. */
+.panelTrigger[aria-expanded="true"] {
+  color: var(--c-accent);
+  background: color-mix(in oklab, var(--c-accent) 10%, var(--c-surface-raised));
+  border-color: color-mix(in oklab, var(--c-accent) 55%, transparent);
+}
+
+.panelTrigger:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
+.panel {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.8rem;
+  padding: 1rem;
+  background: var(--c-surface-soft);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+}
+
+/* A settings panel opened inside a group body is already on that surface, so it
+   steps up rather than repeating the same one. */
+.groupBody .panel {
+  background: var(--c-surface);
+}
+
+.panelHead {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.panelHead h3 {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--c-ink-soft);
+}
+
+.panelClose {
+  width: 1.9rem;
+  height: 1.9rem;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: var(--c-ink-soft);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.panelClose:hover {
+  color: var(--c-ink);
+  background: var(--c-surface-hover);
+  border-color: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+.panelClose:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
+/* ---- Forms ---------------------------------------------------------------- */
+.form,
+.inlineForm {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.7rem;
+}
+
+.inlineForm {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* .panel is itself a form in places, so the field rules cover both — without
+   this a label sat directly against its input. */
+.form label,
+.panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+  max-width: 24rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--c-ink-muted);
+}
+
+.form input,
+.form textarea,
+.panel input,
+.panel textarea {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.9rem;
+  font-weight: 400;
+  font-family: inherit;
+  color: var(--c-ink);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--r-md);
+}
+
+/* Height is managed by autoGrow, so the drag handle and a scrollbar would both
+   fight it. */
+.form textarea,
+.panel textarea {
+  resize: none;
+  overflow: hidden;
+}
+
+.form input:focus-visible,
+.form textarea:focus-visible,
+.panel input:focus-visible,
+.panel textarea:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 1px;
+}
+
+/* ---- The join code -------------------------------------------------------- */
+.codeRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.code {
+  padding: 0.45rem 0.8rem;
+  background: var(--c-surface);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--c-ink);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--r-pill);
+}
+
+/* ---- Status -------------------------------------------------------------- */
+.success,
+.error {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--c-ink-muted);
+}
+
+.error {
+  color: var(--c-critical);
+}
+
+.success {
+  color: var(--c-good);
+}
+
+/* Phones: a row stacks so a long name and three controls stop fighting for width. */
+@media (max-width: 560px) {
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .rowActions {
+    justify-content: flex-start;
+  }
+
+  .form label,
+  .panel label {
+    max-width: none;
+  }
+
+  .groupBody {
+    padding-inline: 0.8rem;
+  }
+}

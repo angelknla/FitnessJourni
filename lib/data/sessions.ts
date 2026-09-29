@@ -34,9 +34,13 @@ export const hasUnreadSessions = (
   lastReadAt: string | null
 ): boolean => Boolean(latestSessionAt && (!lastReadAt || latestSessionAt > lastReadAt));
 
-export const getHasUnreadSessions = async (memberId: string): Promise<boolean> => {
+/** Per group, for the same reason the chat cursor is — see lib/data/messages.ts. */
+export const getHasUnreadSessions = async (
+  memberId: string,
+  groupId: string | null
+): Promise<boolean> => {
   const supabase = getSupabase();
-  if (!supabase) {
+  if (!supabase || !groupId) {
     return false;
   }
 
@@ -44,9 +48,15 @@ export const getHasUnreadSessions = async (memberId: string): Promise<boolean> =
     supabase
       .from('sessions')
       .select('created_at')
+      .eq('group_id', groupId)
       .order('created_at', { ascending: false })
       .limit(1),
-    supabase.from('session_reads').select('last_read_at').eq('member_id', memberId).maybeSingle(),
+    supabase
+      .from('session_reads')
+      .select('last_read_at')
+      .eq('member_id', memberId)
+      .eq('group_id', groupId)
+      .maybeSingle(),
   ]);
 
   if (latestResult.error || readResult.error) {
@@ -62,27 +72,33 @@ export const getHasUnreadSessions = async (memberId: string): Promise<boolean> =
   return hasUnreadSessions(latestSessionAt ?? null, lastReadAt ?? null);
 };
 
-/** Sessions from `fromDate` onwards, soonest first. */
-export const getUpcomingSessions = cache(async (fromDate: string): Promise<TrainingSession[]> => {
-  const supabase = getSupabase();
-  if (!supabase) {
-    return [];
+/**
+ * One group's sessions from `fromDate` onwards, soonest first. A session belongs
+ * to its group outright, so Personal mode has none and no query is sent.
+ */
+export const getUpcomingSessions = cache(
+  async (fromDate: string, groupId: string | null): Promise<TrainingSession[]> => {
+    const supabase = getSupabase();
+    if (!supabase || !groupId) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from('sessions')
+      .select('*, session_rsvps(member_id, status)')
+      .eq('group_id', groupId)
+      .gte('session_date', fromDate)
+      .order('session_date', { ascending: true })
+      .order('session_time', { ascending: true });
+
+    if (error) {
+      console.error('[sessions] read failed:', error.message);
+      return [];
+    }
+
+    return (data as SessionRow[]).map(mapSession);
   }
-
-  const { data, error } = await supabase
-    .from('sessions')
-    .select('*, session_rsvps(member_id, status)')
-    .gte('session_date', fromDate)
-    .order('session_date', { ascending: true })
-    .order('session_time', { ascending: true });
-
-  if (error) {
-    console.error('[sessions] read failed:', error.message);
-    return [];
-  }
-
-  return (data as SessionRow[]).map(mapSession);
-});
+);
 
 /** Keep a session visible until 45 minutes after its booked start time. */
 export const upcomingSessions = (

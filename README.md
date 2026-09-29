@@ -11,6 +11,7 @@ Biome, Vitest — backed by Supabase. Dark-only and phone-first.
 | --- | --- |
 | `/` | **Today** — a tab per person; steps, water and calories as rings, macros as bars, quick entry, and a strip comparing everyone |
 | `/sessions` | **Sessions** — upcoming runs/workouts/swims/walks, and a form to book a day + time + activity |
+| `/groups` | **Groups** — the groups you belong to, their members and roles, invitations, join requests and join codes |
 
 Targets default to the 12-week playbook — 2,500 kcal, 156 g protein / 313 g carbs / 69 g fat,
 10,000 steps (8,000 minimum), 2.5 L water — and are stored per person, so they can diverge.
@@ -67,6 +68,50 @@ username.
 
 `robots.txt` disallows everything, so none of this ends up in search results.
 
+### Groups
+
+Everything shared is shared with a **group**. A member can belong to several and has exactly one
+active at a time; the active group decides which people and which shared content every other page
+shows. Someone in no group is in **Personal** mode: logging still works, and nothing they record is
+shared with anyone.
+
+Roles are **owner**, **admin** and **member**. The creator becomes the owner, a group always has
+exactly one (a partial unique index enforces it), and the owner cannot leave until they have handed
+it over. Admins run the group day to day but cannot manage the owner or each other. The rules
+themselves are pure functions in `lib/groups.ts`, and every one is re-checked inside the Postgres
+functions in `supabase/schema.sql` — the first so a refusal can be explained, the second so the rule
+holds even if a caller forgets to ask.
+
+Joining always needs two parties. An owner or admin invites by username and the invited person
+accepts; or someone enters a join code and an owner or admin approves the request. Neither route
+adds anybody on its own.
+
+**How visibility works.** Personal activity is recorded once, not once per group. When a log, workout
+or run is created, a row is written associating it with every group its author belonged to *at that
+moment* (`group_daily_logs`, `group_workouts`, `group_runs`). That single decision is what makes both
+rules hold at once:
+
+- joining a group exposes nothing logged beforehand — no row exists for a group that did not yet
+  contain the author;
+- leaving or being removed retracts nothing already shared — the rows outlive the membership, so the
+  people still there keep seeing the days that person was part of.
+
+Deriving visibility from current membership instead would get both of those wrong. Editing a record
+never re-shares it, which is why a day logged in Personal mode stays private even after joining.
+
+Chat, sessions and their reactions and RSVPs belong to one group outright, carry its id, and are
+deleted with it. Deleting a group keeps every member's own logs, workouts and runs and removes only
+their association with that group; everyone affected is moved to another group of theirs, or back to
+Personal mode.
+
+The group tables have RLS enabled with **no** anon policy at all, like `member_credentials`, so the
+publishable key cannot enumerate groups, memberships, invitations or join codes. The group functions
+also have their default `PUBLIC` execute grant revoked — without that, anyone holding that key could
+call `delete_group` over the REST endpoint.
+
+Group codes look like `N7K4-P2Q9`, in an alphabet with no I, L, O, 0 or 1 so they survive being read
+aloud. Regenerating one invalidates the old immediately.
+
 ### Timezone
 
 The logged date is resolved on the server. If a deployment's date ever disagrees with yours, set
@@ -91,14 +136,19 @@ The logged date is resolved on the server. If a deployment's date ever disagrees
 ```
 app/
   actions.ts          Server Actions — every write goes through here
+  group-actions.ts    Group Server Actions; authorization is re-derived, never trusted
   page.tsx            Today
   (pages)/sessions/   Sessions
+  (pages)/groups/     Groups
 components/           One folder per component: Component.tsx + Component.module.css
 data/                 Static data: nav, activity labels, accent slots, playbook defaults
 lib/
   supabase/server.ts  Server-only client; returns null when unconfigured
   data/               The only modules that touch Supabase, plus row -> camelCase mappers
+  data/scope.ts       What a group-scoped read may see; threaded through every such query
+  groups.ts           Group roles, permissions and join codes as pure functions
   progress.ts         Percent-of-target maths
+  testing/            Test doubles (the Supabase query-builder stand-in)
 styles/globals.css    Design tokens and element resets
 supabase/schema.sql   Schema, RLS and seed
 types/fitness.ts      Shared domain types

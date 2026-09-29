@@ -1,5 +1,7 @@
 import { defaultTargets, resolveAccent } from '@data/fitnessData';
 import { cache } from 'react';
+import { getGroupMemberIds } from '@/lib/data/groups';
+import type { DataScope } from '@/lib/data/scope';
 import { getSupabase } from '@/lib/supabase/server';
 import type { Member } from '@/types/fitness';
 
@@ -67,3 +69,22 @@ export const getMembers = cache(async (): Promise<Member[]> => {
 
   return (data as MemberRow[]).map(mapMember);
 });
+
+/**
+ * The people a group-scoped page should show: the active group's accepted
+ * members, or just the viewer in Personal mode.
+ *
+ * Kept separate from getMembers(), which still returns everyone — account
+ * enrollment and the globally unique accent colours are not group concerns, and
+ * narrowing those would break them.
+ */
+export const getScopedMembers = async (scope: DataScope): Promise<Member[]> => {
+  const everyone = await getMembers();
+
+  if (scope.groupId) {
+    const ids = new Set(await getGroupMemberIds(scope.groupId));
+    return everyone.filter((member) => ids.has(member.id));
+  }
+
+  return scope.memberId ? everyone.filter((member) => member.id === scope.memberId) : [];
+};

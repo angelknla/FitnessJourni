@@ -152,3 +152,76 @@ export interface MessageReaction {
   memberId: string;
   type: MessageReactionType;
 }
+
+/**
+ * Group roles, most privileged first. The creator of a group is its owner, a
+ * group always has exactly one, and the rules each role implies live in
+ * lib/groups.ts rather than being re-derived at each call site.
+ */
+export type GroupRole = 'owner' | 'admin' | 'member';
+
+export interface FitnessGroup {
+  id: string;
+  name: string;
+  description: string | null;
+  /** Short, human-friendly and regeneratable, e.g. `N7K4-P2Q9`. */
+  joinCode: string;
+  /** Counted from accepted memberships, never stored. */
+  memberCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** One group this member has accepted membership of, and what they may do in it. */
+export interface GroupMembership {
+  group: FitnessGroup;
+  role: GroupRole;
+  joinedAt: string;
+}
+
+export interface GroupMemberRole {
+  memberId: string;
+  role: GroupRole;
+  joinedAt: string;
+}
+
+export type GroupInvitationStatus = 'pending' | 'accepted' | 'declined' | 'cancelled';
+export type GroupJoinRequestStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
+
+export interface GroupInvitation {
+  id: string;
+  groupId: string;
+  groupName: string;
+  memberId: string;
+  invitedBy: string | null;
+  status: GroupInvitationStatus;
+  createdAt: string;
+}
+
+export interface GroupJoinRequest {
+  id: string;
+  groupId: string;
+  groupName: string;
+  memberId: string;
+  status: GroupJoinRequestStatus;
+  createdAt: string;
+}
+
+/**
+ * The group whose shared content the viewer is currently seeing. Always resolved
+ * on the server from an accepted membership; null means Personal mode, where
+ * only the viewer's own records exist.
+ */
+export interface ActiveGroup {
+  id: string;
+  name: string;
+  role: GroupRole;
+}
+
+/** How many answers are waiting on this person, for the header's quiet marker. */
+export interface GroupPendingSummary {
+  /** Invitations addressed to them. */
+  invitations: number;
+  /** Join requests waiting for them to approve, across the groups they manage. */
+  requests: number;
+}

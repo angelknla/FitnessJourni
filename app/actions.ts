@@ -27,6 +27,7 @@ import {
 } from '@/lib/account';
 import { COOKIE_MAX_AGE, createViewerToken, VIEWER_COOKIE } from '@/lib/auth';
 import { createCredentials, findAccountByUsername } from '@/lib/data/accounts';
+import { getActiveGroup, getGroupMemberIds, getMemberships } from '@/lib/data/groups';
 import { getMembers } from '@/lib/data/members';
 import { canModifyMessage } from '@/lib/messagePolicy';
 import { ADMIN_MEMBER_NAME, canEditMember, canRemoveMember } from '@/lib/ownership';
@@ -91,6 +92,119 @@ const toText = (value: FormDataEntryValue | null) =>
 const toOptionalNumber = (value: FormDataEntryValue | null): number | null => {
   const text = toText(value);
   return text === '' ? null : Number(text);
+};
+
+const NO_GROUP = 'Join or create a group first — this is shared with the group.';
+
+/**
+ * The group the viewer is acting in, resolved from an accepted membership rather
+ * than from anything the form sent. Null means Personal mode, where there is no
+ * group to attach shared content to.
+ */
+const activeGroupId = async (memberId: string): Promise<string | null> =>
+  (await getActiveGroup(memberId))?.id ?? null;
+
+/**
+ * Shares a record the viewer has just created with every group they belong to at
+ * this moment, and only now.
+ *
+ * Called on creation and never on edit, which is the whole mechanism behind the
+ * two visibility rules: a group joined later gets no row for this record, so it
+ * never sees it, and a group left later keeps the row, so it still does. Personal
+ * mode writes nothing at all and the record stays private.
+ */
+const shareWithCurrentGroups = async (
+  supabase: NonNullable<ReturnType<typeof getSupabase>>,
+  table: 'group_daily_logs' | 'group_workouts' | 'group_runs',
+  column: 'daily_log_id' | 'workout_id' | 'run_id',
+  recordId: string,
+  memberId: string
+): Promise<void> => {
+  const groupIds = (await getMemberships(memberId)).map((membership) => membership.group.id);
+  if (groupIds.length === 0) {
+    return;
+  }
+
+  const { error } = await supabase.from(table).upsert(
+    groupIds.map((groupId) => ({ group_id: groupId, [column]: recordId })),
+    { onConflict: `group_id,${column}`, ignoreDuplicates: true }
+  );
+
+  if (error) {
+    // The record itself saved; only its sharing did not. Worth knowing about,
+    // not worth failing the save the person just made.
+    console.error(`[${table}] share failed:`, error.message);
+  }
+};
+
+/**
+ * Whether a session belongs to the group this member is currently viewing. The
+ * forms send only a row id, so membership of the group has to be re-established
+ * from the row itself before it may be answered or changed.
+ */
+const sessionInActiveGroup = async (
+  supabase: NonNullable<ReturnType<typeof getSupabase>>,
+  sessionId: string,
+  memberId: string
+): Promise<boolean> => {
+  const groupId = await activeGroupId(memberId);
+  if (!groupId) {
+    return false;
+  }
+
+  const { data } = await supabase
+    .from('sessions')
+    .select('id')
+    .eq('id', sessionId)
+    .eq('group_id', groupId)
+    .maybeSingle();
+
+  return Boolean(data);
+};
+
+/** The same check for chat, which is group-owned in exactly the same way. */
+const messageInActiveGroup = async (
+  supabase: NonNullable<ReturnType<typeof getSupabase>>,
+  messageId: string,
+  memberId: string
+): Promise<boolean> => {
+  const groupId = await activeGroupId(memberId);
+  if (!groupId) {
+    return false;
+  }
+
+  const { data } = await supabase
+    .from('messages')
+    .select('id')
+    .eq('id', messageId)
+    .eq('group_id', groupId)
+    .maybeSingle();
+
+  return Boolean(data);
+};
+
+/**
+ * Who may be listed on a run: the logger, plus real members of the group they are
+ * logging it in. Without the second half, any member id at all could be posted as
+ * an attendee and show up on a run inside a group that person is not in. In
+ * Personal mode it is the logger alone.
+ */
+const allowedAttendees = async (createdBy: string, formData: FormData): Promise<string[]> => {
+  const groupId = await activeGroupId(createdBy);
+  const [members, groupMemberIds] = await Promise.all([
+    getMembers(),
+    groupId ? getGroupMemberIds(groupId) : Promise.resolve<string[]>([]),
+  ]);
+
+  const known = new Set(members.map((member) => member.id));
+  const inGroup = new Set(groupMemberIds);
+  const submitted = [
+    ...new Set([createdBy, ...formData.getAll('attendee').map((value) => String(value))]),
+  ];
+
+  return submitted.filter(
+    (memberId) => known.has(memberId) && (memberId === createdBy || inGroup.has(memberId))
+  );
 };
 
 export const saveAvatar = async (_prev: ActionState, formData: FormData): Promise<ActionState> => {
@@ -429,27 +543,48 @@ export const saveDailyLog = async (
     return fail(notYours);
   }
 
-  const { error } = await supabase.from('daily_logs').upsert(
-    {
-      member_id: memberId,
-      log_date: date,
-      steps: toInt(formData.get('steps'), 200000),
-      water_ml: toInt(formData.get('waterMl'), 20000),
-      calories: toInt(formData.get('calories'), 20000),
-      protein_g: toInt(formData.get('proteinG'), 1000),
-      carbs_g: toInt(formData.get('carbsG'), 2000),
-      fat_g: toInt(formData.get('fatG'), 1000),
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'member_id,log_date' }
-  );
+  /*
+   * Whether this day already had a row decides whether it gets shared. Editing an
+   * existing day must not re-share it, or a day logged before joining a group
+   * would become visible to that group the next time it was corrected.
+   */
+  const { data: existing } = await supabase
+    .from('daily_logs')
+    .select('id')
+    .eq('member_id', memberId)
+    .eq('log_date', date)
+    .maybeSingle();
 
-  if (error) {
-    console.error('[saveDailyLog]', error.message);
+  const { data: saved, error } = await supabase
+    .from('daily_logs')
+    .upsert(
+      {
+        member_id: memberId,
+        log_date: date,
+        steps: toInt(formData.get('steps'), 200000),
+        water_ml: toInt(formData.get('waterMl'), 20000),
+        calories: toInt(formData.get('calories'), 20000),
+        protein_g: toInt(formData.get('proteinG'), 1000),
+        carbs_g: toInt(formData.get('carbsG'), 2000),
+        fat_g: toInt(formData.get('fatG'), 1000),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'member_id,log_date' }
+    )
+    .select('id')
+    .single();
+
+  if (error || !saved) {
+    console.error('[saveDailyLog]', error?.message ?? 'Log upsert returned no row.');
     return fail("Could not save that. It's logged on the server.");
   }
 
+  if (!existing) {
+    await shareWithCurrentGroups(supabase, 'group_daily_logs', 'daily_log_id', saved.id, memberId);
+  }
+
   revalidatePath('/');
+  revalidatePath('/logs');
   return { ok: true, message: 'Data saved.', bookedAt: Date.now() };
 };
 
@@ -482,19 +617,34 @@ export const saveSleep = async (_prev: ActionState, formData: FormData): Promise
     return fail('Enter sleep from 0.1 to 24 hours.');
   }
 
-  const { error } = await supabase.from('daily_logs').upsert(
-    {
-      member_id: memberId,
-      log_date: date,
-      sleep_hours: Math.round(sleepHours * 10) / 10,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'member_id,log_date' }
-  );
+  const { data: existing } = await supabase
+    .from('daily_logs')
+    .select('id')
+    .eq('member_id', memberId)
+    .eq('log_date', date)
+    .maybeSingle();
 
-  if (error) {
-    console.error('[saveSleep]', error.message);
+  const { data: saved, error } = await supabase
+    .from('daily_logs')
+    .upsert(
+      {
+        member_id: memberId,
+        log_date: date,
+        sleep_hours: Math.round(sleepHours * 10) / 10,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'member_id,log_date' }
+    )
+    .select('id')
+    .single();
+
+  if (error || !saved) {
+    console.error('[saveSleep]', error?.message ?? 'Sleep upsert returned no row.');
     return fail('Could not save that sleep.');
+  }
+
+  if (!existing) {
+    await shareWithCurrentGroups(supabase, 'group_daily_logs', 'daily_log_id', saved.id, memberId);
   }
 
   revalidatePath('/');
@@ -865,15 +1015,30 @@ export const bookSession = async (_prev: ActionState, formData: FormData): Promi
     return fail('Pick an activity.');
   }
 
+  // createdBy travels as a hidden input, so it is re-checked rather than trusted.
+  const notYours = await refuseUnlessOwn(createdBy);
+  if (notYours) {
+    return fail(notYours);
+  }
+
+  // A session belongs to one group, so Personal mode has nowhere to put it.
+  const groupId = await activeGroupId(createdBy);
+  if (!groupId) {
+    return fail(NO_GROUP);
+  }
+
   /*
    * Nothing confirmed a booking before, so a second tap was easy and produced a
    * duplicate row. Checked in the app rather than with a unique constraint, so the
-   * message can say what clashed. Two people booking the same slot in the same
-   * instant could still slip through; at this size that is not worth a migration.
+   * message can say what clashed. Scoped to this group: two groups booking the
+   * same slot is not a clash, it is two groups. Two people booking the same slot
+   * in the same instant could still slip through; at this size that is not worth a
+   * migration.
    */
   const { data: clash } = await supabase
     .from('sessions')
     .select('id')
+    .eq('group_id', groupId)
     .eq('session_date', date)
     .eq('session_time', time)
     .eq('activity', activity)
@@ -886,6 +1051,7 @@ export const bookSession = async (_prev: ActionState, formData: FormData): Promi
   const { data: session, error } = await supabase
     .from('sessions')
     .insert({
+      group_id: groupId,
       session_date: date,
       session_time: time,
       activity,
@@ -904,8 +1070,8 @@ export const bookSession = async (_prev: ActionState, formData: FormData): Promi
     const { error: readError } = await supabase
       .from('session_reads')
       .upsert(
-        { member_id: createdBy, last_read_at: session.created_at },
-        { onConflict: 'member_id' }
+        { member_id: createdBy, group_id: groupId, last_read_at: session.created_at },
+        { onConflict: 'member_id,group_id' }
       );
     if (readError) {
       console.error('[bookSession read cursor]', readError.message);
@@ -954,6 +1120,11 @@ export const respondToSession = async (
     return fail(notYours);
   }
 
+  const inScope = await sessionInActiveGroup(supabase, sessionId, memberId);
+  if (!inScope) {
+    return fail('That session is not in the group you are viewing.');
+  }
+
   const { error } = await supabase.from('session_rsvps').upsert(
     {
       session_id: sessionId,
@@ -991,7 +1162,22 @@ export const deleteSession = async (
     return fail('Nothing to remove.');
   }
 
-  const { error } = await supabase.from('sessions').delete().eq('id', id);
+  const viewer = await readViewer();
+  if (!viewer.memberId) {
+    return fail(LOCKED);
+  }
+
+  /*
+   * The form sends only the row id, so the group has to be read from the session
+   * itself: without this, the id of a session in another group would be enough to
+   * delete it from outside.
+   */
+  const groupId = await activeGroupId(viewer.memberId);
+  if (!groupId) {
+    return fail(NO_GROUP);
+  }
+
+  const { error } = await supabase.from('sessions').delete().eq('id', id).eq('group_id', groupId);
 
   if (error) {
     console.error('[deleteSession]', error.message);
@@ -1044,17 +1230,23 @@ export const logWorkout = async (_prev: ActionState, formData: FormData): Promis
     return fail(notYours);
   }
 
-  const { error } = await supabase.from('workouts').insert({
-    member_id: memberId,
-    workout_date: date,
-    focuses,
-    note: note ? note.slice(0, 200) : null,
-  });
+  const { data: workout, error } = await supabase
+    .from('workouts')
+    .insert({
+      member_id: memberId,
+      workout_date: date,
+      focuses,
+      note: note ? note.slice(0, 200) : null,
+    })
+    .select('id')
+    .single();
 
-  if (error) {
-    console.error('[logWorkout]', error.message);
+  if (error || !workout) {
+    console.error('[logWorkout]', error?.message ?? 'Workout insert returned no row.');
     return fail('Could not log that workout.');
   }
+
+  await shareWithCurrentGroups(supabase, 'group_workouts', 'workout_id', workout.id, memberId);
 
   revalidatePath('/');
   revalidatePath('/workouts');
@@ -1170,11 +1362,12 @@ export const logRun = async (_prev: ActionState, formData: FormData): Promise<Ac
     return fail(notYours);
   }
 
-  const members = await getMembers();
-  const memberIds = new Set(members.map((member) => member.id));
-  const attendeeIds = [
-    ...new Set([createdBy, ...formData.getAll('attendee').map((value) => String(value))]),
-  ].filter((memberId) => memberIds.has(memberId));
+  /*
+   * Attendees are narrowed to the group being viewed. Without that, the id of
+   * anyone at all could be posted as an attendee and appear on a run inside a
+   * group they are not in.
+   */
+  const attendeeIds = await allowedAttendees(createdBy, formData);
 
   const { data: run, error: runError } = await supabase
     .from('runs')
@@ -1205,6 +1398,8 @@ export const logRun = async (_prev: ActionState, formData: FormData): Promise<Ac
     console.error('[logRun attendees]', attendeeError.message);
     return fail('Could not save who attended.');
   }
+
+  await shareWithCurrentGroups(supabase, 'group_runs', 'run_id', run.id as string, createdBy);
 
   revalidatePath('/running');
   return ok;
@@ -1276,11 +1471,7 @@ export const editRun = async (_prev: ActionState, formData: FormData): Promise<A
     return fail(notYours);
   }
 
-  const members = await getMembers();
-  const memberIds = new Set(members.map((member) => member.id));
-  const attendeeIds = [
-    ...new Set([createdBy, ...formData.getAll('attendee').map((value) => String(value))]),
-  ].filter((memberId) => memberIds.has(memberId));
+  const attendeeIds = await allowedAttendees(createdBy, formData);
 
   const { error: runError } = await supabase
     .from('runs')
@@ -1378,16 +1569,38 @@ export const postMessage = async (_prev: ActionState, formData: FormData): Promi
     return fail('Keep your post under 500 characters.');
   }
 
+  const groupId = await activeGroupId(viewer.memberId);
+  if (!groupId) {
+    return fail(NO_GROUP);
+  }
+
+  /*
+   * A reply has to point at a message in the same group, or an id from another
+   * group's chat would pull its text into this one as quoted context.
+   */
+  if (replyToId) {
+    const { data: parent } = await supabase
+      .from('messages')
+      .select('id')
+      .eq('id', replyToId)
+      .eq('group_id', groupId)
+      .maybeSingle();
+
+    if (!parent) {
+      return fail('That message is no longer here.');
+    }
+  }
+
   let insertResult = await supabase
     .from('messages')
-    .insert({ member_id: viewer.memberId, content, reply_to_id: replyToId })
+    .insert({ group_id: groupId, member_id: viewer.memberId, content, reply_to_id: replyToId })
     .select('id, created_at')
     .single();
 
   if (!replyToId && insertResult.error?.message.includes('reply_to_id')) {
     insertResult = await supabase
       .from('messages')
-      .insert({ member_id: viewer.memberId, content })
+      .insert({ group_id: groupId, member_id: viewer.memberId, content })
       .select('id, created_at')
       .single();
   }
@@ -1402,8 +1615,8 @@ export const postMessage = async (_prev: ActionState, formData: FormData): Promi
   const { error: readError } = await supabase
     .from('message_reads')
     .upsert(
-      { member_id: viewer.memberId, last_read_at: data.created_at },
-      { onConflict: 'member_id' }
+      { member_id: viewer.memberId, group_id: groupId, last_read_at: data.created_at },
+      { onConflict: 'member_id,group_id' }
     );
 
   if (readError) {
@@ -1442,6 +1655,9 @@ const ownedMessage = async (
   }
   if (await refuseUnlessOwn(message.member_id as string)) {
     return fail('You can only change your own messages.');
+  }
+  if (!(await messageInActiveGroup(supabase, id, message.member_id as string))) {
+    return fail('That message is no longer here.');
   }
   if (!canModifyMessage(message.created_at as string)) {
     return fail('Messages can only be changed within 15 minutes of being sent.');
@@ -1537,6 +1753,10 @@ export const reactToMessage = async (
     return fail('Choose a reaction.');
   }
 
+  if (!(await messageInActiveGroup(supabase, messageId, viewer.memberId))) {
+    return fail('That message is no longer here.');
+  }
+
   const { data: existing, error: readError } = await supabase
     .from('message_reactions')
     .select('reaction')
@@ -1585,9 +1805,15 @@ export const markMessagesRead = async (): Promise<void> => {
     return;
   }
 
+  const groupId = await activeGroupId(viewer.memberId);
+  if (!groupId) {
+    return;
+  }
+
   const { data: latest } = await supabase
     .from('messages')
     .select('created_at')
+    .eq('group_id', groupId)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -1599,8 +1825,8 @@ export const markMessagesRead = async (): Promise<void> => {
   const { error } = await supabase
     .from('message_reads')
     .upsert(
-      { member_id: viewer.memberId, last_read_at: latest.created_at },
-      { onConflict: 'member_id' }
+      { member_id: viewer.memberId, group_id: groupId, last_read_at: latest.created_at },
+      { onConflict: 'member_id,group_id' }
     );
 
   if (error) {
@@ -1621,9 +1847,15 @@ export const markSessionsRead = async (): Promise<void> => {
     return;
   }
 
+  const groupId = await activeGroupId(viewer.memberId);
+  if (!groupId) {
+    return;
+  }
+
   const { data: latest } = await supabase
     .from('sessions')
     .select('created_at')
+    .eq('group_id', groupId)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -1634,8 +1866,8 @@ export const markSessionsRead = async (): Promise<void> => {
   const { error } = await supabase
     .from('session_reads')
     .upsert(
-      { member_id: viewer.memberId, last_read_at: latest.created_at },
-      { onConflict: 'member_id' }
+      { member_id: viewer.memberId, group_id: groupId, last_read_at: latest.created_at },
+      { onConflict: 'member_id,group_id' }
     );
   if (error) {
     console.error('[markSessionsRead]', error.message);

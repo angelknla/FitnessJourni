@@ -3,6 +3,7 @@
 import { AddMemberForm } from '@components/AddMemberForm/AddMemberForm';
 import { CompareStrip } from '@components/CompareStrip/CompareStrip';
 import { EditTargets } from '@components/EditTargets/EditTargets';
+import { GroupBadge } from '@components/GroupBadge/GroupBadge';
 import {
   CalendarIcon,
   ChevronLeftIcon,
@@ -13,6 +14,7 @@ import {
 import { MacroBars } from '@components/MacroBars/MacroBars';
 import { MedalLeaderboard } from '@components/MedalLeaderboard/MedalLeaderboard';
 import { MemberTabs } from '@components/MemberTabs/MemberTabs';
+import { PersonalModeNotice } from '@components/PersonalModeNotice/PersonalModeNotice';
 import { ProgressRing } from '@components/ProgressRing/ProgressRing';
 import { QuickEntry } from '@components/QuickEntry/QuickEntry';
 import { SleepLogger } from '@components/SleepLogger/SleepLogger';
@@ -50,6 +52,15 @@ interface HomeProps {
   dateLabel: string;
   /** Who this browser is acting as; null for a visitor, who edits nothing. */
   viewerId: string | null;
+  /**
+   * True when the viewer belongs to no group. Their own rings and quick entry
+   * still work; the parts that compare people have nobody to compare with.
+   */
+  personalMode?: boolean;
+  /** The active group's name, or null in Personal mode. */
+  activeGroupName?: string | null;
+  /** Group invitations and join requests waiting on this person. */
+  pendingGroupCount?: number;
 }
 
 const PANEL_ID = 'member-panel';
@@ -183,6 +194,9 @@ export const Home = ({
   datePickerLabel,
   dateLabel,
   viewerId,
+  personalMode = false,
+  activeGroupName = null,
+  pendingGroupCount = 0,
 }: HomeProps) => {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(date);
@@ -404,51 +418,58 @@ export const Home = ({
   return (
     <div className={styles.home}>
       <header className={styles.head}>
-        <div className={styles.dateNavigation}>
-          <button
-            type="button"
-            className={styles.dateStep}
-            aria-label="Previous day"
-            onClick={() => navigateToDate(adjacentDate(selectedDate, -1))}
-          >
-            <ChevronLeftIcon />
-          </button>
-          <div className={styles.dateControl}>
-            <button
-              type="button"
-              className={styles.datePicker}
-              aria-label={`Choose dashboard date, ${datePickerLabel}`}
-              onClick={openDatePicker}
-            >
-              <CalendarIcon size={14} />
-              <span>{datePickerLabel}</span>
-            </button>
-            <input
-              ref={dateInput}
-              className={styles.dateInput}
-              type="date"
-              value={selectedDate}
-              max={today}
-              aria-label="Dashboard date value"
-              tabIndex={-1}
-              onChange={(event) => {
-                const nextDate = event.target.value;
-                if (nextDate) {
-                  navigateToDate(nextDate);
-                }
-              }}
-            />
-          </div>
-          {!isToday && (
+        <div className={styles.topRow}>
+          <div className={styles.dateNavigation}>
             <button
               type="button"
               className={styles.dateStep}
-              aria-label="Next day"
-              onClick={() => navigateToDate(adjacentDate(selectedDate, 1))}
+              aria-label="Previous day"
+              onClick={() => navigateToDate(adjacentDate(selectedDate, -1))}
             >
-              <ChevronRightIcon />
+              <ChevronLeftIcon />
             </button>
-          )}
+            <div className={styles.dateControl}>
+              <button
+                type="button"
+                className={styles.datePicker}
+                aria-label={`Choose dashboard date, ${datePickerLabel}`}
+                onClick={openDatePicker}
+              >
+                <CalendarIcon size={14} />
+                <span>{datePickerLabel}</span>
+              </button>
+              <input
+                ref={dateInput}
+                className={styles.dateInput}
+                type="date"
+                value={selectedDate}
+                max={today}
+                aria-label="Dashboard date value"
+                tabIndex={-1}
+                onChange={(event) => {
+                  const nextDate = event.target.value;
+                  if (nextDate) {
+                    navigateToDate(nextDate);
+                  }
+                }}
+              />
+            </div>
+            {!isToday && (
+              <button
+                type="button"
+                className={styles.dateStep}
+                aria-label="Next day"
+                onClick={() => navigateToDate(adjacentDate(selectedDate, 1))}
+              >
+                <ChevronRightIcon />
+              </button>
+            )}
+          </div>
+
+          {/* Phone only; on desktop the same badge sits with the member tabs. */}
+          <div className={styles.badgeSlot}>
+            <GroupBadge groupName={activeGroupName} pendingCount={pendingGroupCount} />
+          </div>
         </div>
         <h1 className={styles.date}>{dateLabel}</h1>
       </header>
@@ -460,6 +481,8 @@ export const Home = ({
         onAdd={() => setAddOpen((open) => !open)}
         addOpen={addOpen}
         panelId={PANEL_ID}
+        activeGroupName={activeGroupName}
+        pendingGroupCount={pendingGroupCount}
       />
 
       {addOpen && <AddMemberForm viewerId={viewerId} />}
@@ -498,8 +521,8 @@ export const Home = ({
                 viewerId={viewerId}
                 editingTargets={false}
                 preview
-                onToggleTargets={() => { }}
-                onTargetsSaved={() => { }}
+                onToggleTargets={() => {}}
+                onTargetsSaved={() => {}}
               />
             </div>
             <div className={styles.carouselSlide}>
@@ -524,8 +547,8 @@ export const Home = ({
                 viewerId={viewerId}
                 editingTargets={false}
                 preview
-                onToggleTargets={() => { }}
-                onTargetsSaved={() => { }}
+                onToggleTargets={() => {}}
+                onTargetsSaved={() => {}}
               />
             </div>
           </div>
@@ -595,21 +618,32 @@ export const Home = ({
         </section>
       </div>
 
-      <section className={`${styles.panel} ${styles.medalPanel}`}>
-        <MedalLeaderboard
-          members={tabOrder}
-          boards={medalBoards}
-          medalDate={medalDate}
-          today={today}
+      {/* Medals and the comparison strip both rank people against each other, so
+          both are replaced rather than shown empty when there is nobody to rank. */}
+      {personalMode ? (
+        <PersonalModeNotice
+          title="Medals need a group"
+          description="Your own numbers are all here. Medals and side-by-side comparisons start once you are in a group with other people."
         />
-      </section>
+      ) : (
+        <>
+          <section className={`${styles.panel} ${styles.medalPanel}`}>
+            <MedalLeaderboard
+              members={tabOrder}
+              boards={medalBoards}
+              medalDate={medalDate}
+              today={today}
+            />
+          </section>
 
-      <CompareStrip
-        members={tabOrder}
-        logs={logs}
-        activeMemberId={active.id}
-        heading={isToday ? 'Everyone today' : 'Everyone on this day'}
-      />
+          <CompareStrip
+            members={tabOrder}
+            logs={logs}
+            activeMemberId={active.id}
+            heading={isToday ? 'Everyone today' : 'Everyone on this day'}
+          />
+        </>
+      )}
     </div>
   );
 };

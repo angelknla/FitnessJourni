@@ -6,10 +6,11 @@ import { WorkoutPlan } from '@components/WorkoutPlan/WorkoutPlan';
 import { WorkoutTally } from '@components/WorkoutTally/WorkoutTally';
 import { earlier, fromISODate, startOfMonth, startOfWeek, toISODate } from '@utils/date';
 import type { Metadata } from 'next';
-import { getMembers } from '@/lib/data/members';
+import { getScopedMembers } from '@/lib/data/members';
+import { readViewerContext } from '@/lib/data/viewerScope';
 import { getWorkoutsSince, tallyWorkouts } from '@/lib/data/workouts';
 import { viewerFirst } from '@/lib/ownership';
-import { isUnlocked, readViewer } from '@/lib/session';
+import { isUnlocked } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
 
 import styles from './page.module.css';
@@ -46,10 +47,10 @@ const WorkoutsPage = async () => {
 
   // A Monday-start week can begin in the previous month, so fetch from whichever
   // boundary is earlier or the week's counts would be short.
-  const [members, workouts, viewer] = await Promise.all([
-    getMembers(),
-    getWorkoutsSince(earlier(weekStart, monthStart)),
-    readViewer(),
+  const { viewer, scope } = await readViewerContext();
+  const [members, workouts] = await Promise.all([
+    getScopedMembers(scope),
+    getWorkoutsSince(earlier(weekStart, monthStart), scope),
   ]);
 
   const tallies = tallyWorkouts(workouts, today);

@@ -85,14 +85,11 @@ export const Header = ({
             {/* The profile follows the desktop links and remains in the header
               while mobile navigation moves to the bottom of the viewport. */}
             <div className={styles.side}>
-              <nav
-                id="main-navigation"
-                className={styles.nav}
-                aria-label="Primary navigation"
-              >
+              <nav id="main-navigation" className={styles.nav} aria-label="Primary navigation">
                 {navigationData.map((item) => {
                   const Icon = navIcons[item.href as keyof typeof navIcons];
-                  const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
+                  const active =
+                    item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
 
                   return (
                     <Link
@@ -105,8 +102,8 @@ export const Header = ({
                       <span className={styles.navLabel}>{item.label}</span>
                       {((item.href === '/messages' && hasUnreadMessages) ||
                         (item.href === '/sessions' && hasUnreadSessions)) && (
-                          <span className={styles.unreadDot} aria-hidden="true" />
-                        )}
+                        <span className={styles.unreadDot} aria-hidden="true" />
+                      )}
                     </Link>
                   );
                 })}
@@ -129,7 +126,9 @@ export const Header = ({
                     href="/profile"
                     className={styles.identity}
                     style={
-                      you ? ({ '--identity-accent': accentHex[you.accent] } as CSSProperties) : undefined
+                      you
+                        ? ({ '--identity-accent': accentHex[you.accent] } as CSSProperties)
+                        : undefined
                     }
                     aria-label={`Open ${identityLabel} profile`}
                   >
@@ -147,7 +146,6 @@ export const Header = ({
                   </Link>
                 </>
               )}
-
             </div>
           </>
         )}

@@ -8,10 +8,11 @@ import { fromISODate, startOfMonth, startOfWeek, toISODate } from '@utils/date';
 import type { Metadata } from 'next';
 import { awardMedals, type Period, summarise } from '@/lib/aggregate';
 import { getLogsSince } from '@/lib/data/logs';
-import { getMembers } from '@/lib/data/members';
+import { getScopedMembers } from '@/lib/data/members';
+import { readViewerContext } from '@/lib/data/viewerScope';
 import { countWorkouts, getWorkoutsSince } from '@/lib/data/workouts';
 import { viewerFirst } from '@/lib/ownership';
-import { isUnlocked, readViewer } from '@/lib/session';
+import { isUnlocked } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
 
 import styles from './page.module.css';
@@ -40,20 +41,24 @@ const LogsPage = async ({ searchParams }: LogsPageProps) => {
   const { period: rawPeriod, date: rawDate } = await searchParams;
   const now = new Date();
   const today = toISODate(now);
-  const selectedDate = rawDate && /^\d{4}-\d{2}-\d{2}$/.test(rawDate)
-    && toISODate(fromISODate(rawDate)) === rawDate && rawDate <= today
-    ? rawDate
-    : null;
+  const selectedDate =
+    rawDate &&
+    /^\d{4}-\d{2}-\d{2}$/.test(rawDate) &&
+    toISODate(fromISODate(rawDate)) === rawDate &&
+    rawDate <= today
+      ? rawDate
+      : null;
   const period: Period = rawPeriod === 'today' || rawPeriod === 'month' ? rawPeriod : 'week';
-  const from = selectedDate
-    ?? (period === 'today' ? today : period === 'week' ? startOfWeek(today) : startOfMonth(today));
+  const from =
+    selectedDate ??
+    (period === 'today' ? today : period === 'week' ? startOfWeek(today) : startOfMonth(today));
   const through = selectedDate ?? today;
 
-  const [members, logs, workouts, viewer] = await Promise.all([
-    getMembers(),
-    getLogsSince(from),
-    getWorkoutsSince(from),
-    readViewer(),
+  const { viewer, scope } = await readViewerContext();
+  const [members, logs, workouts] = await Promise.all([
+    getScopedMembers(scope),
+    getLogsSince(from, scope),
+    getWorkoutsSince(from, scope),
   ]);
 
   const summaries = summarise(logs, from, through);

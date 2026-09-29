@@ -1,5 +1,6 @@
 'use client';
 
+import { GroupBadge } from '@components/GroupBadge/GroupBadge';
 import { CrossIcon, PlusIcon } from '@components/Icons/Icons';
 import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
 import { accentHex } from '@data/fitnessData';
@@ -16,6 +17,10 @@ interface MemberTabsProps {
   addOpen: boolean;
   /** Id of the panel these tabs control, for aria-controls. */
   panelId: string;
+  /** The active group, or null for someone who belongs to none yet. */
+  activeGroupName?: string | null;
+  /** Invitations plus join requests waiting on this person. */
+  pendingGroupCount?: number;
 }
 
 export const MemberTabs = ({
@@ -25,6 +30,8 @@ export const MemberTabs = ({
   onAdd,
   addOpen,
   panelId,
+  activeGroupName = null,
+  pendingGroupCount = 0,
 }: MemberTabsProps) => {
   const listRef = useRef<HTMLDivElement>(null);
   const [scrollEdges, setScrollEdges] = useState({ left: false, right: false });
@@ -135,6 +142,15 @@ export const MemberTabs = ({
             );
           })}
         </div>
+      </div>
+
+      {/*
+       * Desktop only: the badge labels these tabs, so it sits with them rather
+       * than in the page header. On a phone there is no room beside a scrolling
+       * tab strip, so Home shows it on the date row instead — see .groupSlot.
+       */}
+      <div className={styles.groupSlot}>
+        <GroupBadge groupName={activeGroupName} pendingCount={pendingGroupCount} />
       </div>
 
       <button

@@ -1,4 +1,5 @@
 import { startOfMonth, startOfWeek } from '@utils/date';
+import { type DataScope, isEmptyScope } from '@/lib/data/scope';
 import { getSupabase } from '@/lib/supabase/server';
 import type { Workout, WorkoutFocus, WorkoutTally } from '@/types/fitness';
 
@@ -19,27 +20,52 @@ export const mapWorkout = (row: WorkoutRow): Workout => ({
 });
 
 /**
- * Everything from `fromDate` onwards. One query covers today, the week and the
- * month; the counts are derived in JS rather than three round trips.
+ * Everything visible from `fromDate` onwards. One pass covers today, the week and
+ * the month; the counts are derived in JS rather than three round trips.
+ *
+ * Visible means shared with the active group or belonging to the viewer — see the
+ * note in lib/data/logs.ts for why that is two reads merged here rather than one.
  */
-export const getWorkoutsSince = async (fromDate: string): Promise<Workout[]> => {
+export const getWorkoutsSince = async (fromDate: string, scope: DataScope): Promise<Workout[]> => {
   const supabase = getSupabase();
-  if (!supabase) {
+  if (!supabase || isEmptyScope(scope)) {
     return [];
   }
 
-  const { data, error } = await supabase
-    .from('workouts')
-    .select('*')
-    .gte('workout_date', fromDate)
-    .order('workout_date', { ascending: false });
+  const results = await Promise.all([
+    ...(scope.groupId
+      ? [
+          supabase
+            .from('workouts')
+            .select('*, group_workouts!inner(group_id)')
+            .eq('group_workouts.group_id', scope.groupId)
+            .gte('workout_date', fromDate),
+        ]
+      : []),
+    ...(scope.memberId
+      ? [
+          supabase
+            .from('workouts')
+            .select('*')
+            .eq('member_id', scope.memberId)
+            .gte('workout_date', fromDate),
+        ]
+      : []),
+  ]);
 
-  if (error) {
-    console.error('[workouts] read failed:', error.message);
-    return [];
+  const byId = new Map<string, Workout>();
+
+  for (const result of results) {
+    if (result.error) {
+      console.error('[workouts] read failed:', result.error.message);
+      continue;
+    }
+    for (const row of (result.data ?? []) as WorkoutRow[]) {
+      byId.set(row.id, mapWorkout(row));
+    }
   }
 
-  return (data as WorkoutRow[]).map(mapWorkout);
+  return [...byId.values()].sort((a, b) => b.date.localeCompare(a.date));
 };
 
 export const countWorkouts = (

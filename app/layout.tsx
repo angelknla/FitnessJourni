@@ -6,11 +6,12 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { cookies } from 'next/headers';
 import Script from 'next/script';
-import { getMembers } from '@/lib/data/members';
+import { getScopedMembers } from '@/lib/data/members';
 import { getHasUnreadMessages } from '@/lib/data/messages';
 import { getHasUnreadSessions, getUpcomingSessions, nextSession } from '@/lib/data/sessions';
+import { readViewerContext } from '@/lib/data/viewerScope';
 import { viewerFirst } from '@/lib/ownership';
-import { isUnlocked, readViewer, type Viewer } from '@/lib/session';
+import { isUnlocked, type Viewer } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
 import type { Member } from '@/types/fitness';
 import type { LayoutProps } from '@/types/LayoutProps';
@@ -42,9 +43,7 @@ export const metadata: Metadata = {
       { url: '/fitnessjourni-icon-v2.svg', type: 'image/svg+xml' },
       { url: '/fitnessjourni-icon-192-v2.png', sizes: '192x192', type: 'image/png' },
     ],
-    apple: [
-      { url: '/fitnessjourni-apple-touch-v2.png', sizes: '180x180', type: 'image/png' },
-    ],
+    apple: [{ url: '/fitnessjourni-apple-touch-v2.png', sizes: '180x180', type: 'image/png' }],
   },
 };
 
@@ -54,12 +53,12 @@ const bannerDay = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'nume
 const LOCKED_VIEWER: Viewer = { memberId: null, chosen: false };
 
 /** The soonest session that has not happened yet, formatted for the banner. */
-const nextSessionBanner = async (members: Member[]) => {
+const nextSessionBanner = async (members: Member[], groupId: string | null) => {
   const now = new Date();
   const today = toISODate(now);
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
-  const sessions = await getUpcomingSessions(today);
+  const sessions = await getUpcomingSessions(today, groupId);
   const session = nextSession(sessions, today, nowMinutes);
 
   if (!session) {
@@ -103,16 +102,24 @@ const RootLayout = async ({ children }: LayoutProps) => {
    * Fetched here rather than inside the banner because the header needs the same
    * list for the picker, and one query serves both.
    */
-  const members: Member[] = locked || !configured ? [] : await getMembers();
-  const viewer: Viewer = locked ? LOCKED_VIEWER : await readViewer();
+  const context = locked || !configured ? null : await readViewerContext();
+  const viewer: Viewer = context?.viewer ?? LOCKED_VIEWER;
+  const activeGroup = context?.activeGroup ?? null;
+
+  /*
+   * Only the active group's members, so the header shows the people this browser
+   * is actually sharing with. In Personal mode that is just them.
+   */
+  const members: Member[] = context ? await getScopedMembers(context.scope) : [];
+
   const [banner, hasUnreadMessages, hasUnreadSessions] =
-    locked || !configured
+    !context || !viewer.memberId
       ? [null, false, false]
       : await Promise.all([
-        nextSessionBanner(members),
-        viewer.memberId ? getHasUnreadMessages(viewer.memberId) : false,
-        viewer.memberId ? getHasUnreadSessions(viewer.memberId) : false,
-      ]);
+          nextSessionBanner(members, activeGroup?.id ?? null),
+          getHasUnreadMessages(viewer.memberId, activeGroup?.id ?? null),
+          getHasUnreadSessions(viewer.memberId, activeGroup?.id ?? null),
+        ]);
 
   return (
     <html lang="en" data-scroll-behavior="smooth" data-theme={theme} suppressHydrationWarning>

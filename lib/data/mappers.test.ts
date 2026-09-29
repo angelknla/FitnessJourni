@@ -148,8 +148,10 @@ describe('mapSession', () => {
 describe('reads without a configured client', () => {
   it('returns empty collections rather than throwing', async () => {
     await expect(getMembers()).resolves.toEqual([]);
-    await expect(getLogsForDate('2026-09-25')).resolves.toEqual({});
-    await expect(getUpcomingSessions('2026-09-25')).resolves.toEqual([]);
+    await expect(
+      getLogsForDate('2026-09-25', { groupId: 'g1', memberId: 'm1' })
+    ).resolves.toEqual({});
+    await expect(getUpcomingSessions('2026-09-25', 'g1')).resolves.toEqual([]);
   });
 });
 

@@ -1,0 +1,82 @@
+.badge {
+  position: relative;
+  /* Deliberately the same metrics as Home's date switcher, which it shares a row
+     with: same min-height, padding, font size, radius and control surface. */
+  min-height: 1.75rem;
+  padding: 0.2rem 0.5rem;
+  /* Shrinks before it overflows: on a narrow phone the name ellipses rather than
+     pushing the date controls off the row. min-width:0 is what allows that. */
+  flex: 0 1 auto;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 100%;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--c-ink-soft);
+  text-decoration: none;
+  background: var(--control-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  box-shadow: var(--control-shadow);
+  transition:
+    color 0.2s var(--ease-flow),
+    border-color 0.2s var(--ease-flow);
+}
+
+.badge:hover {
+  color: var(--c-ink);
+  border-color: var(--c-border-strong);
+}
+
+.badge:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
+.badge svg {
+  flex: 0 0 auto;
+  color: var(--c-ink-muted);
+}
+
+.badge:hover svg {
+  color: var(--c-accent);
+}
+
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Spells out what the chevron implies. First thing dropped when width is short:
+   the icon, the name and the accessible label still carry the meaning. */
+.manage {
+  padding-left: 0.3rem;
+  font-weight: 500;
+  color: var(--c-ink-muted);
+  border-left: 1px solid var(--c-border);
+  white-space: nowrap;
+}
+
+.badge:hover .manage {
+  color: var(--c-ink-soft);
+}
+
+@media (max-width: 420px) {
+  .manage {
+    display: none;
+  }
+}
+
+/* Same quiet marker the navigation uses for unread posts. */
+.pending {
+  position: absolute;
+  top: -0.15rem;
+  right: -0.15rem;
+  width: 0.4rem;
+  height: 0.4rem;
+  background: #ef5b5b;
+  border-radius: 50%;
+}

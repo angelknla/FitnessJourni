@@ -1,0 +1,343 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createSupabaseMock, type SupabaseMock } from '@/lib/testing/supabaseMock';
+
+/*
+ * The visibility model, asserted where it is actually decided.
+ *
+ * Creating a record writes one association row per group the author is in AT THAT
+ * MOMENT, and editing writes none. Those two facts are the whole mechanism behind
+ * "joining exposes nothing earlier" and "leaving retracts nothing already shared",
+ * so they are tested directly rather than inferred from the schema.
+ */
+
+const state = {
+  unlocked: true,
+  memberId: 'angel' as string | null,
+  groups: [] as { group: { id: string; name: string }; role: string }[],
+  groupMemberIds: [] as string[],
+};
+
+let supabase: SupabaseMock;
+
+vi.mock('@/lib/session', () => ({
+  isUnlocked: vi.fn(async () => state.unlocked),
+  readViewer: vi.fn(async () => ({ memberId: state.memberId, chosen: true })),
+  hasEnrollmentAccess: vi.fn(async () => false),
+}));
+
+vi.mock('@/lib/supabase/server', () => ({
+  getSupabase: () => supabase.client,
+}));
+
+vi.mock('@/lib/data/groups', () => ({
+  getActiveGroup: async () =>
+    state.groups[0]
+      ? { id: state.groups[0].group.id, name: state.groups[0].group.name, role: 'member' }
+      : null,
+  getMemberships: async () => state.groups,
+  getGroupMemberIds: async () => state.groupMemberIds,
+}));
+
+vi.mock('@/lib/data/members', () => ({
+  getMembers: async () => [
+    { id: 'angel', name: 'Angel' },
+    { id: 'dillon', name: 'Dillon' },
+    { id: 'outsider', name: 'Outsider' },
+  ],
+}));
+
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+vi.mock('next/headers', () => ({ cookies: async () => ({ set: vi.fn(), delete: vi.fn() }) }));
+
+import {
+  bookSession,
+  deleteSession,
+  logRun,
+  logWorkout,
+  postMessage,
+  saveDailyLog,
+} from './actions';
+
+const form = (fields: Record<string, string | string[]>): FormData => {
+  const data = new FormData();
+  for (const [key, value] of Object.entries(fields)) {
+    for (const entry of Array.isArray(value) ? value : [value]) {
+      data.append(key, entry);
+    }
+  }
+  return data;
+};
+
+const initial = { ok: false };
+
+/** One group, so "shared with the groups I am in" has something to mean. */
+const inGroups = (...ids: string[]) => {
+  state.groups = ids.map((id) => ({ group: { id, name: id }, role: 'member' }));
+};
+
+/** The arguments an upsert on `table` was called with, without the method name. */
+const upsertOf = (table: string) =>
+  supabase
+    .callsTo(table)
+    .flatMap((call) => call.ops)
+    .find(([name]) => name === 'upsert')
+    ?.slice(1);
+
+beforeEach(() => {
+  state.unlocked = true;
+  state.memberId = 'angel';
+  state.groups = [];
+  state.groupMemberIds = [];
+  supabase = createSupabaseMock();
+});
+
+describe('logging a day for the first time', () => {
+  /** No existing row, and the upsert hands back the new row's id. */
+  const asNewLog = () =>
+    createSupabaseMock({
+      daily_logs: (call) =>
+        call.ops.some(([name]) => name === 'upsert') ? { data: { id: 'log-1' } } : { data: null },
+    });
+
+  it('shares it with every group the author is in at that moment', async () => {
+    supabase = asNewLog();
+    inGroups('nine-elms', 'battersea');
+
+    const result = await saveDailyLog(initial, form({ memberId: 'angel', date: '2026-09-29' }));
+
+    expect(result.ok).toBe(true);
+    const [rows] = upsertOf('group_daily_logs') as [{ group_id: string; daily_log_id: string }[]];
+    expect(rows).toEqual([
+      { group_id: 'nine-elms', daily_log_id: 'log-1' },
+      { group_id: 'battersea', daily_log_id: 'log-1' },
+    ]);
+  });
+
+  it('keeps it private in Personal mode, writing no association at all', async () => {
+    supabase = asNewLog();
+    inGroups();
+
+    const result = await saveDailyLog(initial, form({ memberId: 'angel', date: '2026-09-29' }));
+
+    expect(result.ok).toBe(true);
+    expect(supabase.callsTo('group_daily_logs')).toHaveLength(0);
+  });
+});
+
+describe('editing a day that already exists', () => {
+  it('does not re-share it — this is what stops retroactive exposure', async () => {
+    /*
+     * The row already exists, so it was created before the author joined whatever
+     * groups they are in now. Correcting it must not hand those groups a day they
+     * were never entitled to see.
+     */
+    supabase = createSupabaseMock({
+      daily_logs: (call) =>
+        call.ops.some(([name]) => name === 'upsert')
+          ? { data: { id: 'log-1' } }
+          : { data: { id: 'log-1' } },
+    });
+    inGroups('joined-later');
+
+    const result = await saveDailyLog(
+      initial,
+      form({ memberId: 'angel', date: '2026-01-01', steps: '9000' })
+    );
+
+    expect(result.ok).toBe(true);
+    expect(supabase.callsTo('group_daily_logs')).toHaveLength(0);
+  });
+});
+
+describe('logging a workout', () => {
+  it('shares it with the author’s current groups', async () => {
+    supabase = createSupabaseMock({ workouts: { data: { id: 'workout-1' } } });
+    inGroups('nine-elms');
+
+    const result = await logWorkout(
+      initial,
+      form({ memberId: 'angel', date: '2026-09-29', focus: ['upper'] })
+    );
+
+    expect(result.ok).toBe(true);
+    const [rows] = upsertOf('group_workouts') as [{ group_id: string; workout_id: string }[]];
+    expect(rows).toEqual([{ group_id: 'nine-elms', workout_id: 'workout-1' }]);
+  });
+
+  it('stays private with no group', async () => {
+    supabase = createSupabaseMock({ workouts: { data: { id: 'workout-1' } } });
+    inGroups();
+
+    await logWorkout(initial, form({ memberId: 'angel', date: '2026-09-29', focus: ['legs'] }));
+
+    expect(supabase.callsTo('group_workouts')).toHaveLength(0);
+  });
+});
+
+describe('logging a run', () => {
+  const runForm = (attendees: string[]) =>
+    form({
+      createdBy: 'angel',
+      date: '2026-09-29',
+      hours: '1',
+      minutes: '0',
+      distanceKm: '10',
+      attendee: attendees,
+    });
+
+  it('shares it, and only lists attendees from the group it is logged in', async () => {
+    supabase = createSupabaseMock({ runs: { data: { id: 'run-1' } } });
+    inGroups('nine-elms');
+    state.groupMemberIds = ['angel', 'dillon'];
+
+    const result = await logRun(initial, runForm(['dillon', 'outsider']));
+
+    expect(result.ok).toBe(true);
+
+    // 'outsider' is a real member but not in this group, so it is dropped.
+    const [attendeeRows] = supabase.argsFor('run_attendees', 'insert') as [{ member_id: string }[]];
+    expect(attendeeRows.map((row) => row.member_id)).toEqual(['angel', 'dillon']);
+
+    const [shared] = upsertOf('group_runs') as [{ group_id: string; run_id: string }[]];
+    expect(shared).toEqual([{ group_id: 'nine-elms', run_id: 'run-1' }]);
+  });
+
+  it('is the logger alone in Personal mode', async () => {
+    supabase = createSupabaseMock({ runs: { data: { id: 'run-1' } } });
+    inGroups();
+
+    await logRun(initial, runForm(['dillon']));
+
+    const [attendeeRows] = supabase.argsFor('run_attendees', 'insert') as [{ member_id: string }[]];
+    expect(attendeeRows.map((row) => row.member_id)).toEqual(['angel']);
+    expect(supabase.callsTo('group_runs')).toHaveLength(0);
+  });
+});
+
+describe('chat belongs to a group outright', () => {
+  it('refuses to post in Personal mode rather than creating an orphan', async () => {
+    inGroups();
+
+    const result = await postMessage(initial, form({ content: 'morning all' }));
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/join or create a group/i);
+    expect(supabase.used('messages', 'insert')).toBe(false);
+  });
+
+  it('stamps the active group on the message', async () => {
+    supabase = createSupabaseMock({
+      messages: { data: { id: 'message-1', created_at: '2026-09-29T08:00:00.000Z' } },
+    });
+    inGroups('nine-elms');
+
+    const result = await postMessage(initial, form({ content: 'morning all' }));
+
+    expect(result.ok).toBe(true);
+    const [row] = supabase.argsFor('messages', 'insert') as [{ group_id: string }];
+    expect(row.group_id).toBe('nine-elms');
+  });
+
+  it('keeps the read cursor per group', async () => {
+    supabase = createSupabaseMock({
+      messages: { data: { id: 'message-1', created_at: '2026-09-29T08:00:00.000Z' } },
+    });
+    inGroups('nine-elms');
+
+    await postMessage(initial, form({ content: 'morning all' }));
+
+    const [row, options] = supabase.argsFor('message_reads', 'upsert') as [
+      { member_id: string; group_id: string },
+      { onConflict: string },
+    ];
+    expect(row).toMatchObject({ member_id: 'angel', group_id: 'nine-elms' });
+    expect(options.onConflict).toBe('member_id,group_id');
+  });
+});
+
+describe('sessions belong to a group outright', () => {
+  const booking = form({
+    createdBy: 'angel',
+    date: '2099-01-01',
+    time: '07:30',
+    activity: 'run',
+  });
+
+  it('refuses to book in Personal mode', async () => {
+    inGroups();
+
+    const result = await bookSession(initial, booking);
+
+    expect(result.ok).toBe(false);
+    expect(supabase.used('sessions', 'insert')).toBe(false);
+  });
+
+  it('stamps the group, and looks for a clash only inside it', async () => {
+    supabase = createSupabaseMock({
+      sessions: (call) =>
+        call.ops.some(([name]) => name === 'insert')
+          ? { data: { created_at: '2026-09-29T08:00:00.000Z' } }
+          : { data: [] },
+    });
+    inGroups('nine-elms');
+
+    const result = await bookSession(initial, booking);
+
+    expect(result.ok).toBe(true);
+    const [row] = supabase.argsFor('sessions', 'insert') as [{ group_id: string }];
+    expect(row.group_id).toBe('nine-elms');
+
+    // Two groups booking the same slot is not a clash, so the check is scoped.
+    const clashCheck = supabase.callsTo('sessions')[0];
+    expect(clashCheck.ops).toEqual(expect.arrayContaining([['eq', 'group_id', 'nine-elms']]));
+  });
+
+  it('deletes only within the group being viewed', async () => {
+    inGroups('nine-elms');
+
+    await deleteSession(initial, form({ id: 'session-1' }));
+
+    const deletion = supabase.callsTo('sessions')[0];
+    expect(deletion.ops).toEqual(
+      expect.arrayContaining([
+        ['delete'],
+        ['eq', 'id', 'session-1'],
+        ['eq', 'group_id', 'nine-elms'],
+      ])
+    );
+  });
+
+  it('refuses to delete at all in Personal mode', async () => {
+    inGroups();
+
+    const result = await deleteSession(initial, form({ id: 'session-1' }));
+
+    expect(result.ok).toBe(false);
+    expect(supabase.used('sessions', 'delete')).toBe(false);
+  });
+});
+
+describe('ownership of a write', () => {
+  it('refuses to log a day for someone else', async () => {
+    state.memberId = 'dillon';
+    inGroups('nine-elms');
+
+    const result = await saveDailyLog(initial, form({ memberId: 'angel', date: '2026-09-29' }));
+
+    expect(result.ok).toBe(false);
+    expect(supabase.used('daily_logs', 'upsert')).toBe(false);
+  });
+
+  it('refuses to book a session as someone else', async () => {
+    state.memberId = 'dillon';
+    inGroups('nine-elms');
+
+    const result = await bookSession(
+      initial,
+      form({ createdBy: 'angel', date: '2099-01-01', time: '07:30', activity: 'run' })
+    );
+
+    expect(result.ok).toBe(false);
+    expect(supabase.used('sessions', 'insert')).toBe(false);
+  });
+});

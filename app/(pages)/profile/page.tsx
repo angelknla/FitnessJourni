@@ -8,91 +8,101 @@ import { getAccount } from '@/lib/data/accounts';
 import { getLogsSince } from '@/lib/data/logs';
 import { getMembers } from '@/lib/data/members';
 import { getProfile } from '@/lib/data/profile';
+import { readViewerContext } from '@/lib/data/viewerScope';
 import { getWorkoutsSince } from '@/lib/data/workouts';
 import { buildMedalBoards, medalFetchStart } from '@/lib/medals';
 import { canRemoveMembers } from '@/lib/ownership';
-import { isUnlocked, readViewer } from '@/lib/session';
+import { isUnlocked } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
 
 import styles from './page.module.css';
 
 export const metadata: Metadata = {
-    title: 'Profile — FitnessJourni',
-    description: 'Measurements, goals and monthly progress',
+  title: 'Profile — FitnessJourni',
+  description: 'Measurements, goals and monthly progress',
 };
 
 export const dynamic = 'force-dynamic';
 
 interface ProfilePageProps {
-    searchParams: Promise<{ medalDate?: string }>;
+  searchParams: Promise<{ medalDate?: string }>;
 }
 
 const ProfilePage = async ({ searchParams }: ProfilePageProps) => {
-    if (!(await isUnlocked())) {
-        return <Landing />;
-    }
+  if (!(await isUnlocked())) {
+    return <Landing />;
+  }
 
-    if (!isSupabaseConfigured()) {
-        return <SetupNotice />;
-    }
+  if (!isSupabaseConfigured()) {
+    return <SetupNotice />;
+  }
 
-    const today = toISODate(new Date());
-    const { medalDate: requestedMedalDate } = await searchParams;
-    const medalDate = requestedMedalDate
-        && /^\d{4}-\d{2}-\d{2}$/.test(requestedMedalDate)
-        && toISODate(fromISODate(requestedMedalDate)) === requestedMedalDate
-        && requestedMedalDate <= today
-        ? requestedMedalDate
-        : today;
-    const medalFrom = medalFetchStart(medalDate);
-    const [members, viewer, logs, workouts] = await Promise.all([
-        getMembers(),
-        readViewer(),
-        getLogsSince(medalFrom),
-        getWorkoutsSince(medalFrom),
-    ]);
-    const member = members.find((item) => item.id === viewer.memberId) ?? null;
-    const [profileData, account] = member
-        ? await Promise.all([getProfile(member.id), getAccount(member.id)])
-        : [null, null];
-    const profile =
-        profileData?.profile ??
-        (member
-            ? {
-                memberId: member.id,
-                age: null,
-                heightCm: null,
-                targetWeightKg: null,
-                targetBmi: null,
-            }
-            : null);
+  const today = toISODate(new Date());
+  const { medalDate: requestedMedalDate } = await searchParams;
+  const medalDate =
+    requestedMedalDate &&
+    /^\d{4}-\d{2}-\d{2}$/.test(requestedMedalDate) &&
+    toISODate(fromISODate(requestedMedalDate)) === requestedMedalDate &&
+    requestedMedalDate <= today
+      ? requestedMedalDate
+      : today;
+  const medalFrom = medalFetchStart(medalDate);
+  const { viewer, activeGroup, scope } = await readViewerContext();
 
-    return (
-        <PageLayout>
-            <header className={styles.head}>
-                <p>Profile</p>
-                <h1>Your numbers, over time</h1>
-            </header>
+  /*
+   * Everyone here, not just this group: accent colours are unique across the whole
+   * app, and the Groups panel has to be able to name someone who has only been
+   * invited and is therefore not a member yet.
+   */
+  const [members, logs, workouts] = await Promise.all([
+    getMembers(),
+    getLogsSince(medalFrom, scope),
+    getWorkoutsSince(medalFrom, scope),
+  ]);
+  const member = members.find((item) => item.id === viewer.memberId) ?? null;
+  const [profileData, account] = member
+    ? await Promise.all([getProfile(member.id), getAccount(member.id)])
+    : [null, null];
 
-            <ProfileView
-                members={members}
-                member={member}
-                profile={profile}
-                account={account}
-                measurements={profileData?.measurements ?? []}
-                currentDate={today}
-                medalDate={medalDate}
-                medalBoards={buildMedalBoards(
-                    logs,
-                    workouts,
-                    medalDate,
-                    Object.fromEntries(members.map((item) => [item.id, item.targets])),
-                    today
-                )}
-                canRemoveOthers={canRemoveMembers(viewer, members)}
-            />
-        </PageLayout>
-    );
+  const profile =
+    profileData?.profile ??
+    (member
+      ? {
+          memberId: member.id,
+          age: null,
+          heightCm: null,
+          targetWeightKg: null,
+          targetBmi: null,
+        }
+      : null);
+
+  return (
+    <PageLayout>
+      <header className={styles.head}>
+        <p>Profile</p>
+        <h1>Your numbers, over time</h1>
+      </header>
+
+      <ProfileView
+        members={members}
+        member={member}
+        profile={profile}
+        account={account}
+        measurements={profileData?.measurements ?? []}
+        currentDate={today}
+        medalDate={medalDate}
+        medalBoards={buildMedalBoards(
+          logs,
+          workouts,
+          medalDate,
+          Object.fromEntries(members.map((item) => [item.id, item.targets])),
+          today
+        )}
+        canRemoveOthers={canRemoveMembers(viewer, members)}
+        activeGroupName={activeGroup?.name ?? null}
+      />
+    </PageLayout>
+  );
 };
 
 export default ProfilePage;

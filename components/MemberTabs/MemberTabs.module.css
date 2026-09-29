@@ -165,3 +165,20 @@
     margin-left: 0.2rem;
   }
 }
+
+/* ---- Active group -------------------------------------------------------
+   Sits left of the add control, desktop only. On a phone the tab strip already
+   scrolls and there is no room beside it, so Home renders the badge on the date
+   row instead — one of the two is always hidden, never both visible. */
+.groupSlot {
+  flex-shrink: 0;
+  display: none;
+  align-items: center;
+  min-width: 0;
+}
+
+@media (min-width: 961px) {
+  .groupSlot {
+    display: flex;
+  }
+}

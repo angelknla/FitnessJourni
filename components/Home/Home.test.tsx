@@ -451,3 +451,58 @@ describe('Home', () => {
     expect(screen.getAllByRole('tab')[0]).toHaveTextContent('Angel');
   });
 });
+
+describe('the active group', () => {
+  /*
+   * The badge is rendered twice — on the date row for phones and with the member
+   * tabs for wider screens — and CSS hides whichever does not belong at that
+   * width. jsdom applies no CSS, so both are present here; that exactly one is
+   * visible is asserted against a real browser instead.
+   */
+  it('names the group the numbers belong to, and links to group management', () => {
+    render(<Home {...props('m1')} activeGroupName="Nine Elms" />);
+
+    const badges = screen.getAllByRole('link', { name: 'Nine Elms — manage groups' });
+    expect(badges).toHaveLength(2);
+    for (const badge of badges) {
+      expect(badge).toHaveAttribute('href', '/groups');
+      expect(badge).toHaveTextContent('Nine Elms');
+    }
+  });
+
+  it('reads Personal when the viewer belongs to no group', () => {
+    render(<Home {...props('m1')} activeGroupName={null} />);
+
+    for (const badge of screen.getAllByRole('link', { name: /^Personal —/ })) {
+      expect(badge).toHaveTextContent('Personal');
+    }
+  });
+});
+
+describe('Personal mode', () => {
+  it('replaces the medals and the comparison strip, which need other people', () => {
+    render(<Home {...props('m1')} personalMode />);
+
+    expect(screen.getByRole('heading', { name: 'Medals need a group' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Join or create a group' })).toHaveAttribute(
+      'href',
+      '/groups'
+    );
+    expect(screen.queryByText('Everyone today')).not.toBeInTheDocument();
+  });
+
+  it('still shows the viewer their own day, and still lets them log it', () => {
+    render(<Home {...props('m1')} personalMode />);
+
+    // The point of Personal mode: private logging keeps working.
+    expect(quickEntry()).toBeInTheDocument();
+    expect(selectedTab()).toHaveTextContent('Dillon');
+  });
+
+  it('shows medals and comparisons once there is a group', () => {
+    render(<Home {...props('m1')} personalMode={false} />);
+
+    expect(screen.queryByRole('heading', { name: 'Medals need a group' })).not.toBeInTheDocument();
+    expect(screen.getByText('Everyone today')).toBeInTheDocument();
+  });
+});

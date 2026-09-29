@@ -16,13 +16,37 @@
   gap: 0.15rem;
 }
 
+/* The date-row badge is the phone placement; desktop shows it with the member
+   tabs, which is closer to what it labels. */
+.badgeSlot {
+  display: flex;
+  min-width: 0;
+}
+
+@media (min-width: 961px) {
+  .badgeSlot {
+    display: none;
+  }
+}
+
+/* Date controls at one end, the group badge at the other. The row owns the
+   spacing down to the date heading so both ends sit on the same baseline. */
+.topRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.4rem;
+}
+
 .dateNavigation {
   width: fit-content;
   min-height: 1.75rem;
   display: flex;
   align-items: stretch;
   gap: 0.3rem;
-  margin: 0 0 0.4rem;
+  /* Spacing below now belongs to .topRow, which both ends share. */
+  margin: 0;
 }
 
 .dateControl {

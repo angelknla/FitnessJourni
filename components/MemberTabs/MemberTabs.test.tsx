@@ -170,5 +170,60 @@ describe('MemberTabs', () => {
       inline: 'nearest',
     });
   });
+});
 
+describe('the active group badge', () => {
+  it('sits with the tabs, before the add control, and links to group management', () => {
+    render(
+      <MemberTabs
+        members={members}
+        activeId="m1"
+        onSelect={() => undefined}
+        onAdd={() => undefined}
+        addOpen={false}
+        panelId="panel"
+        activeGroupName="Nine Elms"
+      />
+    );
+
+    const badge = screen.getByRole('link', { name: 'Nine Elms — manage groups' });
+    expect(badge).toHaveAttribute('href', '/groups');
+
+    // Before the add control in document order, which is what puts it to its left.
+    const add = screen.getByRole('button', { name: 'Add a person' });
+    expect(badge.compareDocumentPosition(add) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('says Personal when the viewer belongs to no group', () => {
+    render(
+      <MemberTabs
+        members={members}
+        activeId="m1"
+        onSelect={() => undefined}
+        onAdd={() => undefined}
+        addOpen={false}
+        panelId="panel"
+        activeGroupName={null}
+      />
+    );
+
+    expect(screen.getByRole('link', { name: /^Personal —/ })).toHaveTextContent('Personal');
+  });
+
+  it('marks waiting group requests', () => {
+    const { container } = render(
+      <MemberTabs
+        members={members}
+        activeId="m1"
+        onSelect={() => undefined}
+        onAdd={() => undefined}
+        addOpen={false}
+        panelId="panel"
+        activeGroupName="Nine Elms"
+        pendingGroupCount={1}
+      />
+    );
+
+    expect(container.querySelector('[class*="pending"]')).toBeInTheDocument();
+  });
 });

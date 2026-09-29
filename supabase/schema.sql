@@ -397,3 +397,801 @@ from (values
   ('Bradley', 'aqua',   2)
 ) as v (name, accent, sort_order)
 where not exists (select 1 from public.members m where m.name = v.name);
+
+-- ============================================================================
+-- Groups
+--
+-- A registered user may belong to several groups and has exactly one active one
+-- at a time. The active group decides which members and which shared content
+-- they see, so every group-scoped query and mutation re-derives it on the server
+-- from these tables — a group id arriving from the browser is never trusted.
+--
+-- Roles live in group_members and nowhere else. `groups` deliberately has no
+-- owner_id column: two places recording who owns a group is two places to drift,
+-- and the partial unique index below already guarantees exactly one owner row.
+-- ============================================================================
+
+create table if not exists public.groups (
+  id          uuid primary key default gen_random_uuid(),
+  join_code   text not null,
+  name        text not null,
+  description text,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+
+alter table public.groups drop constraint if exists groups_name_length_check;
+alter table public.groups add constraint groups_name_length_check
+  check (char_length(trim(name)) between 2 and 40);
+
+alter table public.groups drop constraint if exists groups_description_length_check;
+alter table public.groups add constraint groups_description_length_check
+  check (description is null or char_length(description) <= 200);
+
+/*
+ * Join codes are shown to people and typed back in, so the alphabet drops every
+ * character that gets misread out loud or in a screenshot: no I, L, O, 0 or 1.
+ * The constraint is the real enforcement — lib/groups.ts generates codes in the
+ * same alphabet, and normalizeJoinCode() upper-cases and re-hyphenates whatever
+ * someone pastes before it reaches here.
+ */
+alter table public.groups drop constraint if exists groups_join_code_format_check;
+alter table public.groups add constraint groups_join_code_format_check
+  check (join_code ~ '^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{4}-[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{4}$');
+
+create unique index if not exists groups_join_code_idx on public.groups (join_code);
+
+create table if not exists public.group_members (
+  group_id  uuid not null references public.groups (id) on delete cascade,
+  member_id uuid not null references public.members (id) on delete cascade,
+  role      text not null default 'member' check (role in ('owner', 'admin', 'member')),
+  joined_at timestamptz not null default now(),
+  primary key (group_id, member_id)
+);
+
+/*
+ * Reversed-order unique index. It serves "which groups is this person in", and
+ * it is the target member_active_groups points its composite key at — which is
+ * what makes an active group that is not an accepted membership unrepresentable.
+ */
+create unique index if not exists group_members_member_group_idx
+  on public.group_members (member_id, group_id);
+
+/* A group has at most one owner, enforced by the database rather than by care. */
+create unique index if not exists group_members_one_owner_idx
+  on public.group_members (group_id) where role = 'owner';
+
+/*
+ * The active group, persisted so it survives sessions and devices rather than
+ * living in a cookie. One row per member is the "exactly one at a time" rule.
+ *
+ * The composite foreign key means losing the membership drops the active-group
+ * row with it, so a removed member can never still be pointed at the group.
+ */
+create table if not exists public.member_active_groups (
+  member_id  uuid primary key references public.members (id) on delete cascade,
+  group_id   uuid not null,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.member_active_groups
+  drop constraint if exists member_active_groups_membership_fkey;
+alter table public.member_active_groups add constraint member_active_groups_membership_fkey
+  foreign key (member_id, group_id) references public.group_members (member_id, group_id)
+  on delete cascade on update cascade;
+
+/*
+ * Invitations and join requests are separate tables because they are separate
+ * flows: a manager raises an invitation and the invited person answers it; a
+ * person raises a request and a manager answers that. Answered rows are kept so
+ * Profile can show "you asked to join" after the fact, and the partial unique
+ * indexes allow exactly one open row per pair — which is what stops a second tap
+ * from creating a duplicate.
+ */
+create table if not exists public.group_invitations (
+  id           uuid primary key default gen_random_uuid(),
+  group_id     uuid not null references public.groups (id) on delete cascade,
+  member_id    uuid not null references public.members (id) on delete cascade,
+  invited_by   uuid references public.members (id) on delete set null,
+  status       text not null default 'pending'
+                 check (status in ('pending', 'accepted', 'declined', 'cancelled')),
+  created_at   timestamptz not null default now(),
+  responded_at timestamptz
+);
+
+create unique index if not exists group_invitations_pending_idx
+  on public.group_invitations (group_id, member_id) where status = 'pending';
+create index if not exists group_invitations_member_idx
+  on public.group_invitations (member_id, status);
+
+create table if not exists public.group_join_requests (
+  id          uuid primary key default gen_random_uuid(),
+  group_id    uuid not null references public.groups (id) on delete cascade,
+  member_id   uuid not null references public.members (id) on delete cascade,
+  status      text not null default 'pending'
+                check (status in ('pending', 'approved', 'rejected', 'cancelled')),
+  created_at  timestamptz not null default now(),
+  reviewed_by uuid references public.members (id) on delete set null,
+  reviewed_at timestamptz
+);
+
+create unique index if not exists group_join_requests_pending_idx
+  on public.group_join_requests (group_id, member_id) where status = 'pending';
+create index if not exists group_join_requests_member_idx
+  on public.group_join_requests (member_id, status);
+create index if not exists group_join_requests_group_idx
+  on public.group_join_requests (group_id, status);
+
+-- ----------------------------------------------------------------------------
+-- Record visibility
+--
+-- Personal activity is recorded once, not once per group. These association
+-- tables record which groups a record was shared with AT THE MOMENT IT WAS
+-- CREATED, which is what makes the two hard rules possible at the same time:
+--
+--   * joining a group does not expose anything logged before joining, because
+--     no row was written for a group that did not yet contain the author;
+--   * leaving a group does not retract what was already shared, because the
+--     rows survive the membership that produced them.
+--
+-- Deriving visibility from current membership instead would get both wrong.
+-- Activity logged in Personal mode has no rows here at all, and stays private.
+-- ----------------------------------------------------------------------------
+create table if not exists public.group_daily_logs (
+  group_id     uuid not null references public.groups (id) on delete cascade,
+  daily_log_id uuid not null references public.daily_logs (id) on delete cascade,
+  shared_at    timestamptz not null default now(),
+  primary key (group_id, daily_log_id)
+);
+
+create index if not exists group_daily_logs_log_idx on public.group_daily_logs (daily_log_id);
+
+create table if not exists public.group_workouts (
+  group_id   uuid not null references public.groups (id) on delete cascade,
+  workout_id uuid not null references public.workouts (id) on delete cascade,
+  shared_at  timestamptz not null default now(),
+  primary key (group_id, workout_id)
+);
+
+create index if not exists group_workouts_workout_idx on public.group_workouts (workout_id);
+
+create table if not exists public.group_runs (
+  group_id  uuid not null references public.groups (id) on delete cascade,
+  run_id    uuid not null references public.runs (id) on delete cascade,
+  shared_at timestamptz not null default now(),
+  primary key (group_id, run_id)
+);
+
+create index if not exists group_runs_run_idx on public.group_runs (run_id);
+
+-- ----------------------------------------------------------------------------
+-- Collaborative content belongs to one group outright, so it carries the group
+-- id directly and is deleted with the group rather than merely hidden.
+-- Reactions and RSVPs follow their parent through the existing cascades.
+--
+-- The column is added nullable here and made NOT NULL further down, after the
+-- Nine Elms migration has given every pre-existing row a home.
+-- ----------------------------------------------------------------------------
+alter table public.sessions
+  add column if not exists group_id uuid references public.groups (id) on delete cascade;
+alter table public.messages
+  add column if not exists group_id uuid references public.groups (id) on delete cascade;
+
+create index if not exists sessions_group_when_idx
+  on public.sessions (group_id, session_date, session_time);
+create index if not exists messages_group_created_idx
+  on public.messages (group_id, created_at desc);
+
+/*
+ * Read cursors become per group: "everything in this chat is read" is a
+ * statement about one group's chat, and switching groups must not carry the
+ * cursor across or the new-post dot would lie in both directions.
+ */
+alter table public.message_reads
+  add column if not exists group_id uuid references public.groups (id) on delete cascade;
+alter table public.session_reads
+  add column if not exists group_id uuid references public.groups (id) on delete cascade;
+
+-- ----------------------------------------------------------------------------
+-- Group operations that have to be atomic
+--
+-- supabase-js sends one statement per call, so anything that must not be
+-- observed half-done — accepting an invitation, approving a request, handing
+-- ownership over, deleting a group — lives here instead. A plpgsql function body
+-- is a single transaction, which is what "transactional where possible" means on
+-- this stack.
+--
+-- Each one re-checks the caller's role itself. The Server Action checks first so
+-- it can explain the refusal; these check again so the rule holds even if a
+-- future caller forgets. They return a short code rather than raising, so the
+-- action can turn it into a sentence the person can act on.
+-- ----------------------------------------------------------------------------
+
+/* Same alphabet as lib/groups.ts, and the same one groups_join_code_format_check
+ * enforces: no I, L, O, 0 or 1. Retries on collision against the unique index. */
+create or replace function public.generate_group_join_code() returns text
+language plpgsql
+as $$
+declare
+  alphabet constant text := 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  candidate text;
+  attempts  integer := 0;
+begin
+  loop
+    candidate := '';
+    for position in 1..8 loop
+      candidate := candidate || substr(alphabet, 1 + floor(random() * length(alphabet))::integer, 1);
+      if position = 4 then
+        candidate := candidate || '-';
+      end if;
+    end loop;
+
+    exit when not exists (select 1 from public.groups g where g.join_code = candidate);
+
+    attempts := attempts + 1;
+    if attempts > 100 then
+      raise exception 'Could not allocate a unique group join code';
+    end if;
+  end loop;
+
+  return candidate;
+end;
+$$;
+
+/*
+ * Picks up the pieces after a membership ends. Deterministic — oldest membership
+ * first, ties broken by group id — so the same input always lands on the same
+ * group, and someone with nothing left simply has no row and is back in Personal
+ * mode. Never overwrites an active group that is still valid.
+ */
+create or replace function public.reassign_active_group(p_member_id uuid) returns void
+language plpgsql
+as $$
+begin
+  if exists (select 1 from public.member_active_groups where member_id = p_member_id) then
+    return;
+  end if;
+
+  insert into public.member_active_groups (member_id, group_id)
+  select gm.member_id, gm.group_id
+    from public.group_members gm
+   where gm.member_id = p_member_id
+   order by gm.joined_at, gm.group_id
+   limit 1
+  on conflict (member_id) do nothing;
+end;
+$$;
+
+/* The creator becomes the owner, and lands in the group they just made. */
+create or replace function public.create_group(
+  p_name        text,
+  p_description text,
+  p_owner_id    uuid
+) returns table (group_id uuid, join_code text)
+language plpgsql
+as $$
+declare
+  v_group_id uuid;
+  v_code     text;
+begin
+  v_code := public.generate_group_join_code();
+
+  insert into public.groups (name, description, join_code)
+  values (p_name, p_description, v_code)
+  returning id into v_group_id;
+
+  insert into public.group_members (group_id, member_id, role)
+  values (v_group_id, p_owner_id, 'owner');
+
+  insert into public.member_active_groups (member_id, group_id)
+  values (p_owner_id, v_group_id)
+  on conflict (member_id) do update
+    set group_id = excluded.group_id, updated_at = now();
+
+  return query select v_group_id, v_code;
+end;
+$$;
+
+create or replace function public.accept_group_invitation(
+  p_invitation_id uuid,
+  p_member_id     uuid
+) returns text
+language plpgsql
+as $$
+declare
+  v_invitation public.group_invitations;
+begin
+  select * into v_invitation
+    from public.group_invitations
+   where id = p_invitation_id
+   for update;
+
+  if not found then return 'not_found'; end if;
+  if v_invitation.member_id <> p_member_id then return 'forbidden'; end if;
+  if v_invitation.status <> 'pending' then return 'stale'; end if;
+
+  insert into public.group_members (group_id, member_id, role)
+  values (v_invitation.group_id, p_member_id, 'member')
+  on conflict (group_id, member_id) do nothing;
+
+  update public.group_invitations
+     set status = 'accepted', responded_at = now()
+   where id = p_invitation_id;
+
+  -- Any request they had open for the same group is moot now they are in.
+  update public.group_join_requests
+     set status = 'cancelled', reviewed_at = now()
+   where group_id = v_invitation.group_id
+     and member_id = p_member_id
+     and status = 'pending';
+
+  -- Joining does not yank them out of the group they are currently looking at.
+  insert into public.member_active_groups (member_id, group_id)
+  values (p_member_id, v_invitation.group_id)
+  on conflict (member_id) do nothing;
+
+  return 'ok';
+end;
+$$;
+
+create or replace function public.approve_group_join_request(
+  p_request_id  uuid,
+  p_reviewer_id uuid
+) returns text
+language plpgsql
+as $$
+declare
+  v_request public.group_join_requests;
+begin
+  select * into v_request
+    from public.group_join_requests
+   where id = p_request_id
+   for update;
+
+  if not found then return 'not_found'; end if;
+  if v_request.status <> 'pending' then return 'stale'; end if;
+
+  if not exists (
+    select 1 from public.group_members
+     where group_id = v_request.group_id
+       and member_id = p_reviewer_id
+       and role in ('owner', 'admin')
+  ) then
+    return 'forbidden';
+  end if;
+
+  insert into public.group_members (group_id, member_id, role)
+  values (v_request.group_id, v_request.member_id, 'member')
+  on conflict (group_id, member_id) do nothing;
+
+  update public.group_join_requests
+     set status = 'approved', reviewed_by = p_reviewer_id, reviewed_at = now()
+   where id = p_request_id;
+
+  update public.group_invitations
+     set status = 'cancelled', responded_at = now()
+   where group_id = v_request.group_id
+     and member_id = v_request.member_id
+     and status = 'pending';
+
+  insert into public.member_active_groups (member_id, group_id)
+  values (v_request.member_id, v_request.group_id)
+  on conflict (member_id) do nothing;
+
+  return 'ok';
+end;
+$$;
+
+create or replace function public.transfer_group_ownership(
+  p_group_id  uuid,
+  p_owner_id  uuid,
+  p_member_id uuid
+) returns text
+language plpgsql
+as $$
+begin
+  if p_owner_id = p_member_id then return 'stale'; end if;
+
+  if not exists (
+    select 1 from public.group_members
+     where group_id = p_group_id and member_id = p_owner_id and role = 'owner'
+  ) then
+    return 'forbidden';
+  end if;
+
+  if not exists (
+    select 1 from public.group_members
+     where group_id = p_group_id and member_id = p_member_id
+  ) then
+    return 'not_found';
+  end if;
+
+  /*
+   * Demote first. group_members_one_owner_idx is checked per statement, so
+   * promoting before demoting would mean two owners for an instant and be
+   * rejected. The outgoing owner keeps admin rights rather than dropping to
+   * member — they were running the group a moment ago.
+   */
+  update public.group_members set role = 'admin'
+   where group_id = p_group_id and member_id = p_owner_id;
+  update public.group_members set role = 'owner'
+   where group_id = p_group_id and member_id = p_member_id;
+  update public.groups set updated_at = now() where id = p_group_id;
+
+  return 'ok';
+end;
+$$;
+
+/* The owner cannot leave — a group must always have one. They transfer first. */
+create or replace function public.leave_group(
+  p_group_id  uuid,
+  p_member_id uuid
+) returns text
+language plpgsql
+as $$
+declare
+  v_role text;
+begin
+  select role into v_role
+    from public.group_members
+   where group_id = p_group_id and member_id = p_member_id
+   for update;
+
+  if not found then return 'not_found'; end if;
+  if v_role = 'owner' then return 'last_owner'; end if;
+
+  delete from public.group_members
+   where group_id = p_group_id and member_id = p_member_id;
+
+  perform public.reassign_active_group(p_member_id);
+  return 'ok';
+end;
+$$;
+
+create or replace function public.remove_group_member(
+  p_group_id  uuid,
+  p_actor_id  uuid,
+  p_member_id uuid
+) returns text
+language plpgsql
+as $$
+declare
+  v_actor_role  text;
+  v_target_role text;
+begin
+  if p_actor_id = p_member_id then return 'stale'; end if;
+
+  select role into v_actor_role from public.group_members
+   where group_id = p_group_id and member_id = p_actor_id;
+  if not found then return 'forbidden'; end if;
+
+  select role into v_target_role from public.group_members
+   where group_id = p_group_id and member_id = p_member_id
+   for update;
+  if not found then return 'not_found'; end if;
+
+  -- Nobody removes the owner, and an admin may not touch another admin.
+  if v_target_role = 'owner' then return 'forbidden'; end if;
+  if v_actor_role = 'admin' and v_target_role <> 'member' then return 'forbidden'; end if;
+  if v_actor_role not in ('owner', 'admin') then return 'forbidden'; end if;
+
+  delete from public.group_members
+   where group_id = p_group_id and member_id = p_member_id;
+
+  perform public.reassign_active_group(p_member_id);
+  return 'ok';
+end;
+$$;
+
+create or replace function public.set_group_member_role(
+  p_group_id  uuid,
+  p_actor_id  uuid,
+  p_member_id uuid,
+  p_role      text
+) returns text
+language plpgsql
+as $$
+declare
+  v_target_role text;
+begin
+  if p_role not in ('admin', 'member') then return 'forbidden'; end if;
+  if p_actor_id = p_member_id then return 'stale'; end if;
+
+  -- Only the owner promotes and demotes; admins cannot make more admins.
+  if not exists (
+    select 1 from public.group_members
+     where group_id = p_group_id and member_id = p_actor_id and role = 'owner'
+  ) then
+    return 'forbidden';
+  end if;
+
+  select role into v_target_role from public.group_members
+   where group_id = p_group_id and member_id = p_member_id
+   for update;
+  if not found then return 'not_found'; end if;
+  if v_target_role = 'owner' then return 'forbidden'; end if;
+  if v_target_role = p_role then return 'stale'; end if;
+
+  update public.group_members set role = p_role
+   where group_id = p_group_id and member_id = p_member_id;
+
+  return 'ok';
+end;
+$$;
+
+/* Regenerating invalidates the old code the moment this commits. */
+create or replace function public.regenerate_group_join_code(
+  p_group_id uuid,
+  p_actor_id uuid
+) returns table (result text, join_code text)
+language plpgsql
+as $$
+declare
+  v_code text;
+begin
+  if not exists (
+    select 1 from public.group_members
+     where group_id = p_group_id and member_id = p_actor_id and role = 'owner'
+  ) then
+    return query select 'forbidden'::text, null::text;
+    return;
+  end if;
+
+  v_code := public.generate_group_join_code();
+
+  update public.groups
+     set join_code = v_code, updated_at = now()
+   where id = p_group_id;
+
+  if not found then
+    return query select 'not_found'::text, null::text;
+    return;
+  end if;
+
+  return query select 'ok'::text, v_code;
+end;
+$$;
+
+/*
+ * Deleting takes the group and everything that belonged only to it: memberships,
+ * invitations, requests, active-group pointers, chat, sessions, and the rows
+ * recording what was shared with it. The underlying logs, workouts and runs are
+ * personal records and stay exactly where they are — only their association with
+ * this group goes. Every former member is then moved to another group of theirs,
+ * or left in Personal mode.
+ */
+create or replace function public.delete_group(
+  p_group_id uuid,
+  p_actor_id uuid
+) returns text
+language plpgsql
+as $$
+declare
+  v_members uuid[];
+  v_member  uuid;
+begin
+  if not exists (
+    select 1 from public.group_members
+     where group_id = p_group_id and member_id = p_actor_id and role = 'owner'
+  ) then
+    return 'forbidden';
+  end if;
+
+  select coalesce(array_agg(member_id), '{}'::uuid[]) into v_members
+    from public.group_members where group_id = p_group_id;
+
+  delete from public.groups where id = p_group_id;
+  if not found then return 'not_found'; end if;
+
+  foreach v_member in array v_members loop
+    perform public.reassign_active_group(v_member);
+  end loop;
+
+  return 'ok';
+end;
+$$;
+
+-- ----------------------------------------------------------------------------
+-- Migration: the existing group becomes "Nine Elms"
+--
+-- Everything this app held before groups existed was shared with everyone, so it
+-- all belongs to one group. Angel owns it; Dillon, Bradley and Pani join as
+-- accepted members; every existing log, workout, run, session and message is
+-- associated with it; and it becomes the active group for all of them.
+--
+-- Safe to apply repeatedly. The group is found by name before it is created, and
+-- every insert is guarded, so a second run changes nothing. Members who have
+-- since been promoted keep their role — nothing here overwrites one. Names that
+-- do not exist in this deployment are simply skipped, which is what makes it
+-- deterministic on a fresh database as well as on the live one.
+-- ----------------------------------------------------------------------------
+do $$
+declare
+  v_group_id uuid;
+  v_owner_id uuid;
+begin
+  select id into v_owner_id
+    from public.members
+   where lower(trim(name)) = 'angel'
+   order by created_at, id
+   limit 1;
+
+  -- No Angel, nothing to hand the group to. A fresh database will seed one and
+  -- pick this up on the next run.
+  if v_owner_id is null then
+    return;
+  end if;
+
+  select id into v_group_id from public.groups where name = 'Nine Elms' limit 1;
+
+  if v_group_id is null then
+    insert into public.groups (name, description, join_code)
+    values ('Nine Elms', null, public.generate_group_join_code())
+    returning id into v_group_id;
+  end if;
+
+  -- Owner first, and only if the group has no owner yet: group_members_one_owner_idx
+  -- would reject a second one, and a re-run must not fight a later transfer.
+  if not exists (
+    select 1 from public.group_members where group_id = v_group_id and role = 'owner'
+  ) then
+    insert into public.group_members (group_id, member_id, role)
+    values (v_group_id, v_owner_id, 'owner')
+    on conflict (group_id, member_id) do update set role = 'owner';
+  end if;
+
+  insert into public.group_members (group_id, member_id, role)
+  select v_group_id, m.id, 'member'
+    from public.members m
+   where lower(trim(m.name)) in ('angel', 'dillon', 'bradley', 'pani')
+  on conflict (group_id, member_id) do nothing;
+
+  -- Collaborative content: everything that had no group now has this one.
+  update public.sessions set group_id = v_group_id where group_id is null;
+  update public.messages set group_id = v_group_id where group_id is null;
+
+  -- Visibility: every record these members already had was shared with them all.
+  insert into public.group_daily_logs (group_id, daily_log_id)
+  select v_group_id, dl.id
+    from public.daily_logs dl
+    join public.group_members gm
+      on gm.member_id = dl.member_id and gm.group_id = v_group_id
+  on conflict (group_id, daily_log_id) do nothing;
+
+  insert into public.group_workouts (group_id, workout_id)
+  select v_group_id, w.id
+    from public.workouts w
+    join public.group_members gm
+      on gm.member_id = w.member_id and gm.group_id = v_group_id
+  on conflict (group_id, workout_id) do nothing;
+
+  -- Runs were always group runs; ones whose logger has since been removed
+  -- (created_by set null by the existing cascade) belong to the group too.
+  insert into public.group_runs (group_id, run_id)
+  select v_group_id, r.id
+    from public.runs r
+   where r.created_by is null
+      or exists (
+        select 1 from public.group_members gm
+         where gm.member_id = r.created_by and gm.group_id = v_group_id
+      )
+  on conflict (group_id, run_id) do nothing;
+
+  -- Read cursors were global; they become this group's cursors.
+  update public.message_reads set group_id = v_group_id where group_id is null;
+  update public.session_reads set group_id = v_group_id where group_id is null;
+
+  -- And this is the group they all land in.
+  insert into public.member_active_groups (member_id, group_id)
+  select gm.member_id, v_group_id
+    from public.group_members gm
+   where gm.group_id = v_group_id
+  on conflict (member_id) do nothing;
+end;
+$$;
+
+-- ----------------------------------------------------------------------------
+-- Tighten the collaborative-content columns now that the migration has run.
+--
+-- Guarded rather than unconditional: if some row still has no group — a database
+-- this migration could not place, for instance — the constraint is skipped
+-- instead of aborting the whole script. A read cursor is disposable, so a
+-- stranded one is dropped; a session or a message never is.
+-- ----------------------------------------------------------------------------
+do $$
+begin
+  if not exists (select 1 from public.sessions where group_id is null) then
+    alter table public.sessions alter column group_id set not null;
+  end if;
+
+  if not exists (select 1 from public.messages where group_id is null) then
+    alter table public.messages alter column group_id set not null;
+  end if;
+end;
+$$;
+
+delete from public.message_reads where group_id is null;
+delete from public.session_reads where group_id is null;
+
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+     where table_schema = 'public' and table_name = 'message_reads'
+       and column_name = 'group_id' and is_nullable = 'YES'
+  ) then
+    alter table public.message_reads alter column group_id set not null;
+    alter table public.message_reads drop constraint if exists message_reads_pkey;
+    alter table public.message_reads add primary key (member_id, group_id);
+  end if;
+
+  if exists (
+    select 1 from information_schema.columns
+     where table_schema = 'public' and table_name = 'session_reads'
+       and column_name = 'group_id' and is_nullable = 'YES'
+  ) then
+    alter table public.session_reads alter column group_id set not null;
+    alter table public.session_reads drop constraint if exists session_reads_pkey;
+    alter table public.session_reads add primary key (member_id, group_id);
+  end if;
+end;
+$$;
+
+-- ----------------------------------------------------------------------------
+-- Row Level Security for the group tables
+--
+-- These get RLS with NO anon/authenticated policy at all — the same treatment as
+-- member_credentials. The browser never talks to Supabase directly, so nothing
+-- legitimate loses access, and the publishable key cannot be used to enumerate
+-- groups, memberships, invitations, join codes or who logged what. Only the
+-- server-only secret key, which bypasses RLS, can read them.
+--
+-- The pre-existing app-data policies above stay permissive on purpose, as they
+-- were before this feature; authorization for group-scoped data is enforced in
+-- the Server Actions and in the functions above, which is where the acting
+-- member's identity is actually known.
+-- ----------------------------------------------------------------------------
+alter table public.groups               enable row level security;
+alter table public.group_members        enable row level security;
+alter table public.member_active_groups enable row level security;
+alter table public.group_invitations    enable row level security;
+alter table public.group_join_requests  enable row level security;
+alter table public.group_daily_logs     enable row level security;
+alter table public.group_workouts       enable row level security;
+alter table public.group_runs           enable row level security;
+
+/*
+ * Functions are executable by PUBLIC by default, which would let anyone holding
+ * the publishable key call delete_group over the REST endpoint. Take that back
+ * and hand it to the server key only.
+ */
+do $$
+declare
+  routine record;
+begin
+  for routine in
+    select p.oid::regprocedure as signature
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+     where n.nspname = 'public'
+       and p.proname in (
+         'generate_group_join_code',
+         'reassign_active_group',
+         'create_group',
+         'accept_group_invitation',
+         'approve_group_join_request',
+         'transfer_group_ownership',
+         'leave_group',
+         'remove_group_member',
+         'set_group_member_role',
+         'regenerate_group_join_code',
+         'delete_group'
+       )
+  loop
+    execute format('revoke all on function %s from public', routine.signature);
+    execute format('revoke all on function %s from anon', routine.signature);
+    execute format('revoke all on function %s from authenticated', routine.signature);
+    execute format('grant execute on function %s to service_role', routine.signature);
+  end loop;
+end;
+$$;

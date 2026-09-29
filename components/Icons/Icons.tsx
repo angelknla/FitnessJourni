@@ -287,3 +287,24 @@ export const BinIcon = ({ size = 16 }: IconProps) => (
     <path d="M6.75 6.75v4.5M9.25 6.75v4.5" />
   </svg>
 );
+
+/** Two figures — a group, not a single person, which is the whole distinction. */
+export const GroupIcon = ({ size = 16 }: IconProps) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path d="M16 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1" />
+    <circle cx="9" cy="7" r="3.2" />
+    <path d="M22 19v-1a4 4 0 0 0-3-3.87" />
+    <path d="M16.5 4.2a3.2 3.2 0 0 1 0 5.6" />
+  </svg>
+);
