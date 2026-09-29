@@ -175,22 +175,21 @@
 
   .nav .link[aria-current="page"] {
     color: var(--c-accent);
-    background: color-mix(in oklab, var(--c-accent) 12%, transparent);
-    box-shadow:
-      inset 0 1px 0 color-mix(in oklab, var(--c-accent) 24%, transparent),
-      0 5px 13px color-mix(in oklab, var(--c-accent) 10%, transparent);
+    font-weight: 600;
+    background: transparent;
+    box-shadow: none;
   }
 
   .nav .link[aria-current="page"]::after {
     content: "";
     position: absolute;
-    right: 28%;
-    bottom: 0.08rem;
-    left: 28%;
-    height: 2px;
+    bottom: 0.06rem;
+    left: 50%;
+    width: 0.25rem;
+    height: 0.25rem;
     background: var(--c-accent);
-    border-radius: var(--r-pill);
-    box-shadow: 0 0 7px color-mix(in oklab, var(--c-accent) 62%, transparent);
+    border-radius: 50%;
+    transform: translateX(-50%);
   }
 
   .nav .unreadDot {
