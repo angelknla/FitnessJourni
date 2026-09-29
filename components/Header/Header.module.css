@@ -180,15 +180,19 @@
     box-shadow: none;
   }
 
-  .nav .link[aria-current="page"]::after {
+  .navLabel {
+    position: relative;
+  }
+
+  .nav .link[aria-current="page"] .navLabel::after {
     content: "";
     position: absolute;
-    bottom: 0.06rem;
+    top: calc(100% + 0.5px);
     left: 50%;
-    width: 0.25rem;
-    height: 0.25rem;
+    width: 70%;
+    height: 2px;
     background: var(--c-accent);
-    border-radius: 50%;
+    border-radius: 999px;
     transform: translateX(-50%);
   }
 

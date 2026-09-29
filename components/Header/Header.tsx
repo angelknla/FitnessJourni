@@ -102,7 +102,7 @@ export const Header = ({
                       aria-current={active ? 'page' : undefined}
                     >
                       <Icon />
-                      <span>{item.label}</span>
+                      <span className={styles.navLabel}>{item.label}</span>
                       {((item.href === '/messages' && hasUnreadMessages) ||
                         (item.href === '/sessions' && hasUnreadSessions)) && (
                           <span className={styles.unreadDot} aria-hidden="true" />
