@@ -370,9 +370,16 @@ export const respondToInvitation = async (
   if (isRefusal(session)) return session;
 
   const invitationId = toText(formData.get('invitationId'));
-  const response = toText(formData.get('response'));
+  /*
+   * Named `decision`, not `response`: Netlify's edge rejects any POST carrying a
+   * form field called `response` with a bare 403, before the request reaches the
+   * app at all — so accepting an invitation failed in production while every other
+   * action worked. Reviewing a join request already used `decision`, which is why
+   * that one was unaffected.
+   */
+  const decision = toText(formData.get('decision'));
 
-  if (!invitationId || (response !== 'accept' && response !== 'decline')) {
+  if (!invitationId || (decision !== 'accept' && decision !== 'decline')) {
     /*
      * Worth a line in the log. A refusal the person sees but the server never
      * records is the hardest kind to support — this branch in particular means the
@@ -380,12 +387,12 @@ export const respondToInvitation = async (
      */
     console.error(
       '[respondToInvitation] missing fields:',
-      JSON.stringify({ invitationId, response, member: session.memberId })
+      JSON.stringify({ invitationId, decision, member: session.memberId })
     );
     return fail('Choose whether to accept or decline.');
   }
 
-  if (response === 'decline') {
+  if (decision === 'decline') {
     /*
      * Scoped to their own pending row, so the id alone cannot decline someone
      * else's invitation, and an already-answered one reports as gone rather than

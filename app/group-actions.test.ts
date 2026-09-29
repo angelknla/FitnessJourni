@@ -323,7 +323,7 @@ describe('answering an invitation', () => {
   it('accepts through the transactional function, not a bare insert', async () => {
     const result = await respondToInvitation(
       initial,
-      form({ invitationId: 'i1', response: 'accept' })
+      form({ invitationId: 'i1', decision: 'accept' })
     );
 
     expect(result.ok).toBe(true);
@@ -338,7 +338,7 @@ describe('answering an invitation', () => {
 
     const result = await respondToInvitation(
       initial,
-      form({ invitationId: 'i1', response: 'decline' })
+      form({ invitationId: 'i1', decision: 'decline' })
     );
 
     expect(result.ok).toBe(true);
@@ -357,7 +357,7 @@ describe('answering an invitation', () => {
 
     const result = await respondToInvitation(
       initial,
-      form({ invitationId: 'i1', response: 'decline' })
+      form({ invitationId: 'i1', decision: 'decline' })
     );
 
     expect(result.ok).toBe(false);
@@ -484,5 +484,33 @@ describe('deleting a group', () => {
 
     expect(result.ok).toBe(false);
     expect(supabase.rpcs).toHaveLength(0);
+  });
+});
+
+describe('the field names a form posts', () => {
+  /*
+   * Netlify's edge rejects any POST carrying a form field called `response` with a
+   * bare 403, before it reaches the app — which broke accepting an invitation in
+   * production while every other action worked. This pins the name so it cannot
+   * drift back.
+   */
+  it('does not read a field called "response"', async () => {
+    const data = new FormData();
+    data.set('invitationId', 'i1');
+    data.set('response', 'accept');
+
+    const result = await respondToInvitation(initial, data);
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/accept or decline/i);
+  });
+
+  it('reads "decision" instead', async () => {
+    const result = await respondToInvitation(
+      initial,
+      form({ invitationId: 'i1', decision: 'accept' })
+    );
+
+    expect(result.ok).toBe(true);
   });
 });

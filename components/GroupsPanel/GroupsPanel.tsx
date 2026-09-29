@@ -250,14 +250,14 @@ export const GroupsPanel = ({
                 <div className={styles.rowActions}>
                   <form action={invitationAction}>
                     <input type="hidden" name="invitationId" value={invitation.id} />
-                    <input type="hidden" name="response" value="accept" />
+                    <input type="hidden" name="decision" value="accept" />
                     <button type="submit" className={styles.primary} disabled={answering}>
                       Accept
                     </button>
                   </form>
                   <form action={invitationAction}>
                     <input type="hidden" name="invitationId" value={invitation.id} />
-                    <input type="hidden" name="response" value="decline" />
+                    <input type="hidden" name="decision" value="decline" />
                     <button type="submit" className={styles.quiet} disabled={answering}>
                       Decline
                     </button>
