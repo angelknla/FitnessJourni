@@ -334,7 +334,7 @@ export const saveProfileAccent = async (
   return { ok: true, message: 'Profile colour saved.', bookedAt: Date.now() };
 };
 
-export const saveProfileDetails = async (
+export const saveProfileInfo = async (
   _prev: ActionState,
   formData: FormData
 ): Promise<ActionState> => {
@@ -352,13 +352,6 @@ export const saveProfileDetails = async (
   const surname = toText(formData.get('surname'));
   const age = toOptionalNumber(formData.get('age'));
   const heightCm = toOptionalNumber(formData.get('heightCm'));
-  const targetWeightKg = toOptionalNumber(formData.get('targetWeightKg'));
-  const targetBmi = toOptionalNumber(formData.get('targetBmi'));
-  const targetSleepHours = toOptionalNumber(formData.get('targetSleepHours'));
-  const targetCalories = toOptionalNumber(formData.get('targetCalories'));
-  const targetProtein = toOptionalNumber(formData.get('targetProtein'));
-  const targetCarbs = toOptionalNumber(formData.get('targetCarbs'));
-  const targetFat = toOptionalNumber(formData.get('targetFat'));
   const saveCurrentWeight = formData.get('saveCurrentWeight') === 'true';
   const currentDateInput = toText(formData.get('currentDate'));
   const currentDate = ISO_DATE.test(currentDateInput) ? currentDateInput : '';
@@ -381,33 +374,6 @@ export const saveProfileDetails = async (
     return fail('Enter a height from 100 to 250 cm.');
   }
   if (
-    targetWeightKg !== null &&
-    (!Number.isFinite(targetWeightKg) || targetWeightKg < 25 || targetWeightKg > 500)
-  ) {
-    return fail('Enter a weight goal from 25 to 500 kg.');
-  }
-  if (targetBmi !== null && (!Number.isFinite(targetBmi) || targetBmi < 10 || targetBmi > 60)) {
-    return fail('Enter a BMI goal from 10 to 60.');
-  }
-  if (
-    targetSleepHours !== null &&
-    (!Number.isFinite(targetSleepHours) || targetSleepHours < 1 || targetSleepHours > 24)
-  ) {
-    return fail('Enter a sleep target from 1 to 24 hours.');
-  }
-  const nutritionTargets = [
-    { value: targetCalories, max: 20000, label: 'calorie' },
-    { value: targetProtein, max: 1000, label: 'protein' },
-    { value: targetCarbs, max: 2000, label: 'carb' },
-    { value: targetFat, max: 1000, label: 'fat' },
-  ];
-  const invalidNutritionTarget = nutritionTargets.find(
-    ({ value, max }) => value !== null && (!Number.isInteger(value) || value < 1 || value > max)
-  );
-  if (invalidNutritionTarget) {
-    return fail(`Enter a valid ${invalidNutritionTarget.label} target.`);
-  }
-  if (
     saveCurrentWeight &&
     (!currentDate ||
       currentWeightKg === null ||
@@ -425,20 +391,11 @@ export const saveProfileDetails = async (
       surname: surname || null,
       age,
       height_cm: heightCm,
-      target_weight_kg: targetWeightKg,
-      target_bmi: targetBmi,
-      ...(targetSleepHours !== null
-        ? { target_sleep_hours: Math.round(targetSleepHours * 100) / 100 }
-        : {}),
-      ...(targetCalories !== null ? { target_calories: targetCalories } : {}),
-      ...(targetProtein !== null ? { target_protein: targetProtein } : {}),
-      ...(targetCarbs !== null ? { target_carbs: targetCarbs } : {}),
-      ...(targetFat !== null ? { target_fat: targetFat } : {}),
     })
     .eq('id', memberId);
 
   if (error) {
-    console.error('[saveProfileDetails]', error.message);
+    console.error('[saveProfileInfo]', error.message);
     return fail('Could not save your profile.');
   }
 
@@ -455,7 +412,7 @@ export const saveProfileDetails = async (
     );
 
     if (weightError) {
-      console.error('[saveProfileDetails:weight]', weightError.message);
+      console.error('[saveProfileInfo:weight]', weightError.message);
       return fail('Your profile saved, but the current weight did not. Try that weight again.');
     }
   }
@@ -463,7 +420,88 @@ export const saveProfileDetails = async (
   revalidatePath('/profile');
   revalidatePath('/logs');
   revalidatePath('/', 'layout');
-  return { ok: true, message: 'Profile saved.' };
+  return { ok: true, message: 'Information saved.' };
+};
+
+export const saveProfileTargets = async (
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> => {
+  if (!(await isUnlocked())) {
+    return fail(LOCKED);
+  }
+
+  const supabase = getSupabase();
+  if (!supabase) {
+    return fail(NOT_CONFIGURED);
+  }
+
+  const memberId = toText(formData.get('memberId'));
+  const targetWeightKg = toOptionalNumber(formData.get('targetWeightKg'));
+  const targetBmi = toOptionalNumber(formData.get('targetBmi'));
+  const targetSleepHours = toOptionalNumber(formData.get('targetSleepHours'));
+  const targetCalories = toOptionalNumber(formData.get('targetCalories'));
+  const targetProtein = toOptionalNumber(formData.get('targetProtein'));
+  const targetCarbs = toOptionalNumber(formData.get('targetCarbs'));
+  const targetFat = toOptionalNumber(formData.get('targetFat'));
+  const notYours = await refuseUnlessOwn(memberId);
+
+  if (notYours) {
+    return fail(notYours);
+  }
+  if (
+    targetWeightKg !== null &&
+    (!Number.isFinite(targetWeightKg) || targetWeightKg < 25 || targetWeightKg > 500)
+  ) {
+    return fail('Enter a weight goal from 25 to 500 kg.');
+  }
+  if (targetBmi !== null && (!Number.isFinite(targetBmi) || targetBmi < 10 || targetBmi > 60)) {
+    return fail('Enter a BMI goal from 10 to 60.');
+  }
+  if (
+    targetSleepHours === null ||
+    !Number.isFinite(targetSleepHours) ||
+    targetSleepHours < 1 ||
+    targetSleepHours > 24
+  ) {
+    return fail('Enter a sleep target from 1 to 24 hours.');
+  }
+
+  const nutritionTargets = [
+    { value: targetCalories, max: 20000, label: 'calorie' },
+    { value: targetProtein, max: 1000, label: 'protein' },
+    { value: targetCarbs, max: 2000, label: 'carb' },
+    { value: targetFat, max: 1000, label: 'fat' },
+  ];
+  const invalidNutritionTarget = nutritionTargets.find(
+    ({ value, max }) => value === null || !Number.isInteger(value) || value < 1 || value > max
+  );
+  if (invalidNutritionTarget) {
+    return fail(`Enter a valid ${invalidNutritionTarget.label} target.`);
+  }
+
+  const { error } = await supabase
+    .from('members')
+    .update({
+      target_weight_kg: targetWeightKg,
+      target_bmi: targetBmi,
+      target_sleep_hours: Math.round(targetSleepHours * 100) / 100,
+      target_calories: targetCalories,
+      target_protein: targetProtein,
+      target_carbs: targetCarbs,
+      target_fat: targetFat,
+    })
+    .eq('id', memberId);
+
+  if (error) {
+    console.error('[saveProfileTargets]', error.message);
+    return fail('Could not save your goals and targets.');
+  }
+
+  revalidatePath('/profile');
+  revalidatePath('/logs');
+  revalidatePath('/', 'layout');
+  return { ok: true, message: 'Goals and targets saved.' };
 };
 
 export const saveWeightMeasurement = async (

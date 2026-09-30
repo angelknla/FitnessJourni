@@ -20,6 +20,7 @@ import { QuickEntry } from '@components/QuickEntry/QuickEntry';
 import { SleepLogger } from '@components/SleepLogger/SleepLogger';
 import { WorkoutLogger } from '@components/WorkoutLogger/WorkoutLogger';
 import { accentHex } from '@data/fitnessData';
+import { useStepCaloriesPreference } from '@hooks/useStepCaloriesPreference';
 import { fromISODate, toISODate } from '@utils/date';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -82,6 +83,7 @@ interface MemberSummaryProps {
   date: string;
   viewerId: string | null;
   editingTargets: boolean;
+  includeStepCalories: boolean;
   preview?: boolean;
   onToggleTargets: () => void;
   onTargetsSaved: () => void;
@@ -93,13 +95,14 @@ const MemberSummary = ({
   date,
   viewerId,
   editingTargets,
+  includeStepCalories,
   preview = false,
   onToggleTargets,
   onTargetsSaved,
 }: MemberSummaryProps) => {
   const { targets } = member;
   const caloriesBurned = caloriesBurnedFromSteps(log.steps);
-  const adjustedCalorieTarget = targets.calories + caloriesBurned;
+  const adjustedCalorieTarget = targets.calories + (includeStepCalories ? caloriesBurned : 0);
   const canEdit = !preview && member.id === viewerId;
 
   return (
@@ -129,7 +132,7 @@ const MemberSummary = ({
           label="Calories"
           display={formatCount(log.calories)}
           targetDisplay={formatCount(targets.calories)}
-          targetAdjustmentDisplay={formatCount(caloriesBurned)}
+          targetAdjustmentDisplay={includeStepCalories ? formatCount(caloriesBurned) : undefined}
           value={log.calories}
           target={adjustedCalorieTarget}
           overIsBad
@@ -241,6 +244,7 @@ export const Home = ({
   const [addOpen, setAddOpen] = useState(false);
   const [editingTargets, setEditingTargets] = useState(false);
   const [editingSleepTarget, setEditingSleepTarget] = useState(false);
+  const [includeStepCalories] = useStepCaloriesPreference();
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
   const pendingMemberId = useRef<string | null>(null);
@@ -528,6 +532,7 @@ export const Home = ({
                 date={date}
                 viewerId={viewerId}
                 editingTargets={false}
+                includeStepCalories={includeStepCalories}
                 preview
                 onToggleTargets={() => {}}
                 onTargetsSaved={() => {}}
@@ -540,6 +545,7 @@ export const Home = ({
                 date={date}
                 viewerId={viewerId}
                 editingTargets={editingTargets}
+                includeStepCalories={includeStepCalories}
                 onToggleTargets={() => {
                   setEditingSleepTarget(false);
                   setEditingTargets((open) => !open);
@@ -554,6 +560,7 @@ export const Home = ({
                 date={date}
                 viewerId={viewerId}
                 editingTargets={false}
+                includeStepCalories={includeStepCalories}
                 preview
                 onToggleTargets={() => {}}
                 onTargetsSaved={() => {}}

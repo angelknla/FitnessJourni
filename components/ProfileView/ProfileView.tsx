@@ -5,6 +5,7 @@ import { MemberMedals } from '@components/MedalLeaderboard/MedalLeaderboard';
 import { RemoveMemberDialog } from '@components/RemoveMemberDialog/RemoveMemberDialog';
 import { avatarOptions, avatarUploadTypes, isAvatarPath } from '@data/avatarData';
 import { accentHex, accentNames, defaultTargets } from '@data/fitnessData';
+import { useStepCaloriesPreference } from '@hooks/useStepCaloriesPreference';
 import { replaceInputFile, shrinkImage } from '@utils/image';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -21,7 +22,8 @@ import {
   type ActionState,
   saveAvatar,
   saveProfileAccent,
-  saveProfileDetails,
+  saveProfileInfo,
+  saveProfileTargets,
   saveWeightMeasurement,
 } from '@/app/actions';
 import { lock, saveAccountSettings } from '@/app/auth-actions';
@@ -148,13 +150,15 @@ export const ProfileView = ({
   const [selectedAccent, setSelectedAccent] = useState(member?.accent ?? 'blue');
   const avatarFileRef = useRef<HTMLInputElement>(null);
   const [signingOut, startSignOut] = useTransition();
-  const [profileState, profileAction, profilePending] = useActionState(saveProfileDetails, initial);
+  const [infoState, infoAction, infoPending] = useActionState(saveProfileInfo, initial);
+  const [targetsState, targetsAction, targetsPending] = useActionState(saveProfileTargets, initial);
   const [weightState, weightAction, weightPending] = useActionState(saveWeightMeasurement, initial);
   const [avatarState, avatarAction, avatarPending] = useActionState(saveAvatar, initial);
   const [accentState, accentAction, accentPending] = useActionState(saveProfileAccent, initial);
   const [accountState, accountAction, accountPending] = useActionState(saveAccountSettings, {});
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [theme, setTheme] = useState<Theme>('light');
+  const [includeStepCalories, setIncludeStepCalories] = useStepCaloriesPreference();
 
   const currentWeight = measurements.at(-1)?.weightKg ?? null;
   const currentDateMeasurement = measurements.find((item) => item.date === currentDate);
@@ -898,7 +902,7 @@ export const ProfileView = ({
           </div>
         </div>
 
-        <form className={styles.detailsForm} action={profileAction}>
+        <form className={styles.detailsForm} action={infoAction}>
           <input type="hidden" name="memberId" value={member.id} />
           <input type="hidden" name="currentDate" value={currentDate} />
           <input type="hidden" name="saveCurrentWeight" value={String(currentWeightChanged)} />
@@ -983,6 +987,20 @@ export const ProfileView = ({
               </label>
             </div>
           </fieldset>
+          <div className={styles.formActions}>
+            <button type="submit" className={styles.saveButton} disabled={infoPending}>
+              {infoPending ? 'Saving…' : 'Save info'}
+            </button>
+            {(infoState.error || infoState.message) && (
+              <p className={infoState.error ? styles.error : styles.success} role="status">
+                {infoState.error ?? infoState.message}
+              </p>
+            )}
+          </div>
+        </form>
+
+        <form className={styles.detailsForm} action={targetsAction}>
+          <input type="hidden" name="memberId" value={member.id} />
           <fieldset id="goals-and-targets" className={styles.detailGroup}>
             <legend>Goals and targets</legend>
             <div className={styles.detailFields}>
@@ -1051,6 +1069,15 @@ export const ProfileView = ({
                   <span>kcal</span>
                 </span>
               </label>
+              <label className={styles.stepCaloriesPreference}>
+                <input
+                  type="checkbox"
+                  aria-label="Count burned kcal towards target"
+                  checked={includeStepCalories}
+                  onChange={(event) => setIncludeStepCalories(event.target.checked)}
+                />
+                <span>Count burned kcal towards target</span>
+              </label>
               <fieldset className={styles.targetModes}>
                 <legend className="sr-only">Enter macro targets as</legend>
                 {(['grams', 'percent'] as ProfileMacroMode[]).map((option) => (
@@ -1108,13 +1135,13 @@ export const ProfileView = ({
             <button
               type="submit"
               className={styles.saveButton}
-              disabled={profilePending || targetSplitOff}
+              disabled={targetsPending || targetSplitOff}
             >
-              {profilePending ? 'Saving…' : 'Save profile'}
+              {targetsPending ? 'Saving…' : 'Save targets'}
             </button>
-            {(profileState.error || profileState.message) && (
-              <p className={profileState.error ? styles.error : styles.success} role="status">
-                {profileState.error ?? profileState.message}
+            {(targetsState.error || targetsState.message) && (
+              <p className={targetsState.error ? styles.error : styles.success} role="status">
+                {targetsState.error ?? targetsState.message}
               </p>
             )}
           </div>

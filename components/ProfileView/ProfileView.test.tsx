@@ -1,10 +1,13 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { STEP_CALORIES_PREFERENCE_KEY } from '@hooks/useStepCaloriesPreference';
+import { saveProfileInfo, saveProfileTargets } from '@/app/actions';
 import type { Member, MemberProfile } from '@/types/fitness';
 
 vi.mock('@/app/actions', () => ({
-  saveProfileDetails: vi.fn(async () => ({ ok: true })),
+  saveProfileInfo: vi.fn(async () => ({ ok: true })),
+  saveProfileTargets: vi.fn(async () => ({ ok: true })),
   saveProfileAccent: vi.fn(async () => ({ ok: true })),
   saveWeightMeasurement: vi.fn(async () => ({ ok: true })),
   saveAvatar: vi.fn(async () => ({ ok: true })),
@@ -193,6 +196,77 @@ describe('ProfileView', () => {
     expect(screen.getByRole('group', { name: 'Personal info' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Measurements' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Goals and targets' })).toBeInTheDocument();
+  });
+
+  it('saves profile information and targets from separate forms', async () => {
+    const user = userEvent.setup();
+    vi.mocked(saveProfileInfo).mockClear();
+    vi.mocked(saveProfileTargets).mockClear();
+    render(
+      <ProfileView
+        members={[member]}
+        member={member}
+        profile={profile}
+        measurements={[]}
+        currentDate="2026-09-27"
+      />
+    );
+
+    const infoForm = screen.getByRole('button', { name: 'Save info' }).closest('form');
+    const targetsForm = screen.getByRole('button', { name: 'Save targets' }).closest('form');
+    expect(infoForm).not.toBe(targetsForm);
+    expect(infoForm).toHaveFormValues({ name: 'Dillon', heightCm: 180 });
+    expect(infoForm).not.toHaveFormValues({ targetWeightKg: 75, targetCalories: 2500 });
+    expect(targetsForm).toHaveFormValues({ targetWeightKg: 75, targetCalories: 2500 });
+    expect(targetsForm).not.toHaveFormValues({ name: 'Dillon', heightCm: 180 });
+
+    await user.click(screen.getByRole('button', { name: 'Save info' }));
+    await waitFor(() => expect(saveProfileInfo).toHaveBeenCalledOnce());
+    const infoData = vi.mocked(saveProfileInfo).mock.calls[0]?.[1];
+    expect(infoData?.get('memberId')).toBe('m1');
+    expect(infoData?.get('heightCm')).toBe('180');
+    expect(infoData?.has('targetCalories')).toBe(false);
+    expect(saveProfileTargets).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: 'Save targets' }));
+    await waitFor(() => expect(saveProfileTargets).toHaveBeenCalledOnce());
+    const targetsData = vi.mocked(saveProfileTargets).mock.calls[0]?.[1];
+    expect(targetsData?.get('memberId')).toBe('m1');
+    expect(targetsData?.get('targetCalories')).toBe('2500');
+    expect(targetsData?.has('name')).toBe(false);
+    expect(targetsData?.has('heightCm')).toBe(false);
+  });
+
+  it('saves the burned-kcal preference immediately from Goals and targets', async () => {
+    const user = userEvent.setup();
+    window.localStorage.removeItem(STEP_CALORIES_PREFERENCE_KEY);
+    vi.mocked(saveProfileTargets).mockClear();
+    render(
+      <ProfileView
+        members={[member]}
+        member={member}
+        profile={profile}
+        measurements={[]}
+        currentDate="2026-09-27"
+      />
+    );
+
+    const preference = screen.getByRole('checkbox', {
+      name: 'Count burned kcal towards target',
+    });
+    expect(preference).not.toBeChecked();
+
+    await user.click(preference);
+
+    expect(preference).toBeChecked();
+    expect(window.localStorage.getItem(STEP_CALORIES_PREFERENCE_KEY)).toBe('true');
+    expect(saveProfileTargets).not.toHaveBeenCalled();
+
+    await user.click(preference);
+
+    expect(preference).not.toBeChecked();
+    expect(window.localStorage.getItem(STEP_CALORIES_PREFERENCE_KEY)).toBe('false');
+    window.localStorage.removeItem(STEP_CALORIES_PREFERENCE_KEY);
   });
 
   it('tracks separate weight measurements on specific dates in the same month', () => {

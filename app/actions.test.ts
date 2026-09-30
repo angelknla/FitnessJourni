@@ -56,6 +56,8 @@ import {
   logWorkout,
   postMessage,
   saveDailyLog,
+  saveProfileInfo,
+  saveProfileTargets,
 } from './actions';
 
 const form = (fields: Record<string, string | string[]>): FormData => {
@@ -339,5 +341,67 @@ describe('ownership of a write', () => {
 
     expect(result.ok).toBe(false);
     expect(supabase.used('sessions', 'insert')).toBe(false);
+  });
+});
+
+describe('saving profile information', () => {
+  it('updates personal and measurement fields and records changed current weight', async () => {
+    const result = await saveProfileInfo(
+      initial,
+      form({
+        memberId: 'angel',
+        name: 'Angel',
+        surname: 'Hart',
+        age: '34',
+        heightCm: '180',
+        currentDate: '2026-09-29',
+        currentWeightKg: '79.5',
+        saveCurrentWeight: 'true',
+      })
+    );
+
+    expect(result).toMatchObject({ ok: true, message: 'Information saved.' });
+    expect(supabase.argsFor('members', 'update')?.[0]).toEqual({
+      name: 'Angel',
+      surname: 'Hart',
+      age: 34,
+      height_cm: 180,
+    });
+    expect(supabase.argsFor('weight_measurements', 'upsert')?.[0]).toMatchObject({
+      member_id: 'angel',
+      month_start: '2026-09-01',
+      measured_on: '2026-09-29',
+      weight_kg: 79.5,
+    });
+  });
+});
+
+describe('saving profile targets', () => {
+  it('updates goals and nutrition targets without requiring profile fields', async () => {
+    const result = await saveProfileTargets(
+      initial,
+      form({
+        memberId: 'angel',
+        targetWeightKg: '75',
+        targetBmi: '23',
+        targetSleepHours: '8.5',
+        targetCalories: '2500',
+        targetProtein: '156',
+        targetCarbs: '313',
+        targetFat: '69',
+      })
+    );
+
+    expect(result).toMatchObject({ ok: true, message: 'Goals and targets saved.' });
+    expect(supabase.argsFor('members', 'update')?.[0]).toEqual({
+      target_weight_kg: 75,
+      target_bmi: 23,
+      target_sleep_hours: 8.5,
+      target_calories: 2500,
+      target_protein: 156,
+      target_carbs: 313,
+      target_fat: 69,
+    });
+    expect(supabase.callsTo('weight_measurements')).toHaveLength(0);
   });
 });

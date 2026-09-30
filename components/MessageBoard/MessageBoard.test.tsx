@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Member, MemberTargets } from '@/types/fitness';
 
 vi.mock('@/app/actions', () => ({
@@ -14,8 +14,30 @@ vi.mock('next/navigation', () => ({
     useRouter: () => ({ refresh: vi.fn() }),
 }));
 
-import { postMessage, reactToMessage } from '@/app/actions';
+import { type ActionState, postMessage, reactToMessage } from '@/app/actions';
 import { MessageBoard } from './MessageBoard';
+
+const deferReactionAction = () => {
+    const resolvers: Array<(state: ActionState) => void> = [];
+    vi.mocked(reactToMessage).mockImplementation(
+        (_previousState, _formData) => new Promise((resolve) => resolvers.push(resolve))
+    );
+    return {
+        resolveNext: async (state: ActionState) => {
+            const resolve = resolvers.shift();
+            expect(resolve).toBeDefined();
+            await act(async () => {
+                resolve?.(state);
+                await Promise.resolve();
+            });
+        },
+    };
+};
+
+afterEach(() => {
+    vi.mocked(reactToMessage).mockReset();
+    vi.mocked(reactToMessage).mockImplementation(async () => ({ ok: true }));
+});
 
 const targets: MemberTargets = {
     calories: 2500,
@@ -293,6 +315,116 @@ describe('MessageBoard', () => {
         }
         fireEvent.pointerDown(document.body);
         expect(screen.queryByRole('button', { name: 'Heart reaction' })).not.toBeInTheDocument();
+    });
+
+    it('applies reactions immediately, replaces the viewer reaction, and toggles it off', async () => {
+        const user = userEvent.setup();
+        const deferred = deferReactionAction();
+        const { rerender } = render(
+            <MessageBoard
+                members={[member, angel, bradley]}
+                viewerId="m1"
+                messages={[
+                    {
+                        id: 'post-1',
+                        memberId: 'm2',
+                        content: 'React quickly.',
+                        createdAt: '2026-09-25T08:30:00.000Z',
+                        reactions: [
+                            { memberId: 'm1', type: 'heart' },
+                            { memberId: 'm2', type: 'heart' },
+                            { memberId: 'm3', type: 'smile' },
+                        ],
+                    },
+                ]}
+            />
+        );
+
+        await user.click(screen.getByRole('button', {
+            name: 'React to message. Heart, 2 reactions. Smile, 1 reaction',
+        }));
+        await user.click(screen.getByRole('button', { name: 'Smile reaction' }));
+
+        const replacedTrigger = await screen.findByRole('button', {
+            name: 'React to message. Heart, 1 reaction. Smile, 2 reactions',
+        });
+        expect(replacedTrigger).toHaveTextContent('❤️1😊2');
+        expect(replacedTrigger).toBeDisabled();
+        expect(reactToMessage).toHaveBeenCalledOnce();
+        expect(vi.mocked(reactToMessage).mock.calls[0]?.[1].get('reaction')).toBe('smile');
+
+        rerender(
+            <MessageBoard
+                members={[member, angel, bradley]}
+                viewerId="m1"
+                messages={[
+                    {
+                        id: 'post-1',
+                        memberId: 'm2',
+                        content: 'React quickly.',
+                        createdAt: '2026-09-25T08:30:00.000Z',
+                        reactions: [
+                            { memberId: 'm2', type: 'heart' },
+                            { memberId: 'm1', type: 'smile' },
+                            { memberId: 'm3', type: 'smile' },
+                        ],
+                    },
+                ]}
+            />
+        );
+        await deferred.resolveNext({ ok: true });
+        await waitFor(() => expect(replacedTrigger).toBeEnabled());
+
+        await user.click(replacedTrigger);
+        expect(screen.getByRole('button', { name: 'Smile reaction' })).toHaveAttribute(
+            'aria-pressed',
+            'true'
+        );
+        await user.click(screen.getByRole('button', { name: 'Smile reaction' }));
+
+        const toggledTrigger = await screen.findByRole('button', {
+            name: 'React to message. Heart, 1 reaction. Smile, 1 reaction',
+        });
+        expect(toggledTrigger).toHaveTextContent('❤️1😊1');
+        expect(toggledTrigger).toBeDisabled();
+        await deferred.resolveNext({ ok: true });
+    });
+
+    it('reverts the optimistic reaction and shows the action error on failure', async () => {
+        const user = userEvent.setup();
+        const deferred = deferReactionAction();
+        render(
+            <MessageBoard
+                members={[member, angel]}
+                viewerId="m1"
+                messages={[
+                    {
+                        id: 'post-1',
+                        memberId: 'm2',
+                        content: 'A reaction may fail.',
+                        createdAt: '2026-09-25T08:30:00.000Z',
+                        reactions: [{ memberId: 'm2', type: 'heart' }],
+                    },
+                ]}
+            />
+        );
+
+        await user.click(screen.getByRole('button', {
+            name: 'React to message. Heart, 1 reaction',
+        }));
+        await user.click(screen.getByRole('button', { name: 'Heart reaction' }));
+
+        const optimisticTrigger = await screen.findByRole('button', {
+            name: 'React to message. Heart, 2 reactions',
+        });
+        expect(optimisticTrigger).toBeDisabled();
+
+        await deferred.resolveNext({ ok: false, error: 'Could not update that reaction.' });
+
+        expect(await screen.findByRole('button', {
+            name: 'React to message. Heart, 1 reaction',
+        })).toBeEnabled();
+        expect(screen.getByRole('alert')).toHaveTextContent('Could not update that reaction.');
     });
 
     it('shows who added each reaction on hover', async () => {

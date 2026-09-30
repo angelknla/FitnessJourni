@@ -22,6 +22,7 @@ import {
     type PointerEvent as ReactPointerEvent,
     useActionState,
     useEffect,
+    useOptimistic,
     useRef,
     useState,
     useTransition,
@@ -35,7 +36,13 @@ import {
     reactToMessage,
 } from '@/app/actions';
 import { canModifyMessage, MESSAGE_EDIT_WINDOW_MS } from '@/lib/messagePolicy';
-import type { Member, MessagePost, MessageReactionType, MessageReply } from '@/types/fitness';
+import type {
+    Member,
+    MessagePost,
+    MessageReaction,
+    MessageReactionType,
+    MessageReply,
+} from '@/types/fitness';
 
 import styles from './MessageBoard.module.css';
 
@@ -108,7 +115,35 @@ const MessageBubble = ({
     const [optionsOpen, setOptionsOpen] = useState(false);
     const [editState, editAction, isEditing] = useActionState(editMessage, initial);
     const [deleteState, deleteAction, isDeleting] = useActionState(deleteMessage, initial);
-    const [reactionState, reactionAction, isReacting] = useActionState(reactToMessage, initial);
+    const [optimisticReactions, addOptimisticReaction] = useOptimistic(
+        message.reactions,
+        (currentReactions: MessageReaction[], nextReaction: MessageReactionType) => {
+            if (!viewerId) return currentReactions;
+            const viewerAlreadyReacted = currentReactions.some(
+                (reaction) => reaction.memberId === viewerId && reaction.type === nextReaction
+            );
+            const otherReactions = currentReactions.filter(
+                (reaction) => reaction.memberId !== viewerId
+            );
+            return viewerAlreadyReacted
+                ? otherReactions
+                : [...otherReactions, { memberId: viewerId, type: nextReaction }];
+        }
+    );
+    const [reactionState, reactionAction, isReacting] = useActionState(
+        async (previousState: ActionState, formData: FormData) => {
+            const nextReaction = formData.get('reaction');
+            if (
+                viewerId &&
+                typeof nextReaction === 'string' &&
+                reactionOptions.some((option) => option.type === nextReaction)
+            ) {
+                addOptimisticReaction(nextReaction as MessageReactionType);
+            }
+            return reactToMessage(previousState, formData);
+        },
+        initial
+    );
     const [reactionPickerOpen, setReactionPickerOpen] = useState(false);
     const [reactionDetailsOpen, setReactionDetailsOpen] = useState(false);
     const [canModify, setCanModify] = useState(() => canModifyMessage(message.createdAt));
@@ -127,13 +162,13 @@ const MessageBubble = ({
     const swipeOffsetRef = useRef(0);
     const swipeActiveRef = useRef(false);
     const lastPointerTypeRef = useRef('');
-    const viewerReaction = message.reactions.find(
+    const viewerReaction = optimisticReactions.find(
         (reaction) => reaction.memberId === viewerId
     )?.type;
     const reactionCounts = reactionOptions
         .map((option) => ({
             ...option,
-            reactors: message.reactions
+            reactors: optimisticReactions
                 .filter((reaction) => reaction.type === option.type)
                 .map((reaction) => memberById.get(reaction.memberId)?.name ?? 'Former member'),
         }))

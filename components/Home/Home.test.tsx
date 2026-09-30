@@ -1,6 +1,7 @@
+import { STEP_CALORIES_PREFERENCE_KEY } from '@hooks/useStepCaloriesPreference';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { DailyLog, Member, MemberTargets } from '@/types/fitness';
 
 // Mocked so the real modules (and next/cache with them) stay out of jsdom.
@@ -70,6 +71,10 @@ const selectedTab = () =>
   screen.getAllByRole('tab').find((tab) => tab.getAttribute('aria-selected') === 'true');
 
 const quickEntry = () => screen.queryByRole('button', { name: 'Log your day' });
+
+afterEach(() => {
+  window.localStorage.removeItem(STEP_CALORIES_PREFERENCE_KEY);
+});
 
 describe('Home', () => {
   it('defaults the date picker to today and prevents future dates', () => {
@@ -173,20 +178,58 @@ describe('Home', () => {
     expect(screen.getByRole('button', { name: "Edit Dillon's macro targets" })).toBeInTheDocument();
   });
 
-  it('adds estimated step calories to the calorie ring target only', () => {
+  it('keeps estimated step calories out of the calorie ring by default', () => {
+    window.localStorage.removeItem(STEP_CALORIES_PREFERENCE_KEY);
     setup('m1');
     const summary = screen.getByRole('heading', { name: 'Macros' }).closest('section');
 
     expect(
       screen.getByRole('img', {
-        name: 'Calories: 2,400 of 2,500 target plus 360 burned, 84 percent',
+        name: 'Calories: 2,400 of 2,500 target, 96 percent',
       })
     ).toBeInTheDocument();
     expect(summary).toHaveTextContent('of 2,500');
-    expect(summary).toHaveTextContent('+ 360');
+    expect(summary).not.toHaveTextContent('+ 360');
     expect(summary).toHaveTextContent('360 kcal burned from steps');
     expect(screen.queryByText(/The tick on Steps marks/)).not.toBeInTheDocument();
     expect(targets.calories).toBe(2500);
+  });
+
+  it('uses the saved profile preference to adjust the calorie ring', async () => {
+    window.localStorage.setItem(STEP_CALORIES_PREFERENCE_KEY, 'true');
+    const homeProps = props('m1');
+    render(
+      <Home
+        {...homeProps}
+      />
+    );
+    const summary = screen.getByRole('heading', { name: 'Macros' }).closest('section');
+
+    await waitFor(() => expect(
+      screen.getByRole('img', {
+        name: 'Calories: 2,400 of 2,500 target plus 360 burned, 84 percent',
+      })
+    ).toBeInTheDocument());
+    expect(summary).toHaveTextContent('+ 360');
+    expect(summary).toHaveTextContent('360 kcal burned from steps');
+  });
+
+  it('does not show a zero adjustment when step calories are excluded by default', () => {
+    window.localStorage.removeItem(STEP_CALORIES_PREFERENCE_KEY);
+    const homeProps = props('m1');
+    render(
+      <Home
+        {...homeProps}
+        logs={{ ...homeProps.logs, m1: { ...log('m1'), steps: 0 } }}
+      />
+    );
+    const summary = screen.getByRole('heading', { name: 'Macros' }).closest('section');
+
+    expect(
+      screen.getByRole('img', { name: 'Calories: 2,400 of 2,500 target, 96 percent' })
+    ).toBeInTheDocument();
+    expect(screen.queryByText('+ 0')).not.toBeInTheDocument();
+    expect(summary).toHaveTextContent('0 kcal burned from steps');
   });
 
   it('swaps the targets pencil for a close icon while editing', async () => {
