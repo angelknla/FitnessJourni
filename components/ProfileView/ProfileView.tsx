@@ -257,7 +257,7 @@ export const ProfileView = ({
   const chartX = (date: string) =>
     CHART_LEFT +
     ((new Date(`${date}T12:00:00`).getTime() - chartPeriodStart) / chartPeriodDuration) *
-      chartPlotWidth;
+    chartPlotWidth;
   const chartY = (weight: number) =>
     CHART_TOP + ((chartMax - weight) / chartRange) * chartPlotHeight;
   const chartPoints = chartMeasurements
@@ -283,7 +283,7 @@ export const ProfileView = ({
     document.documentElement.dataset.theme = nextTheme;
     try {
       window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
-    } catch {}
+    } catch { }
   };
 
   if (!member || !profile) {
@@ -852,7 +852,7 @@ export const ProfileView = ({
           <p className={styles.empty}>No weights saved for this period yet.</p>
         )}
 
-        <form className={styles.inlineForm} action={weightAction}>
+        <form id="log-weight" className={styles.inlineForm} action={weightAction}>
           <input type="hidden" name="memberId" value={member.id} />
           <label htmlFor="profile-weight-date">
             <span>Date</span>

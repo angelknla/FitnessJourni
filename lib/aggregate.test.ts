@@ -266,7 +266,7 @@ describe('nutritionTargetScore', () => {
     avgSleepHours: 0,
   };
 
-  it('scores equal under and over target misses identically', () => {
+  it('penalises substantial excess more than an equally close shortfall', () => {
     const memberTargets = targets(2000, 100);
     const under = nutritionTargetScore(
       { ...summary, avgCalories: 1800, avgProteinG: 90 },
@@ -278,7 +278,29 @@ describe('nutritionTargetScore', () => {
     );
 
     expect(under).toBe(90);
-    expect(over).toBe(90);
+    expect(over).toBe(85);
+  });
+
+  it('allows small overshoots without an additional penalty', () => {
+    expect(
+      nutritionTargetScore({ ...summary, avgCalories: 2100, avgProteinG: 105 }, targets(2000, 100))
+    ).toBe(95);
+  });
+
+  it('ranks a close shortfall above excess even when protein is on target', () => {
+    const awards = awardMedals(
+      {
+        under: { ...summary, avgCalories: 1800, avgProteinG: 100 },
+        over: { ...summary, avgCalories: 2300, avgProteinG: 100 },
+      },
+      {},
+      { under: targets(2000, 100), over: targets(2000, 100) }
+    ).filter((award) => award.category === 'nutritionTarget');
+
+    expect(awards.map(({ memberId, rank }) => [memberId, rank])).toEqual([
+      ['under', 'gold'],
+      ['over', 'silver'],
+    ]);
   });
 
   it('does not score incomplete nutrition logging', () => {

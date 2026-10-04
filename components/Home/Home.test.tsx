@@ -77,6 +77,24 @@ afterEach(() => {
 });
 
 describe('Home', () => {
+  it('links to weight logging only on the signed-in member panel', async () => {
+    const user = userEvent.setup();
+    setup('m1');
+
+    expect(screen.getByRole('link', { name: 'Log your weight' })).toHaveAttribute(
+      'href',
+      '/profile#log-weight'
+    );
+    await user.click(screen.getByRole('tab', { name: /Angel/ }));
+    expect(screen.queryByRole('link', { name: 'Log your weight' })).not.toBeInTheDocument();
+  });
+
+  it('does not offer weight logging to visitors', () => {
+    setup(null);
+
+    expect(screen.queryByRole('link', { name: 'Log your weight' })).not.toBeInTheDocument();
+  });
+
   it('defaults the date picker to today and prevents future dates', () => {
     setup('m1');
 

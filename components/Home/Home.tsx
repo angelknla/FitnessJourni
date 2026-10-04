@@ -112,6 +112,12 @@ const MemberSummary = ({
       inert={preview || undefined}
       style={{ '--member-accent': accentHex[member.accent] } as CSSProperties}
     >
+      {canEdit && (
+        <Link href="/profile#log-weight" className={styles.weightCta}>
+          <span>Log your weight</span>
+          <ChevronRightIcon size={14} />
+        </Link>
+      )}
       <div className={styles.rings}>
         <ProgressRing
           label="Steps"
@@ -534,8 +540,8 @@ export const Home = ({
                 editingTargets={false}
                 includeStepCalories={includeStepCalories}
                 preview
-                onToggleTargets={() => {}}
-                onTargetsSaved={() => {}}
+                onToggleTargets={() => { }}
+                onTargetsSaved={() => { }}
               />
             </div>
             <div className={styles.carouselSlide}>
@@ -562,8 +568,8 @@ export const Home = ({
                 editingTargets={false}
                 includeStepCalories={includeStepCalories}
                 preview
-                onToggleTargets={() => {}}
-                onTargetsSaved={() => {}}
+                onToggleTargets={() => { }}
+                onTargetsSaved={() => { }}
               />
             </div>
           </div>

@@ -6,6 +6,27 @@
   min-width: 0;
 }
 
+.weightCta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--c-border);
+  color: var(--c-accent);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.weightCta:hover {
+  text-decoration: underline;
+}
+
+.weightCta svg {
+  flex-shrink: 0;
+}
+
 .home > * {
   min-width: 0;
 }

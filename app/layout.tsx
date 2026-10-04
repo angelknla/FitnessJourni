@@ -1,6 +1,8 @@
 import { Footer } from '@components/Footer/Footer';
 import { Header } from '@components/Header/Header';
 import { SessionBanner } from '@components/SessionBanner/SessionBanner';
+import bannerStyles from '@components/SessionBanner/SessionBanner.module.css';
+import { WeightReminderBanner } from '@components/SessionBanner/WeightReminderBanner';
 import { toISODate } from '@utils/date';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
@@ -116,10 +118,10 @@ const RootLayout = async ({ children }: LayoutProps) => {
     !context || !viewer.memberId
       ? [null, false, false]
       : await Promise.all([
-          nextSessionBanner(members, activeGroup?.id ?? null),
-          getHasUnreadMessages(viewer.memberId, activeGroup?.id ?? null),
-          getHasUnreadSessions(viewer.memberId, activeGroup?.id ?? null),
-        ]);
+        nextSessionBanner(members, activeGroup?.id ?? null),
+        getHasUnreadMessages(viewer.memberId, activeGroup?.id ?? null),
+        getHasUnreadSessions(viewer.memberId, activeGroup?.id ?? null),
+      ]);
 
   return (
     <html lang="en" data-scroll-behavior="smooth" data-theme={theme} suppressHydrationWarning>
@@ -138,14 +140,17 @@ const RootLayout = async ({ children }: LayoutProps) => {
             hasUnreadSessions={hasUnreadSessions}
           />
 
-          {banner && (
-            <SessionBanner
-              session={banner.session}
-              bookedBy={banner.bookedBy}
-              whenLabel={banner.whenLabel}
-              expiresAt={banner.expiresAt}
-            />
-          )}
+          <div className={bannerStyles.stack}>
+            <WeightReminderBanner viewerId={viewer.memberId} />
+            {banner && (
+              <SessionBanner
+                session={banner.session}
+                bookedBy={banner.bookedBy}
+                whenLabel={banner.whenLabel}
+                expiresAt={banner.expiresAt}
+              />
+            )}
+          </div>
           <main className={styles.content}>{children}</main>
           <Footer />
         </div>

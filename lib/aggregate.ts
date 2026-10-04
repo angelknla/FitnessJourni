@@ -171,14 +171,20 @@ const podium = [
 const targetCloseness = (value: number, target: number): number =>
   target > 0 ? Math.max(0, 100 - (Math.abs(value - target) / target) * 100) : 0;
 
+const nutritionCloseness = (value: number, target: number): number => {
+  if (target <= 0) return 0;
+  const excess = Math.max(0, (value - target) / target - 0.05);
+  return Math.max(0, targetCloseness(value, target) - excess * 100);
+};
+
 export const nutritionTargetScore = (
   summary: LogSummary,
   targets: MemberTargets | undefined
 ): number => {
   if (!targets || summary.avgCalories <= 0 || summary.avgProteinG <= 0) return 0;
   return Math.round(
-    (targetCloseness(summary.avgCalories, targets.calories) +
-      targetCloseness(summary.avgProteinG, targets.protein)) /
+    (nutritionCloseness(summary.avgCalories, targets.calories) +
+      nutritionCloseness(summary.avgProteinG, targets.protein)) /
       2
   );
 };
