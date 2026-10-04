@@ -1,7 +1,7 @@
+import { STEP_CALORIES_PREFERENCE_KEY } from '@hooks/useStepCaloriesPreference';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { STEP_CALORIES_PREFERENCE_KEY } from '@hooks/useStepCaloriesPreference';
 import { saveProfileInfo, saveProfileTargets } from '@/app/actions';
 import type { Member, MemberProfile } from '@/types/fitness';
 
