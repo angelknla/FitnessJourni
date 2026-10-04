@@ -73,6 +73,25 @@ beforeAll(() => {
 });
 
 describe('ProfileView', () => {
+  it('anchors weight logging at the progress section so its headings are included', () => {
+    render(
+      <ProfileView
+        members={[member]}
+        member={member}
+        profile={profile}
+        measurements={[]}
+        currentDate="2026-09-27"
+      />
+    );
+
+    const progressSection = screen.getByRole('region', { name: 'Weight progress' });
+    expect(progressSection).toHaveAttribute('id', 'log-weight');
+    expect(within(progressSection).getByText('Progress')).toBeInTheDocument();
+    expect(within(progressSection).getByRole('heading', { name: 'Weight progress' })).toBeInTheDocument();
+    expect(within(progressSection).getByLabelText('Date')).toBeInTheDocument();
+    expect(document.querySelectorAll('#log-weight')).toHaveLength(1);
+  });
+
   it('switches and persists the selected appearance', async () => {
     const user = userEvent.setup();
     window.localStorage.clear();

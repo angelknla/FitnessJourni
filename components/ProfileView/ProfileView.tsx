@@ -746,7 +746,7 @@ export const ProfileView = ({
         </div>
       </section>
 
-      <section className={styles.section} aria-labelledby="weight-history-heading">
+      <section id="log-weight" className={styles.section} aria-labelledby="weight-history-heading">
         <div className={styles.sectionHead}>
           <div>
             <p>Progress</p>
@@ -852,7 +852,7 @@ export const ProfileView = ({
           <p className={styles.empty}>No weights saved for this period yet.</p>
         )}
 
-        <form id="log-weight" className={styles.inlineForm} action={weightAction}>
+        <form className={styles.inlineForm} action={weightAction}>
           <input type="hidden" name="memberId" value={member.id} />
           <label htmlFor="profile-weight-date">
             <span>Date</span>
