@@ -75,7 +75,7 @@ export const SleepLogger = ({
         <div className={styles.disclosure}>
           <button
             type="button"
-            className={`${styles.toggle} ${ui.disclosure}`}
+            className={`${ui.entryToggle} ${ui.primaryButton}`}
             aria-expanded={formOpen}
             aria-controls={formId}
             disabled={isPending}
@@ -111,7 +111,7 @@ export const SleepLogger = ({
               <div className={styles.actions}>
                 <button
                   type="submit"
-                  className={`${styles.submit} ${ui.primaryButton}`}
+                  className={`${ui.entrySubmit} ${ui.primaryButton}`}
                   disabled={isPending || !canSave}
                 >
                   {isPending ? 'Saving…' : 'Save sleep'}

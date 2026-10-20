@@ -110,18 +110,6 @@
   gap: 1rem;
 }
 
-.toggle {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
-.toggle svg {
-  flex-shrink: 0;
-}
-
 .fieldset {
   margin: 0;
   padding: 0;
@@ -208,11 +196,6 @@
   font-size: 0.8rem;
   font-variant-numeric: tabular-nums;
   color: var(--c-ink-muted);
-}
-
-.submit {
-  padding: 0.45rem 1.05rem;
-  font-size: 0.88rem;
 }
 
 .error {

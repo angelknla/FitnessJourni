@@ -34,6 +34,28 @@
   border-color: var(--c-primary-hover);
 }
 
+.entryToggle,
+.entrySubmit {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.entryToggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.entryToggle svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: inherit;
+}
+
 .disclosure {
   padding: 0.7rem 0.8rem;
   color: var(--c-accent);

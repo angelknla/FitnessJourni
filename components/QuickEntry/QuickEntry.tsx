@@ -83,7 +83,7 @@ export const QuickEntry = ({ member, log, date, save }: QuickEntryProps) => {
     <div className={styles.wrapper} ref={wrapperRef}>
       <button
         type="button"
-        className={`${styles.toggle} ${ui.primaryButton}`}
+        className={`${ui.entryToggle} ${ui.primaryButton}`}
         aria-expanded={open}
         aria-controls={formId}
         disabled={isPending}
@@ -133,7 +133,7 @@ export const QuickEntry = ({ member, log, date, save }: QuickEntryProps) => {
           <div className={styles.actions}>
             <button
               type="submit"
-              className={`${styles.submit} ${ui.primaryButton}`}
+              className={`${ui.entrySubmit} ${ui.primaryButton}`}
               disabled={isPending || !dirty}
             >
               {isPending ? 'Saving…' : 'Save'}
