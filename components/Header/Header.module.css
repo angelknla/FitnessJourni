@@ -175,26 +175,14 @@
   }
 
   .nav .link[aria-current="page"] {
-    color: var(--c-accent);
+    color: var(--c-primary-ink);
     font-weight: 600;
-    background: transparent;
+    background: var(--c-primary);
     box-shadow: none;
   }
 
   .navLabel {
     position: relative;
-  }
-
-  .nav .link[aria-current="page"] .navLabel::after {
-    content: "";
-    position: absolute;
-    top: calc(100% + 0.5px);
-    left: 50%;
-    width: 70%;
-    height: 2px;
-    background: var(--c-accent);
-    border-radius: 999px;
-    transform: translateX(-50%);
   }
 
   .nav .unreadDot {
@@ -369,8 +357,5 @@
 @media (max-width: 960px) {
   .logoText {
     font-size: 1.5rem;
-  }
-  .nav .link[aria-current="page"] {
-    background: color-mix(in oklab, var(--c-accent) 13%, transparent);
   }
 }
