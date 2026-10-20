@@ -48,7 +48,9 @@ vi.mock('@/lib/data/members', () => ({
 }));
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), updateTag: vi.fn() }));
-vi.mock('next/headers', () => ({ cookies: async () => ({ set: vi.fn(), delete: vi.fn() }) }));
+vi.mock('next/headers', () => ({
+  cookies: async () => ({ get: vi.fn(), set: vi.fn(), delete: vi.fn() }),
+}));
 
 import {
   bookSession,

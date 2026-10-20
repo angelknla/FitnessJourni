@@ -8,6 +8,7 @@ import type { Metadata } from 'next';
 import { getScopedMembers } from '@/lib/data/members';
 import { getMessages } from '@/lib/data/messages';
 import { readViewerContext } from '@/lib/data/viewerScope';
+import { readLocalTime } from '@/lib/localTime';
 import { viewerFirst } from '@/lib/ownership';
 import { isUnlocked } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
@@ -43,9 +44,10 @@ const MessagesPage = async () => {
     );
   }
 
-  const [members, messages] = await Promise.all([
+  const [members, messages, local] = await Promise.all([
     getScopedMembers(scope),
     getMessages(activeGroup.id),
+    readLocalTime(),
   ]);
 
   return (
@@ -55,6 +57,7 @@ const MessagesPage = async () => {
         members={viewerFirst(members, viewer.memberId)}
         messages={messages}
         viewerId={viewer.memberId}
+        timeZone={local.timeZone}
       />
     </PageLayout>
   );

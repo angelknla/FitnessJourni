@@ -14,6 +14,7 @@ import {
 import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
 import { PageHeader } from '@components/PageHeader/PageHeader';
 import { accentHex } from '@data/fitnessData';
+import { localTime } from '@utils/localTime';
 import {
   type CSSProperties,
   type FormEvent,
@@ -49,6 +50,7 @@ interface MessageBoardProps {
   members: Member[];
   messages: MessagePost[];
   viewerId: string | null;
+  timeZone?: string;
 }
 
 const initial: ActionState = { ok: false };
@@ -62,16 +64,6 @@ interface OptimisticMessage {
   replyTo?: MessageReply;
 }
 
-const messageTime = new Intl.DateTimeFormat('en-GB', {
-  hour: '2-digit',
-  minute: '2-digit',
-});
-const dayLabel = new Intl.DateTimeFormat('en-GB', {
-  weekday: 'long',
-  day: 'numeric',
-  month: 'long',
-  year: 'numeric',
-});
 const shortDateLabel = new Intl.DateTimeFormat('en-GB', {
   day: 'numeric',
   month: 'short',
@@ -85,7 +77,8 @@ const reactionOptions: Array<{ type: MessageReactionType; emoji: string; label: 
   { type: 'angry', emoji: '😠', label: 'Angry' },
 ];
 
-const localDateKey = (value: string): string => {
+const localDateKey = (value: string, timeZone?: string): string => {
+  if (timeZone) return localTime(new Date(value), timeZone).today;
   const date = new Date(value);
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -101,6 +94,7 @@ const MessageBubble = ({
   own,
   viewerId,
   onReply,
+  timeZone,
 }: {
   message: MessagePost;
   author?: Member;
@@ -109,6 +103,7 @@ const MessageBubble = ({
   own: boolean;
   viewerId: string | null;
   onReply: (message: MessageReply) => void;
+  timeZone?: string;
 }) => {
   const [editing, setEditing] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
@@ -382,7 +377,11 @@ const MessageBubble = ({
         </span>
         <span className={styles.messageMeta}>
           <time dateTime={message.createdAt}>
-            {messageTime.format(new Date(message.createdAt))}
+            {new Intl.DateTimeFormat('en-GB', {
+              hour: '2-digit',
+              minute: '2-digit',
+              timeZone,
+            }).format(new Date(message.createdAt))}
           </time>
           {viewerId && (
             <span ref={optionsRef} className={styles.options}>
@@ -601,7 +600,14 @@ const MessageBubble = ({
   );
 };
 
-export const MessageBoard = ({ members, messages, viewerId }: MessageBoardProps) => {
+export const MessageBoard = ({ members, messages, viewerId, timeZone }: MessageBoardProps) => {
+  const dayLabel = new Intl.DateTimeFormat('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone,
+  });
   const [optimisticMessages, setOptimisticMessages] = useState<OptimisticMessage[]>([]);
   const [replyTo, setReplyTo] = useState<MessageReply | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -616,7 +622,7 @@ export const MessageBoard = ({ members, messages, viewerId }: MessageBoardProps)
       if (filterMode === 'all' || !filterValue) {
         return true;
       }
-      const date = localDateKey(message.createdAt);
+      const date = localDateKey(message.createdAt, timeZone);
       return date === filterValue;
     })
     .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
@@ -789,9 +795,9 @@ export const MessageBoard = ({ members, messages, viewerId }: MessageBoardProps)
               {filteredMessages.map((message, index) => {
                 const author = memberById.get(message.memberId);
                 const accent = author ? accentHex[author.accent] : 'var(--c-ink-muted)';
-                const date = localDateKey(message.createdAt);
+                const date = localDateKey(message.createdAt, timeZone);
                 const previousDate =
-                  index > 0 ? localDateKey(filteredMessages[index - 1].createdAt) : null;
+                  index > 0 ? localDateKey(filteredMessages[index - 1].createdAt, timeZone) : null;
                 const own = message.memberId === viewerId;
 
                 return (
@@ -806,6 +812,7 @@ export const MessageBoard = ({ members, messages, viewerId }: MessageBoardProps)
                       style={{ '--message-accent': accent } as CSSProperties}
                     >
                       <MessageBubble
+                        timeZone={timeZone}
                         message={message}
                         author={author}
                         replyAuthor={

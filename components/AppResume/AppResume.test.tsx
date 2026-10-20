@@ -7,6 +7,7 @@ const { refresh, router } = vi.hoisted(() => {
 });
 vi.mock('next/navigation', () => ({ useRouter: () => router }));
 
+import { toISODate } from '@utils/date';
 import { AppResume } from './AppResume';
 
 const visibility = (state: DocumentVisibilityState) => {
@@ -27,6 +28,36 @@ afterEach(() => {
 });
 
 describe('AppResume', () => {
+  it('refreshes an initial server date that differs from the local browser date', () => {
+    render(<AppResume initialDate="1969-12-30" timeZone="UTC" />);
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('refreshes once when the browser timezone changes', () => {
+    render(<AppResume initialDate={toISODate(new Date())} timeZone="Europe/Sofia" />);
+    expect(refresh).toHaveBeenCalledTimes(1);
+    act(() => window.dispatchEvent(new Event('pageshow')));
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('refreshes at local midnight while the app stays open', () => {
+    vi.setSystemTime(new Date(2026, 9, 20, 23, 59, 59));
+    render(<AppResume />);
+    expect(refresh).not.toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(1100));
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('refreshes after crossing midnight even during a brief app switch', () => {
+    vi.setSystemTime(new Date(2026, 9, 20, 23, 59, 59));
+    render(<AppResume />);
+    visibility('hidden');
+    act(() => vi.advanceTimersByTime(2000));
+    expect(refresh).not.toHaveBeenCalled();
+    visibility('visible');
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
   it('avoids requests on mount and a brief app switch', () => {
     render(<AppResume />);
     visibility('hidden');

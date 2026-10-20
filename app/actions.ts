@@ -14,7 +14,7 @@ import {
   defaultTargets,
   workoutFocuses,
 } from '@data/fitnessData';
-import { minutesOfTime, toISODate } from '@utils/date';
+import { minutesOfTime } from '@utils/date';
 import { revalidatePath, updateTag } from 'next/cache';
 import { cookies } from 'next/headers';
 import {
@@ -30,6 +30,7 @@ import { createCredentials, findAccountByUsername } from '@/lib/data/accounts';
 import { DATA_TAGS } from '@/lib/data/cache';
 import { getActiveGroup, getGroupMemberIds, getMemberships } from '@/lib/data/groups';
 import { getMembers } from '@/lib/data/members';
+import { readLocalTime } from '@/lib/localTime';
 import { canModifyMessage } from '@/lib/messagePolicy';
 import { ADMIN_MEMBER_NAME, canEditMember, canRemoveMember } from '@/lib/ownership';
 import { hasEnrollmentAccess, isUnlocked, readViewer } from '@/lib/session';
@@ -1039,12 +1040,8 @@ export const bookSession = async (_prev: ActionState, formData: FormData): Promi
   if (!HH_MM.test(time)) {
     return fail('Pick a time.');
   }
-  const now = new Date();
-  const today = toISODate(now);
-  if (
-    date < today ||
-    (date === today && minutesOfTime(time) <= now.getHours() * 60 + now.getMinutes())
-  ) {
+  const { today, nowMinutes } = await readLocalTime();
+  if (date < today || (date === today && minutesOfTime(time) <= nowMinutes)) {
     return fail('Pick a future time.');
   }
   if (!activityTypes.includes(activity)) {

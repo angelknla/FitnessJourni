@@ -11,6 +11,7 @@ import { getMembers } from '@/lib/data/members';
 import { getProfile } from '@/lib/data/profile';
 import { readViewerContext } from '@/lib/data/viewerScope';
 import { getWorkoutsSince } from '@/lib/data/workouts';
+import { readLocalTime } from '@/lib/localTime';
 import { buildMedalBoards, medalFetchStart } from '@/lib/medals';
 import { canRemoveMembers } from '@/lib/ownership';
 import { isUnlocked } from '@/lib/session';
@@ -34,7 +35,7 @@ const ProfilePage = async ({ searchParams }: ProfilePageProps) => {
     return <SetupNotice />;
   }
 
-  const today = toISODate(new Date());
+  const { today } = await readLocalTime();
   const { medalDate: requestedMedalDate } = await searchParams;
   const medalDate =
     requestedMedalDate &&

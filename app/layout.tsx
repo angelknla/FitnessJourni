@@ -4,7 +4,7 @@ import { Header } from '@components/Header/Header';
 import { SessionBanner } from '@components/SessionBanner/SessionBanner';
 import bannerStyles from '@components/SessionBanner/SessionBanner.module.css';
 import { WeightReminderBanner } from '@components/SessionBanner/WeightReminderBanner';
-import { toISODate } from '@utils/date';
+import { localDateTimeMs, TIME_ZONE_COOKIE } from '@utils/localTime';
 import type { Metadata } from 'next';
 import { Barlow_Condensed, Inter } from 'next/font/google';
 import { cookies } from 'next/headers';
@@ -13,6 +13,7 @@ import { getScopedMembers } from '@/lib/data/members';
 import { getHasUnreadMessages } from '@/lib/data/messages';
 import { getHasUnreadSessions, getUpcomingSessions, nextSession } from '@/lib/data/sessions';
 import { readViewerContext } from '@/lib/data/viewerScope';
+import { readLocalTime } from '@/lib/localTime';
 import { viewerFirst } from '@/lib/ownership';
 import { isUnlocked, type Viewer } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
@@ -32,6 +33,10 @@ const display = Barlow_Condensed({
 });
 
 const themeInitializer = `
+try {
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  document.cookie = '${TIME_ZONE_COOKIE}=' + encodeURIComponent(timeZone) + '; Path=/; Max-Age=31536000; SameSite=Lax';
+} catch {}
 try {
   const storedTheme = localStorage.getItem('fitnessjourni-theme');
   const theme = storedTheme === 'light' || storedTheme === 'dark'
@@ -64,9 +69,7 @@ const LOCKED_VIEWER: Viewer = { memberId: null, chosen: false };
 
 /** The soonest session that has not happened yet, formatted for the banner. */
 const nextSessionBanner = async (members: Member[], groupId: string | null) => {
-  const now = new Date();
-  const today = toISODate(now);
-  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const { today, nowMinutes, timeZone } = await readLocalTime();
 
   const sessions = await getUpcomingSessions(today, groupId);
   const session = nextSession(sessions, today, nowMinutes);
@@ -86,7 +89,7 @@ const nextSessionBanner = async (members: Member[], groupId: string | null) => {
     session,
     bookedBy,
     whenLabel: `${dayLabel} at ${session.time}`,
-    expiresAt: new Date(`${session.date}T${session.time}:00`).getTime() + 30 * 60 * 1000,
+    expiresAt: localDateTimeMs(session.date, session.time, timeZone) + 30 * 60 * 1000,
   };
 };
 
@@ -97,7 +100,11 @@ const RootLayout = async ({ children }: LayoutProps) => {
    * layout that declines to render `children` does not stop the page executing —
    * its fetched data still lands in the RSC payload for anyone to read.
    */
-  const [unlocked, cookieStore] = await Promise.all([isUnlocked(), cookies()]);
+  const [unlocked, cookieStore, local] = await Promise.all([
+    isUnlocked(),
+    cookies(),
+    readLocalTime(),
+  ]);
   const locked = !unlocked;
   const savedTheme = cookieStore.get('fitnessjourni-theme')?.value;
   const theme = savedTheme === 'light' || savedTheme === 'dark' ? savedTheme : 'light';
@@ -139,7 +146,7 @@ const RootLayout = async ({ children }: LayoutProps) => {
         </Script>
       </head>
       <body className={`${inter.variable} ${display.variable}`}>
-        {unlocked && <AppResume />}
+        {unlocked && <AppResume initialDate={local.today} timeZone={local.timeZone} />}
         <div className={styles.appWrapper}>
           <Header
             locked={locked}

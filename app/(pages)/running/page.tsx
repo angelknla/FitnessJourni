@@ -3,11 +3,12 @@ import { PageHeader } from '@components/PageHeader/PageHeader';
 import { PageLayout } from '@components/PageLayout/PageLayout';
 import { RunningDashboard } from '@components/RunningDashboard/RunningDashboard';
 import { SetupNotice } from '@components/SetupNotice/SetupNotice';
-import { earlier, startOfMonth, startOfWeek, toISODate } from '@utils/date';
+import { earlier, startOfMonth, startOfWeek } from '@utils/date';
 import type { Metadata } from 'next';
 import { getScopedMembers } from '@/lib/data/members';
 import { getLatestRuns, getRunsSince, tallyRuns } from '@/lib/data/runs';
 import { readViewerContext } from '@/lib/data/viewerScope';
+import { readLocalTime } from '@/lib/localTime';
 import { viewerFirst } from '@/lib/ownership';
 import { isUnlocked } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
@@ -30,7 +31,7 @@ const RunningPage = async () => {
     return <SetupNotice />;
   }
 
-  const today = toISODate(new Date());
+  const { today } = await readLocalTime();
   const { viewer, scope } = await readViewerContext();
   const [members, groupRuns, groupLatest] = await Promise.all([
     getScopedMembers(scope),

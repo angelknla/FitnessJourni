@@ -4,11 +4,12 @@ import { PageLayout } from '@components/PageLayout/PageLayout';
 import { SetupNotice } from '@components/SetupNotice/SetupNotice';
 import { WorkoutPlan } from '@components/WorkoutPlan/WorkoutPlan';
 import { WorkoutTally } from '@components/WorkoutTally/WorkoutTally';
-import { earlier, fromISODate, startOfMonth, startOfWeek, toISODate } from '@utils/date';
+import { earlier, fromISODate, startOfMonth, startOfWeek } from '@utils/date';
 import type { Metadata } from 'next';
 import { getScopedMembers } from '@/lib/data/members';
 import { readViewerContext } from '@/lib/data/viewerScope';
 import { getWorkoutsSince, tallyWorkouts } from '@/lib/data/workouts';
+import { readLocalTime } from '@/lib/localTime';
 import { viewerFirst } from '@/lib/ownership';
 import { isUnlocked } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
@@ -39,8 +40,7 @@ const WorkoutsPage = async () => {
     return <SetupNotice />;
   }
 
-  const now = new Date();
-  const today = toISODate(now);
+  const { today } = await readLocalTime();
   const weekStart = startOfWeek(today);
   const monthStart = startOfMonth(today);
 
@@ -67,7 +67,7 @@ const WorkoutsPage = async () => {
           members={viewerFirst(members, viewer.memberId)}
           tallies={tallies}
           weekLabel={`${dayMonth.format(fromISODate(weekStart))} – ${dayMonthFull.format(weekEnd)}`}
-          monthLabel={monthOnly.format(now)}
+          monthLabel={monthOnly.format(fromISODate(today))}
         />
       </section>
 

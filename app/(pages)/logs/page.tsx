@@ -11,6 +11,7 @@ import { getLogsSince } from '@/lib/data/logs';
 import { getScopedMembers } from '@/lib/data/members';
 import { readViewerContext } from '@/lib/data/viewerScope';
 import { countWorkouts, getWorkoutsSince } from '@/lib/data/workouts';
+import { readLocalTime } from '@/lib/localTime';
 import { viewerFirst } from '@/lib/ownership';
 import { isUnlocked } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
@@ -37,8 +38,7 @@ const LogsPage = async ({ searchParams }: LogsPageProps) => {
   }
 
   const { period: rawPeriod, date: rawDate } = await searchParams;
-  const now = new Date();
-  const today = toISODate(now);
+  const { today } = await readLocalTime();
   const selectedDate =
     rawDate &&
     /^\d{4}-\d{2}-\d{2}$/.test(rawDate) &&

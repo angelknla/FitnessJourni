@@ -6,11 +6,11 @@ import { SessionForm } from '@components/SessionForm/SessionForm';
 import { SessionList } from '@components/SessionList/SessionList';
 import { SessionsReadMarker } from '@components/SessionsReadMarker/SessionsReadMarker';
 import { SetupNotice } from '@components/SetupNotice/SetupNotice';
-import { toISODate } from '@utils/date';
 import type { Metadata } from 'next';
 import { getScopedMembers } from '@/lib/data/members';
 import { getUpcomingSessions, upcomingSessions } from '@/lib/data/sessions';
 import { readViewerContext } from '@/lib/data/viewerScope';
+import { readLocalTime } from '@/lib/localTime';
 import { viewerFirst } from '@/lib/ownership';
 import { isUnlocked } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
@@ -33,8 +33,7 @@ const SessionsPage = async () => {
     return <SetupNotice />;
   }
 
-  const now = new Date();
-  const today = toISODate(now);
+  const { now, today, nowMinutes, timeZone } = await readLocalTime();
   const { viewer, activeGroup, scope } = await readViewerContext();
 
   // Sessions belong to a group, so Personal mode has none to show or book.
@@ -55,7 +54,7 @@ const SessionsPage = async () => {
     getUpcomingSessions(today, activeGroup.id),
   ]);
   const orderedMembers = viewerFirst(members, viewer.memberId);
-  const visibleSessions = upcomingSessions(sessions, today, now.getHours() * 60 + now.getMinutes());
+  const visibleSessions = upcomingSessions(sessions, today, nowMinutes);
 
   return (
     <PageLayout>
@@ -67,11 +66,16 @@ const SessionsPage = async () => {
         members={orderedMembers}
         viewerId={viewer.memberId}
         initialNow={now.getTime()}
+        timeZone={timeZone}
       />
 
       <section className={styles.booking}>
         <h2 className={ui.sectionTitle}>Book one</h2>
-        <SessionForm members={orderedMembers} viewerId={viewer.memberId} />
+        <SessionForm
+          key={`${today}:${timeZone}`}
+          members={orderedMembers}
+          viewerId={viewer.memberId}
+        />
       </section>
     </PageLayout>
   );

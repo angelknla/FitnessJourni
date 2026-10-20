@@ -9,6 +9,7 @@ import { getScopedMembers } from '@/lib/data/members';
 import { readViewerContext } from '@/lib/data/viewerScope';
 import { getWorkoutsSince, tallyWorkouts } from '@/lib/data/workouts';
 import { canManageGroup } from '@/lib/groups';
+import { readLocalTime } from '@/lib/localTime';
 import { buildMedalBoards, medalFetchStart } from '@/lib/medals';
 import { viewerFirst } from '@/lib/ownership';
 import { isUnlocked } from '@/lib/session';
@@ -23,8 +24,7 @@ interface HomepageProps {
   searchParams: Promise<{ date?: string; medalDate?: string }>;
 }
 
-const resolveHomeDate = (requestedDate?: string) => {
-  const today = toISODate(new Date());
+const resolveHomeDate = (today: string, requestedDate?: string) => {
   const date =
     requestedDate &&
     /^\d{4}-\d{2}-\d{2}$/.test(requestedDate) &&
@@ -53,10 +53,9 @@ const Homepage = async ({ searchParams }: HomepageProps) => {
   }
 
   const { date: requestedDate, medalDate: requestedMedalDate } = await searchParams;
-  // Resolved on the server because both metadata and data fetching are keyed by it.
-  // Set TZ in the host environment if the deployed date ever disagrees with yours.
-  const { date, dateLabel, today } = resolveHomeDate(requestedDate);
-  const medalDate = requestedMedalDate ? resolveHomeDate(requestedMedalDate).date : date;
+  const { today } = await readLocalTime();
+  const { date, dateLabel } = resolveHomeDate(today, requestedDate);
+  const medalDate = requestedMedalDate ? resolveHomeDate(today, requestedMedalDate).date : date;
   const yesterday = fromISODate(today);
   yesterday.setDate(yesterday.getDate() - 1);
   const datePickerLabel =

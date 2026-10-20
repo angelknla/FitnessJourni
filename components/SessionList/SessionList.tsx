@@ -4,6 +4,7 @@ import { BinIcon } from '@components/Icons/Icons';
 import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
 import { activityLabels } from '@data/fitnessData';
 import { fromISODate } from '@utils/date';
+import { localDateTimeMs } from '@utils/localTime';
 import { useActionState, useEffect, useState } from 'react';
 import { type ActionState, deleteSession, respondToSession } from '@/app/actions';
 import { SESSION_GRACE_MINUTES } from '@/lib/data/sessions';
@@ -17,6 +18,7 @@ interface SessionListProps {
   members: Member[];
   viewerId: string | null;
   initialNow: number;
+  timeZone?: string;
 }
 
 const initial: ActionState = { ok: true };
@@ -147,21 +149,34 @@ const SessionRow = ({
   );
 };
 
-const expiresAt = (session: TrainingSession) =>
-  new Date(`${session.date}T${session.time}:00`).getTime() + SESSION_GRACE_MINUTES * 60 * 1000;
+const expiresAt = (session: TrainingSession, timeZone?: string) =>
+  (timeZone
+    ? localDateTimeMs(session.date, session.time, timeZone)
+    : new Date(`${session.date}T${session.time}:00`).getTime()) +
+  SESSION_GRACE_MINUTES * 60 * 1000;
 
-export const SessionList = ({ sessions, members, viewerId, initialNow }: SessionListProps) => {
+export const SessionList = ({
+  sessions,
+  members,
+  viewerId,
+  initialNow,
+  timeZone,
+}: SessionListProps) => {
   const [now, setNow] = useState(initialNow);
-  const visibleSessions = sessions.filter((session) => expiresAt(session) > now);
+  const visibleSessions = sessions.filter((session) => expiresAt(session, timeZone) > now);
 
   useEffect(() => {
     const current = Math.max(now, Date.now());
-    const nextExpiry = Math.min(...sessions.map(expiresAt).filter((expiry) => expiry > current));
+    const nextExpiry = Math.min(
+      ...sessions
+        .map((session) => expiresAt(session, timeZone))
+        .filter((expiry) => expiry > current)
+    );
     if (!Number.isFinite(nextExpiry)) return;
 
     const timeout = window.setTimeout(() => setNow(Date.now()), nextExpiry - current + 50);
     return () => window.clearTimeout(timeout);
-  }, [sessions, now]);
+  }, [sessions, now, timeZone]);
 
   if (visibleSessions.length === 0) {
     return <p className={styles.empty}>Nothing booked yet. Pick a day below and get one in.</p>;
