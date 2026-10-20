@@ -49,6 +49,17 @@ because credential rows have no anonymous RLS policy. Never expose it through a 
 The trade-off is no live push updates; pages revalidate on write instead. For daily numbers that's
 plenty, and it avoids shipping a write-capable credential to the client.
 
+### Caching
+
+Visited pages are reused for 30 seconds. Server reads persist across navigation and app reloads:
+members and measurements for five minutes, activity for one minute, sessions for 30 seconds,
+and chat for 15 seconds. Saves expire the relevant data tags immediately across all pages.
+Login, account credentials, group membership, permissions and mutation reads always use fresh data.
+Cookie changes and group switches clear the navigation cache. Returning after at least 30 seconds
+in the background triggers one refresh; there is no polling. Changes made directly in Supabase
+appear after the cache revalidates, or after a hard refresh in development.
+Links fetch when followed rather than prefetching every visible destination again after a save.
+
 ### Accounts and enrollment
 
 Users log in with their username or email and personal password. Passwords are stored as salted
@@ -184,3 +195,7 @@ If you change `--c-surface` or add an accent, re-validate the set rather than ey
 Progress indicators are **meters** — one value against its own limit — so the unfilled track is a
 lighter step of the fill's own ramp, not a neutral grey. Overshooting a *budget* (calories) is
 flagged amber; beating a *goal* (steps, water) is not.
+
+Home and Profile saves use React `useOptimistic` for immediate updates while server actions save
+in the background. Failed changes roll back independently and can be retried; drafts remain available.
+Password changes show pending feedback and clear their fields only after the server confirms success.

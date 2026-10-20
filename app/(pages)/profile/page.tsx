@@ -22,8 +22,6 @@ export const metadata: Metadata = {
   description: 'Measurements, goals and monthly progress',
 };
 
-export const dynamic = 'force-dynamic';
-
 interface ProfilePageProps {
   searchParams: Promise<{ medalDate?: string }>;
 }
@@ -55,7 +53,7 @@ const ProfilePage = async ({ searchParams }: ProfilePageProps) => {
    * invited and is therefore not a member yet.
    */
   const [members, logs, workouts] = await Promise.all([
-    getMembers(),
+    getMembers(true),
     getLogsSince(medalFrom, scope),
     getWorkoutsSince(medalFrom, scope),
   ]);
@@ -84,6 +82,7 @@ const ProfilePage = async ({ searchParams }: ProfilePageProps) => {
       </header>
 
       <ProfileView
+        key={`${member?.id}:${today}`}
         members={members}
         member={member}
         profile={profile}

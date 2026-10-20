@@ -1,7 +1,8 @@
 'use client';
 
-import { useActionState, useEffect, useState } from 'react';
-import { type ActionState, updateTargets } from '@/app/actions';
+import { useEffect, useState } from 'react';
+import { useBackgroundSave, type SaveAction } from '@hooks/useBackgroundSave';
+import { updateTargets } from '@/app/actions';
 import {
   gramsFromPercents,
   kcalFromGrams,
@@ -22,13 +23,12 @@ interface EditTargetsProps {
   id: string;
   onSaved: () => void;
   section?: 'macros' | 'sleep';
+  save?: SaveAction;
 }
 
 type Mode = 'grams' | 'percent';
 type MacroDraft = Record<MacroKey, string>;
 
-/** Deliberately not { ok: true }, so state.ok only becomes true after a real save. */
-const initial: ActionState = { ok: false };
 
 const LABELS: Record<MacroKey, string> = {
   protein: 'Protein',
@@ -53,8 +53,24 @@ const toNumbers = (draft: MacroDraft): MacroGrams => ({
   fat: toNumber(draft.fat),
 });
 
-export const EditTargets = ({ member, id, onSaved, section = 'macros' }: EditTargetsProps) => {
-  const [state, formAction, isPending] = useActionState(updateTargets, initial);
+export const EditTargets = ({
+  member,
+  id,
+  onSaved,
+  section = 'macros',
+  save,
+}: EditTargetsProps) => {
+  const {
+    state,
+    submit: formAction,
+    pending: isPending,
+  } = useBackgroundSave(
+    save ?? ((data) => updateTargets({ ok: false }, data)),
+    () => {
+      if (save) onSaved();
+    },
+    () => {}
+  );
   const [mode, setMode] = useState<Mode>('grams');
 
   const startingGrams: MacroGrams = {
@@ -68,19 +84,17 @@ export const EditTargets = ({ member, id, onSaved, section = 'macros' }: EditTar
   // can never drift apart on screen.
   const [grams, setGrams] = useState<MacroDraft>(toDraft(startingGrams));
   const [calories, setCalories] = useState(String(member.targets.calories));
-  const [percents, setPercents] = useState<MacroDraft>(
-    toDraft(percentsFromGrams(startingGrams))
-  );
+  const [percents, setPercents] = useState<MacroDraft>(toDraft(percentsFromGrams(startingGrams)));
 
   useEffect(() => {
-    if (state.ok) {
+    if (state.ok && !save) {
       onSaved();
     }
-  }, [state.ok, onSaved]);
+  }, [state.ok, onSaved, save]);
 
   if (section === 'sleep') {
     return (
-      <form className={styles.form} action={formAction} id={id}>
+      <form className={styles.form} onSubmit={formAction} id={id}>
         <input type="hidden" name="memberId" value={member.id} />
         <fieldset className={styles.fieldset}>
           <legend className={styles.legend}>{member.name}&apos;s sleep target</legend>
@@ -181,7 +195,7 @@ export const EditTargets = ({ member, id, onSaved, section = 'macros' }: EditTar
   };
 
   return (
-    <form className={styles.form} action={formAction} id={id}>
+    <form className={styles.form} onSubmit={formAction} id={id}>
       <input type="hidden" name="memberId" value={member.id} />
       {/* What actually gets saved, whichever way it was entered. */}
       <input type="hidden" name="calories" value={effectiveCalories} />

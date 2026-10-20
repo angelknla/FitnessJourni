@@ -53,7 +53,7 @@ vi.mock('@/lib/data/members', () => ({
   ],
 }));
 
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), updateTag: vi.fn() }));
 
 import {
   createGroup,

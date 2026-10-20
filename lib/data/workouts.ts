@@ -29,7 +29,7 @@ export const mapWorkout = (row: WorkoutRow): Workout => ({
  * reasoning and for why it is three reads merged here rather than one query.
  */
 export const getWorkoutsSince = async (fromDate: string, scope: DataScope): Promise<Workout[]> => {
-  const supabase = getSupabase();
+  const supabase = getSupabase({ cacheReads: true });
   if (!supabase || isEmptyScope(scope)) {
     return [];
   }
@@ -55,7 +55,7 @@ export const getWorkoutsSince = async (fromDate: string, scope: DataScope): Prom
             .gte('workout_date', fromDate),
         ]
       : []),
-    ...(scope.memberId
+    ...(scope.memberId && !memberIds.includes(scope.memberId)
       ? [
           supabase
             .from('workouts')

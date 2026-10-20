@@ -2,7 +2,7 @@
 
 import { CrossIcon } from '@components/Icons/Icons';
 import { activityLabels } from '@data/fitnessData';
-import Link from 'next/link';
+import Link from '@components/NavigationLink/NavigationLink';
 import { useEffect, useState } from 'react';
 import type { TrainingSession } from '@/types/fitness';
 

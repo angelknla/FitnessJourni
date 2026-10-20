@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import { cache } from 'react';
 import {
   COOKIE_NAME,
   deriveToken,
@@ -14,7 +15,7 @@ import {
  * With no APP_PASSCODE configured the gate is off and everyone counts as
  * unlocked, so a deploy that has not set it still works exactly as before.
  */
-export const hasAppAccess = async (): Promise<boolean> => {
+export const hasAppAccess = cache(async (): Promise<boolean> => {
   const passcode = process.env.APP_PASSCODE;
   if (!passcode) {
     return true;
@@ -26,7 +27,7 @@ export const hasAppAccess = async (): Promise<boolean> => {
   }
 
   return tokensMatch(cookie, await deriveToken(passcode));
-};
+});
 
 /** Enrollment is always passcode-gated, including when the gate is misconfigured. */
 export const hasEnrollmentAccess = async (): Promise<boolean> => {
@@ -38,10 +39,10 @@ export const hasEnrollmentAccess = async (): Promise<boolean> => {
 };
 
 /** App pages require both enrollment access and a named member session. */
-export const isUnlocked = async (): Promise<boolean> => {
+export const isUnlocked = cache(async (): Promise<boolean> => {
   if (!(await hasAppAccess())) return false;
   return Boolean((await readViewer()).memberId);
-};
+});
 
 export interface Viewer {
   /** The member this browser may write to, or null for a visitor who may not. */
@@ -64,7 +65,7 @@ export interface Viewer {
  * resolve an unknown id to the first member, and a write is refused because it
  * cannot match the row it claims.
  */
-export const readViewer = async (): Promise<Viewer> => {
+export const readViewer = cache(async (): Promise<Viewer> => {
   const value = (await cookies()).get(VIEWER_COOKIE)?.value;
   const secret = process.env.APP_PASSCODE;
 
@@ -74,4 +75,4 @@ export const readViewer = async (): Promise<Viewer> => {
 
   const memberId = await readViewerToken(value, secret);
   return memberId ? { memberId, chosen: true } : { memberId: null, chosen: false };
-};
+});

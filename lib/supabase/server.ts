@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createSupabaseFetch } from './fetch';
 
 /**
  * Server-only Supabase client.
@@ -11,6 +12,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
  * (with a setup notice) before the credentials exist.
  */
 let cached: SupabaseClient | null | undefined;
+let cachedReadClient: SupabaseClient | null | undefined;
 
 /**
  * The placeholder that ships in .env.local counts as unconfigured. Otherwise a
@@ -24,24 +26,31 @@ const isRealKey = (key: string | undefined): key is string =>
 const isRealUrl = (url: string | undefined): url is string =>
   Boolean(url) && (url!.startsWith('https://') || url!.startsWith('http://'));
 
-const getServerKey = () =>
-  process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
+const getServerKey = () => process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export const isSupabaseConfigured = () =>
   isRealUrl(process.env.SUPABASE_URL) && isRealKey(getServerKey());
 
-export const getSupabase = (): SupabaseClient | null => {
-  if (cached !== undefined) {
-    return cached;
+export const getSupabase = (options?: { cacheReads: boolean }): SupabaseClient | null => {
+  const cacheReads = options?.cacheReads ?? false;
+  const client = cacheReads ? cachedReadClient : cached;
+  if (client !== undefined) {
+    return client;
   }
 
   const url = process.env.SUPABASE_URL;
   const key = getServerKey();
 
-  cached =
+  const created =
     isRealUrl(url) && isRealKey(key)
-      ? createClient(url, key, { auth: { persistSession: false } })
+      ? createClient(url, key, {
+          auth: { persistSession: false },
+          global: { fetch: createSupabaseFetch(cacheReads) },
+        })
       : null;
 
-  return cached;
+  if (cacheReads) cachedReadClient = created;
+  else cached = created;
+
+  return created;
 };

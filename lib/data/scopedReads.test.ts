@@ -38,10 +38,11 @@ beforeEach(() => {
 });
 
 describe('shared records in a group', () => {
-  it('reads the association, the current members, and the viewer', async () => {
+  it('reads the association and current members without fetching the viewer twice', async () => {
     await getLogsSince('2026-09-01', { groupId: 'g1', memberId: 'm1' });
 
-    const [associated, members, own] = opsOf('daily_logs');
+    const [associated, members] = opsOf('daily_logs');
+    expect(opsOf('daily_logs')).toHaveLength(2);
     expect(associated).toEqual(
       expect.arrayContaining([
         ['select', '*, group_daily_logs!inner(group_id)'],
@@ -56,6 +57,12 @@ describe('shared records in a group', () => {
         ['in', 'member_id', ['m1', 'm2']],
       ])
     );
+  });
+
+  it('still reads the viewer separately when membership does not cover them', async () => {
+    groupMemberIds = ['m2'];
+    await getLogsSince('2026-09-01', { groupId: 'g1', memberId: 'm1' });
+    const own = opsOf('daily_logs')[2];
     expect(own).toEqual(
       expect.arrayContaining([
         ['select', '*'],
@@ -105,6 +112,9 @@ describe('shared records in a group', () => {
   it('scopes workouts and runs the same way', async () => {
     await getWorkoutsSince('2026-09-01', { groupId: 'g1', memberId: 'm1' });
     await getRunsSince('2026-09-01', { groupId: 'g1', memberId: 'm1' });
+
+    expect(opsOf('workouts')).toHaveLength(2);
+    expect(opsOf('runs')).toHaveLength(2);
 
     expect(opsOf('workouts')[0]).toEqual(
       expect.arrayContaining([['eq', 'group_workouts.group_id', 'g1']])

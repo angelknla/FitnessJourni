@@ -2,7 +2,7 @@
 
 import { CalendarIcon } from '@components/Icons/Icons';
 import { fromISODate } from '@utils/date';
-import Link from 'next/link';
+import Link from '@components/NavigationLink/NavigationLink';
 import { useRouter } from 'next/navigation';
 import type { Period } from '@/lib/aggregate';
 

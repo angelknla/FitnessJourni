@@ -21,8 +21,9 @@ import { SleepLogger } from '@components/SleepLogger/SleepLogger';
 import { WorkoutLogger } from '@components/WorkoutLogger/WorkoutLogger';
 import { accentHex } from '@data/fitnessData';
 import { useStepCaloriesPreference } from '@hooks/useStepCaloriesPreference';
+import type { SaveAction } from '@hooks/useBackgroundSave';
 import { fromISODate, toISODate } from '@utils/date';
-import Link from 'next/link';
+import Link from '@components/NavigationLink/NavigationLink';
 import { useRouter } from 'next/navigation';
 import {
   type CSSProperties,
@@ -33,10 +34,19 @@ import {
   useState,
 } from 'react';
 import { emptyLog } from '@/lib/data/logs';
-import { workoutsForToday } from '@/lib/data/workouts';
-import type { MedalBoard } from '@/lib/medals';
+import { tallyWorkouts, workoutsForToday } from '@/lib/data/workouts';
+import { buildMedalBoards, type MedalBoard } from '@/lib/medals';
+import { deleteWorkout, logWorkout, saveDailyLog, saveSleep, updateTargets } from '@/app/actions';
 import { caloriesBurnedFromSteps, formatCount, formatMl } from '@/lib/progress';
-import type { DailyLog, Member, Workout, WorkoutTally } from '@/types/fitness';
+import type {
+  DailyLog,
+  Member,
+  MemberTargets,
+  Workout,
+  WorkoutFocus,
+  WorkoutTally,
+} from '@/types/fitness';
+import { useHomeUpdates } from './useHomeUpdates';
 
 import styles from './Home.module.css';
 
@@ -46,6 +56,7 @@ interface HomeProps {
   workouts: Workout[];
   tallies: Record<string, WorkoutTally>;
   medalBoards?: MedalBoard[];
+  medalLogs?: DailyLog[];
   medalDate?: string;
   date: string;
   today: string;
@@ -60,6 +71,7 @@ interface HomeProps {
   personalMode?: boolean;
   /** The active group's name, or null in Personal mode. */
   activeGroupName?: string | null;
+  activeGroupId?: string | null;
   /** The active group's picture, if it has one. */
   activeGroupImage?: string | null;
   /** Group invitations and join requests waiting on this person. */
@@ -87,6 +99,8 @@ interface MemberSummaryProps {
   preview?: boolean;
   onToggleTargets: () => void;
   onTargetsSaved: () => void;
+  saveLog?: SaveAction;
+  saveTargets?: SaveAction;
 }
 
 const MemberSummary = ({
@@ -99,6 +113,8 @@ const MemberSummary = ({
   preview = false,
   onToggleTargets,
   onTargetsSaved,
+  saveLog,
+  saveTargets,
 }: MemberSummaryProps) => {
   const { targets } = member;
   const caloriesBurned = caloriesBurnedFromSteps(log.steps);
@@ -170,7 +186,12 @@ const MemberSummary = ({
         </div>
 
         {editingTargets && canEdit && (
-          <EditTargets member={member} id={TARGETS_ID} onSaved={onTargetsSaved} />
+          <EditTargets
+            member={member}
+            id={TARGETS_ID}
+            onSaved={onTargetsSaved}
+            save={saveTargets}
+          />
         )}
 
         <MacroBars
@@ -183,7 +204,13 @@ const MemberSummary = ({
       </div>
 
       {canEdit ? (
-        <QuickEntry member={member} log={log} date={date} />
+        <QuickEntry
+          key={`${member.id}-${date}`}
+          member={member}
+          log={log}
+          date={date}
+          save={saveLog}
+        />
       ) : !viewerId && !preview ? (
         <p className={styles.readOnly}>
           You&apos;re looking around as a visitor. Pick yourself in the header to log a day.
@@ -194,11 +221,12 @@ const MemberSummary = ({
 };
 
 export const Home = ({
-  members,
-  logs,
-  workouts,
-  tallies,
+  members: serverMembers,
+  logs: serverLogs,
+  workouts: serverWorkouts,
+  tallies: serverTallies,
   medalBoards = [],
+  medalLogs,
   date,
   medalDate = date,
   today,
@@ -207,9 +235,36 @@ export const Home = ({
   viewerId,
   personalMode = false,
   activeGroupName = null,
+  activeGroupId = null,
   activeGroupImage = null,
   pendingGroupCount = 0,
 }: HomeProps) => {
+  const updates = useHomeUpdates(
+    {
+      members: serverMembers,
+      logs: serverLogs,
+      workouts: serverWorkouts,
+      medalLogs: medalLogs ?? Object.values(serverLogs),
+    },
+    `${viewerId}:${activeGroupId ?? activeGroupName}:${date}`
+  );
+  const { members, logs, workouts } = updates.data;
+  const tallies = updates.statuses.some(
+    (entry) =>
+      !entry.error &&
+      (entry.request.change.type === 'addWorkout' || entry.request.change.type === 'deleteWorkout')
+  )
+    ? tallyWorkouts(workouts, date)
+    : serverTallies;
+  const boards = medalLogs
+    ? buildMedalBoards(
+        updates.data.medalLogs,
+        workouts,
+        medalDate,
+        Object.fromEntries(members.map((member) => [member.id, member.targets])),
+        today
+      )
+    : medalBoards;
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(date);
   const [knownDate, setKnownDate] = useState(date);
@@ -250,6 +305,88 @@ export const Home = ({
   const [addOpen, setAddOpen] = useState(false);
   const [editingTargets, setEditingTargets] = useState(false);
   const [editingSleepTarget, setEditingSleepTarget] = useState(false);
+  const saveLog: SaveAction = (data) =>
+    updates.save({
+      key: `daily:${activeId}`,
+      label: 'Daily numbers',
+      data,
+      change: {
+        type: 'log',
+        memberId: activeId,
+        date,
+        patch: Object.fromEntries(
+          ['steps', 'waterMl', 'calories', 'proteinG', 'carbsG', 'fatG'].map((field) => [
+            field,
+            Math.round(Number(data.get(field)) || 0),
+          ])
+        ),
+      },
+      save: (form) => saveDailyLog({ ok: false }, form),
+    });
+  const saveSleepHours: SaveAction = (data) =>
+    updates.save({
+      key: `sleep:${activeId}`,
+      label: 'Sleep',
+      data,
+      change: {
+        type: 'log',
+        memberId: activeId,
+        date,
+        patch: { sleepHours: Math.round(Number(data.get('sleepHours')) * 10) / 10 },
+      },
+      save: (form) => saveSleep({ ok: false }, form),
+    });
+  const saveTargets: SaveAction = (data) => {
+    setEditingTargets(false);
+    setEditingSleepTarget(false);
+    return updates.save({
+      key: `targets:${activeId}`,
+      label: 'Targets',
+      data,
+      change: {
+        type: 'targets',
+        memberId: activeId,
+        patch: Object.fromEntries(
+          [...data.entries()]
+            .filter(([field]) => field !== 'memberId')
+            .map(([field, value]) => [
+              field,
+              field === 'sleepHours' ? Number(value) : Math.round(Number(value)),
+            ])
+        ) as Partial<MemberTargets>,
+      },
+      save: (form) => updateTargets({ ok: false }, form),
+    });
+  };
+  const saveWorkout: SaveAction = (data) =>
+    updates.save({
+      key: `workout:${activeId}`,
+      label: 'Workout',
+      data,
+      change: {
+        type: 'addWorkout',
+        existingIds: workouts.map((workout) => workout.id),
+        workout: {
+          id: `optimistic:${crypto.randomUUID()}`,
+          memberId: activeId,
+          date,
+          focuses: data.getAll('focus') as WorkoutFocus[],
+          note: String(data.get('note') ?? '').trim() || null,
+        },
+      },
+      save: (form) => logWorkout({ ok: false }, form),
+    });
+  const removeWorkout = (workout: Workout) => {
+    const data = new FormData();
+    data.set('id', workout.id);
+    void updates.save({
+      key: `delete:${workout.id}`,
+      label: 'Workout removal',
+      data,
+      change: { type: 'deleteWorkout', id: workout.id },
+      save: (form) => deleteWorkout({ ok: false }, form),
+    });
+  };
   const [includeStepCalories] = useStepCaloriesPreference();
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -491,6 +628,26 @@ export const Home = ({
         <h1 className={styles.date}>{dateLabel}</h1>
       </header>
 
+      {updates.statuses.length > 0 && (
+        <div className={styles.saveStatus}>
+          {updates.statuses.map(({ request, error }) => (
+            <p key={request.key} role={error ? 'alert' : 'status'}>
+              {error ? `${request.label} wasn’t saved. ${error}` : `${request.label} saving…`}
+              {error && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    void updates.save(request);
+                  }}
+                >
+                  Retry
+                </button>
+              )}
+            </p>
+          ))}
+        </div>
+      )}
+
       <MemberTabs
         members={tabOrder}
         activeId={active.id}
@@ -540,8 +697,8 @@ export const Home = ({
                 editingTargets={false}
                 includeStepCalories={includeStepCalories}
                 preview
-                onToggleTargets={() => { }}
-                onTargetsSaved={() => { }}
+                onToggleTargets={() => {}}
+                onTargetsSaved={() => {}}
               />
             </div>
             <div className={styles.carouselSlide}>
@@ -557,6 +714,8 @@ export const Home = ({
                   setEditingTargets((open) => !open);
                 }}
                 onTargetsSaved={() => setEditingTargets(false)}
+                saveLog={saveLog}
+                saveTargets={saveTargets}
               />
             </div>
             <div className={styles.carouselSlide}>
@@ -568,8 +727,8 @@ export const Home = ({
                 editingTargets={false}
                 includeStepCalories={includeStepCalories}
                 preview
-                onToggleTargets={() => { }}
-                onTargetsSaved={() => { }}
+                onToggleTargets={() => {}}
+                onTargetsSaved={() => {}}
               />
             </div>
           </div>
@@ -583,12 +742,15 @@ export const Home = ({
             </Link>
           </div>
           <WorkoutLogger
+            key={`${active.id}-${date}`}
             member={active}
             date={date}
             logged={todaysWorkouts}
             weekCount={tally.week}
             canEdit={canEdit}
             isToday={isToday}
+            save={saveWorkout}
+            remove={removeWorkout}
           />
         </section>
 
@@ -626,6 +788,7 @@ export const Home = ({
               id={SLEEP_TARGET_ID}
               section="sleep"
               onSaved={() => setEditingSleepTarget(false)}
+              save={saveTargets}
             />
           )}
           <SleepLogger
@@ -635,6 +798,7 @@ export const Home = ({
             sleepHours={log.sleepHours}
             canEdit={canEdit}
             isToday={isToday}
+            save={saveSleepHours}
           />
         </section>
       </div>
@@ -651,7 +815,7 @@ export const Home = ({
           <section className={`${styles.panel} ${styles.medalPanel}`}>
             <MedalLeaderboard
               members={tabOrder}
-              boards={medalBoards}
+              boards={boards}
               medalDate={medalDate}
               today={today}
             />

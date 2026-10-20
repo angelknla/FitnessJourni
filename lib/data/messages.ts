@@ -44,7 +44,7 @@ export const hasUnreadMessages = (
  * caller passes null and gets nothing, with no query sent.
  */
 export const getMessages = async (groupId: string | null): Promise<MessagePost[]> => {
-  const supabase = getSupabase();
+  const supabase = getSupabase({ cacheReads: true });
   if (!supabase || !groupId) {
     return [];
   }
@@ -148,7 +148,7 @@ export const getHasUnreadMessages = async (
   memberId: string,
   groupId: string | null
 ): Promise<boolean> => {
-  const supabase = getSupabase();
+  const supabase = getSupabase({ cacheReads: true });
   if (!supabase || !groupId) {
     return false;
   }

@@ -22,8 +22,6 @@ export const metadata: Metadata = {
   description: 'Compare steps, water, nutrition and sleep across the group',
 };
 
-export const dynamic = 'force-dynamic';
-
 interface LogsPageProps {
   searchParams: Promise<{ period?: string; date?: string }>;
 }

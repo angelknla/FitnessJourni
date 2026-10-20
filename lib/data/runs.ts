@@ -54,7 +54,7 @@ const collectRuns = (
 };
 
 export const getRunsSince = async (fromDate: string, scope: DataScope): Promise<GroupRun[]> => {
-  const supabase = getSupabase();
+  const supabase = getSupabase({ cacheReads: true });
   if (!supabase || isEmptyScope(scope)) {
     return [];
   }
@@ -80,7 +80,7 @@ export const getRunsSince = async (fromDate: string, scope: DataScope): Promise<
             .gte('run_date', fromDate),
         ]
       : []),
-    ...(scope.memberId
+    ...(scope.memberId && !memberIds.includes(scope.memberId)
       ? [
           supabase
             .from('runs')
@@ -95,7 +95,7 @@ export const getRunsSince = async (fromDate: string, scope: DataScope): Promise<
 };
 
 export const getLatestRuns = async (scope: DataScope, limit = 3): Promise<GroupRun[]> => {
-  const supabase = getSupabase();
+  const supabase = getSupabase({ cacheReads: true });
   if (!supabase || isEmptyScope(scope)) {
     return [];
   }
@@ -129,7 +129,7 @@ export const getLatestRuns = async (scope: DataScope, limit = 3): Promise<GroupR
             .limit(limit),
         ]
       : []),
-    ...(scope.memberId
+    ...(scope.memberId && !memberIds.includes(scope.memberId)
       ? [
           supabase
             .from('runs')

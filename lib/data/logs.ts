@@ -80,7 +80,7 @@ export const getLogsForDate = async (
   date: string,
   scope: DataScope
 ): Promise<Record<string, DailyLog>> => {
-  const supabase = getSupabase();
+  const supabase = getSupabase({ cacheReads: true });
   if (!supabase || isEmptyScope(scope)) {
     return {};
   }
@@ -100,7 +100,7 @@ export const getLogsForDate = async (
     ...(memberIds.length > 0
       ? [supabase.from('daily_logs').select('*').in('member_id', memberIds).eq('log_date', date)]
       : []),
-    ...(scope.memberId
+    ...(scope.memberId && !memberIds.includes(scope.memberId)
       ? [
           supabase
             .from('daily_logs')
@@ -123,7 +123,7 @@ export const getLogsForDate = async (
 
 /** Every visible log from `fromDate` onwards, for the comparison views. */
 export const getLogsSince = async (fromDate: string, scope: DataScope): Promise<DailyLog[]> => {
-  const supabase = getSupabase();
+  const supabase = getSupabase({ cacheReads: true });
   if (!supabase || isEmptyScope(scope)) {
     return [];
   }
@@ -149,7 +149,7 @@ export const getLogsSince = async (fromDate: string, scope: DataScope): Promise<
             .gte('log_date', fromDate),
         ]
       : []),
-    ...(scope.memberId
+    ...(scope.memberId && !memberIds.includes(scope.memberId)
       ? [
           supabase
             .from('daily_logs')
@@ -181,7 +181,7 @@ export const getLogsSince = async (fromDate: string, scope: DataScope): Promise<
  * logged before joining is still theirs to correct.
  */
 export const getOwnLog = async (memberId: string, date: string): Promise<DailyLog | null> => {
-  const supabase = getSupabase();
+  const supabase = getSupabase({ cacheReads: true });
   if (!supabase) {
     return null;
   }

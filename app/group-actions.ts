@@ -6,9 +6,10 @@ import {
   GROUP_IMAGE_BUCKET,
   groupImageObjectPath,
 } from '@data/avatarData';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
 import { isValidUsername, normalizeUsername } from '@/lib/account';
 import { findAccountByUsername } from '@/lib/data/accounts';
+import { DATA_TAGS } from '@/lib/data/cache';
 import { getActiveGroup, getGroupRole, getMemberships } from '@/lib/data/groups';
 import { getMembers } from '@/lib/data/members';
 import {
@@ -128,6 +129,7 @@ const requireRole = async (
  * well, which is what stops the previous group's data being served from it.
  */
 const revalidateGroupScope = () => {
+  for (const tag of Object.values(DATA_TAGS)) updateTag(tag);
   for (const path of [
     '/',
     '/logs',

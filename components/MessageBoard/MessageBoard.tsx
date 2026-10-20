@@ -14,7 +14,6 @@ import {
 import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
 import { PageHeader } from '@components/PageHeader/PageHeader';
 import { accentHex } from '@data/fitnessData';
-import { useRouter } from 'next/navigation';
 import {
     type CSSProperties,
     type FormEvent,
@@ -604,7 +603,7 @@ export const MessageBoard = ({ members, messages, viewerId }: MessageBoardProps)
     const [isPending, startTransition] = useTransition();
     const composerInputRef = useRef<HTMLTextAreaElement>(null);
     const conversationRef = useRef<HTMLDivElement>(null);
-    const router = useRouter();
+    const markedReadRef = useRef(false);
     const [filterMode, setFilterMode] = useState<'all' | 'date'>('all');
     const [filterValue, setFilterValue] = useState('');
     const memberById = new Map(members.map((member) => [member.id, member]));
@@ -619,8 +618,10 @@ export const MessageBoard = ({ members, messages, viewerId }: MessageBoardProps)
         .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
 
     useEffect(() => {
-        void markMessagesRead().then(() => router.refresh());
-    }, [router]);
+        if (markedReadRef.current) return;
+        markedReadRef.current = true;
+        void markMessagesRead().catch(() => { markedReadRef.current = false; });
+    }, []);
 
     useEffect(() => {
         const confirmedIds = new Set(messages.map((message) => message.id));
@@ -681,7 +682,6 @@ export const MessageBoard = ({ members, messages, viewerId }: MessageBoardProps)
                             : message
                     )
                 );
-                router.refresh();
             } catch {
                 setOptimisticMessages((current) =>
                     current.map((message) =>

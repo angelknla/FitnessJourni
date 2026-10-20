@@ -1,5 +1,5 @@
 import { STEP_CALORIES_PREFERENCE_KEY } from '@hooks/useStepCaloriesPreference';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { DailyLog, Member, MemberTargets } from '@/types/fitness';
@@ -20,6 +20,7 @@ vi.mock('@/app/auth-actions', () => ({
 const navigation = vi.hoisted(() => ({ push: vi.fn(), refresh: vi.fn() }));
 vi.mock('next/navigation', () => ({ useRouter: () => navigation }));
 
+import { saveDailyLog } from '@/app/actions';
 import { Home } from './Home';
 
 const targets: MemberTargets = {
@@ -216,18 +217,16 @@ describe('Home', () => {
   it('uses the saved profile preference to adjust the calorie ring', async () => {
     window.localStorage.setItem(STEP_CALORIES_PREFERENCE_KEY, 'true');
     const homeProps = props('m1');
-    render(
-      <Home
-        {...homeProps}
-      />
-    );
+    render(<Home {...homeProps} />);
     const summary = screen.getByRole('heading', { name: 'Macros' }).closest('section');
 
-    await waitFor(() => expect(
-      screen.getByRole('img', {
-        name: 'Calories: 2,400 of 2,500 target plus 360 burned, 84 percent',
-      })
-    ).toBeInTheDocument());
+    await waitFor(() =>
+      expect(
+        screen.getByRole('img', {
+          name: 'Calories: 2,400 of 2,500 target plus 360 burned, 84 percent',
+        })
+      ).toBeInTheDocument()
+    );
     expect(summary).toHaveTextContent('+ 360');
     expect(summary).toHaveTextContent('360 kcal burned from steps');
   });
@@ -235,12 +234,7 @@ describe('Home', () => {
   it('does not show a zero adjustment when step calories are excluded by default', () => {
     window.localStorage.removeItem(STEP_CALORIES_PREFERENCE_KEY);
     const homeProps = props('m1');
-    render(
-      <Home
-        {...homeProps}
-        logs={{ ...homeProps.logs, m1: { ...log('m1'), steps: 0 } }}
-      />
-    );
+    render(<Home {...homeProps} logs={{ ...homeProps.logs, m1: { ...log('m1'), steps: 0 } }} />);
     const summary = screen.getByRole('heading', { name: 'Macros' }).closest('section');
 
     expect(
@@ -566,4 +560,25 @@ describe('Personal mode', () => {
     expect(screen.queryByRole('heading', { name: 'Medals need a group' })).not.toBeInTheDocument();
     expect(screen.getByText('Everyone today')).toBeInTheDocument();
   });
+});
+
+it('shows daily numbers immediately and restores them on failure with the draft ready to retry', async () => {
+  let resolve!: (value: { ok: boolean; error?: string }) => void;
+  vi.mocked(saveDailyLog).mockImplementationOnce(
+    () =>
+      new Promise((done) => {
+        resolve = done;
+      })
+  );
+  setup('m1');
+  fireEvent.click(screen.getByRole('button', { name: 'Log your day' }));
+  const steps = screen.getByLabelText('Steps');
+  fireEvent.change(steps, { target: { value: '12000' } });
+  fireEvent.submit(steps.closest('form')!);
+  expect(screen.queryByLabelText('Steps')).not.toBeInTheDocument();
+  expect(screen.getByText('Daily numbers saving…')).toBeInTheDocument();
+  expect(screen.getAllByText('12,000').length).toBeGreaterThan(0);
+  await act(async () => resolve({ ok: false, error: 'Try again' }));
+  expect(screen.queryByText('12,000')).not.toBeInTheDocument();
+  expect(screen.getByLabelText('Steps')).toHaveValue(12000);
 });

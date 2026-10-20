@@ -14,7 +14,7 @@ import { LoginButton } from '@components/LoginButton/LoginButton';
 import { accentHex } from '@data/fitnessData';
 import { navigationData } from '@data/navigationData';
 import Image from 'next/image';
-import Link from 'next/link';
+import Link from '@components/NavigationLink/NavigationLink';
 import { usePathname } from 'next/navigation';
 import { type CSSProperties, useEffect, useState } from 'react';
 import type { Viewer } from '@/lib/session';

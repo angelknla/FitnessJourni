@@ -42,7 +42,7 @@ export const calculateBmi = (weightKg: number | null, heightCm: number | null): 
 export const getProfile = async (
   memberId: string
 ): Promise<{ profile: MemberProfile; measurements: WeightMeasurement[] } | null> => {
-  const supabase = getSupabase();
+  const supabase = getSupabase({ cacheReads: true });
   if (!supabase) {
     return null;
   }

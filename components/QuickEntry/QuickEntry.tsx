@@ -1,8 +1,9 @@
 'use client';
 
 import { CrossIcon, PlusIcon } from '@components/Icons/Icons';
-import { useActionState, useEffect, useRef, useState } from 'react';
-import { type ActionState, saveDailyLog } from '@/app/actions';
+import { useBackgroundSave, type SaveAction } from '@hooks/useBackgroundSave';
+import { useEffect, useRef, useState } from 'react';
+import { saveDailyLog } from '@/app/actions';
 import type { DailyLog, Member } from '@/types/fitness';
 
 import styles from './QuickEntry.module.css';
@@ -11,9 +12,8 @@ interface QuickEntryProps {
   member: Member;
   log: DailyLog;
   date: string;
+  save?: SaveAction;
 }
-
-const initial: ActionState = { ok: true };
 
 /** Blank beats a 0 the user has to clear before typing. */
 const show = (value: number) => (value === 0 ? '' : String(value));
@@ -29,20 +29,30 @@ const fields = [
   { name: 'fatG', label: 'Fat (g)', max: 1000, step: 1 },
 ] as const;
 
-export const QuickEntry = ({ member, log, date }: QuickEntryProps) => {
-  const [state, formAction, isPending] = useActionState(saveDailyLog, initial);
+export const QuickEntry = ({ member, log, date, save }: QuickEntryProps) => {
   const [open, setOpen] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [draft, setDraft] = useState(() =>
+    Object.fromEntries(fields.map((field) => [field.name, show(log[field.name])]))
+  );
+  const {
+    state,
+    pending: isPending,
+    submit,
+  } = useBackgroundSave(
+    save ?? ((data) => saveDailyLog({ ok: false }, data)),
+    () => {
+      setDirty(false);
+      setOpen(false);
+    },
+    () => {
+      setDirty(true);
+      setOpen(true);
+    }
+  );
   const wrapperRef = useRef<HTMLDivElement>(null);
   const returnScrollRef = useRef<number | null>(null);
   const formId = `daily-log-${member.id}`;
-
-  useEffect(() => {
-    if (state.ok && state.bookedAt) {
-      setDirty(false);
-      setOpen(false);
-    }
-  }, [state.ok, state.bookedAt]);
 
   useEffect(() => {
     if (open) {
@@ -74,7 +84,12 @@ export const QuickEntry = ({ member, log, date }: QuickEntryProps) => {
         className={styles.toggle}
         aria-expanded={open}
         aria-controls={formId}
+        disabled={isPending}
         onClick={() => {
+          if (!open && !state.error)
+            setDraft(
+              Object.fromEntries(fields.map((field) => [field.name, show(log[field.name])]))
+            );
           if (!open && window.matchMedia('(max-width: 599px)').matches) {
             returnScrollRef.current = window.scrollY;
           }
@@ -86,21 +101,7 @@ export const QuickEntry = ({ member, log, date }: QuickEntryProps) => {
       </button>
 
       {open && (
-        <form
-          className={styles.form}
-          action={formAction}
-          id={formId}
-          key={`${member.id}-${date}`}
-          onChange={(event) => {
-            const elements = event.currentTarget.elements;
-            setDirty(
-              fields.some((field) => {
-                const input = elements.namedItem(field.name);
-                return input instanceof HTMLInputElement && input.value !== show(log[field.name]);
-              })
-            );
-          }}
-        >
+        <form className={styles.form} onSubmit={submit} id={formId} key={`${member.id}-${date}`}>
           <input type="hidden" name="memberId" value={member.id} />
           <input type="hidden" name="date" value={date} />
 
@@ -116,7 +117,12 @@ export const QuickEntry = ({ member, log, date }: QuickEntryProps) => {
                   max={field.max}
                   step={field.step}
                   placeholder="0"
-                  defaultValue={show(log[field.name])}
+                  value={draft[field.name]}
+                  onChange={(event) => {
+                    const next = { ...draft, [field.name]: event.target.value };
+                    setDraft(next);
+                    setDirty(fields.some((entry) => next[entry.name] !== show(log[entry.name])));
+                  }}
                 />
               </label>
             ))}

@@ -4,7 +4,7 @@ import { CalendarIcon } from '@components/Icons/Icons';
 import { MedalIcon } from '@components/MedalIcon/MedalIcon';
 import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
 import { fromISODate } from '@utils/date';
-import Link from 'next/link';
+import Link from '@components/NavigationLink/NavigationLink';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import type { MedalAward, MedalRank } from '@/lib/aggregate';

@@ -5,21 +5,14 @@ import { MemberMedals } from '@components/MedalLeaderboard/MedalLeaderboard';
 import { RemoveMemberDialog } from '@components/RemoveMemberDialog/RemoveMemberDialog';
 import { avatarOptions, avatarUploadTypes, isAvatarPath } from '@data/avatarData';
 import { accentHex, accentNames, defaultTargets } from '@data/fitnessData';
+import { useBackgroundSave } from '@hooks/useBackgroundSave';
 import { useStepCaloriesPreference } from '@hooks/useStepCaloriesPreference';
 import { replaceInputFile, shrinkImage } from '@utils/image';
 import Image from 'next/image';
-import Link from 'next/link';
+import Link from '@components/NavigationLink/NavigationLink';
 import { useRouter } from 'next/navigation';
+import { type CSSProperties, useEffect, useRef, useState, useTransition } from 'react';
 import {
-  type CSSProperties,
-  useActionState,
-  useEffect,
-  useRef,
-  useState,
-  useTransition,
-} from 'react';
-import {
-  type ActionState,
   saveAvatar,
   saveProfileAccent,
   saveProfileInfo,
@@ -43,6 +36,7 @@ import type { MedalBoard } from '@/lib/medals';
 import type { Member, MemberProfile, WeightMeasurement } from '@/types/fitness';
 
 import styles from './ProfileView.module.css';
+import { useProfileUpdates } from './useProfileUpdates';
 
 interface ProfileViewProps {
   members: Member[];
@@ -58,7 +52,6 @@ interface ProfileViewProps {
   activeGroupName?: string | null;
 }
 
-const initial: ActionState = { ok: false };
 const dateLabel = new Intl.DateTimeFormat('en-GB', {
   day: 'numeric',
   month: 'short',
@@ -123,16 +116,26 @@ const macroLabels: Record<MacroKey, string> = {
 
 export const ProfileView = ({
   members,
-  member,
-  profile,
-  account = null,
-  measurements,
+  member: serverMember,
+  profile: serverProfile,
+  account: serverAccount = null,
+  measurements: serverMeasurements,
   currentDate,
   medalDate = currentDate,
   medalBoards = [],
   canRemoveOthers = false,
   activeGroupName = null,
 }: ProfileViewProps) => {
+  const updates = useProfileUpdates(
+    {
+      member: serverMember,
+      profile: serverProfile,
+      account: serverAccount,
+      measurements: serverMeasurements,
+    },
+    `${serverMember?.id}:${currentDate}`
+  );
+  const { member, profile, account, measurements } = updates.data;
   const router = useRouter();
   const [removeOpen, setRemoveOpen] = useState(false);
   /*
@@ -148,15 +151,147 @@ export const ProfileView = ({
     member?.avatarPath && !isAvatarPath(member.avatarPath) ? 'upload' : (member?.avatarPath ?? '')
   );
   const [selectedAccent, setSelectedAccent] = useState(member?.accent ?? 'blue');
+  const savedAvatarFile = useRef<File | null>(null);
   const avatarFileRef = useRef<HTMLInputElement>(null);
   const [signingOut, startSignOut] = useTransition();
-  const [infoState, infoAction, infoPending] = useActionState(saveProfileInfo, initial);
-  const [targetsState, targetsAction, targetsPending] = useActionState(saveProfileTargets, initial);
-  const [weightState, weightAction, weightPending] = useActionState(saveWeightMeasurement, initial);
-  const [avatarState, avatarAction, avatarPending] = useActionState(saveAvatar, initial);
-  const [accentState, accentAction, accentPending] = useActionState(saveProfileAccent, initial);
-  const [accountState, accountAction, accountPending] = useActionState(saveAccountSettings, {});
   const [passwordOpen, setPasswordOpen] = useState(false);
+  const [currentPasswordDraft, setCurrentPasswordDraft] = useState('');
+  const [newPasswordDraft, setNewPasswordDraft] = useState('');
+  const optionalNumber = (data: FormData, field: string) =>
+    String(data.get(field) ?? '').trim() ? Number(data.get(field)) : null;
+  const infoSave = useBackgroundSave(
+    (data) =>
+      updates.save({
+        key: 'info',
+        label: 'Personal information',
+        data,
+        change: {
+          member: {
+            name: String(data.get('name') ?? '').trim(),
+            firstName: String(data.get('name') ?? '').trim(),
+            surname: String(data.get('surname') ?? '').trim() || null,
+          },
+          profile: { age: optionalNumber(data, 'age'), heightCm: optionalNumber(data, 'heightCm') },
+          ...(data.get('saveCurrentWeight') === 'true' &&
+          optionalNumber(data, 'currentWeightKg') !== null
+            ? {
+                measurement: {
+                  date: String(data.get('currentDate')),
+                  weightKg: Math.round(Number(data.get('currentWeightKg')) * 100) / 100,
+                },
+              }
+            : {}),
+        },
+        save: (form) => saveProfileInfo({ ok: false }, form),
+      }),
+    () => {},
+    () => {}
+  );
+  const targetsSave = useBackgroundSave(
+    (data) =>
+      updates.save({
+        key: 'targets',
+        label: 'Goals and targets',
+        data,
+        change: {
+          profile: {
+            targetWeightKg: optionalNumber(data, 'targetWeightKg'),
+            targetBmi: optionalNumber(data, 'targetBmi'),
+          },
+          member: {
+            targets: {
+              ...member!.targets,
+              sleepHours: Number(data.get('targetSleepHours')),
+              calories: Number(data.get('targetCalories')),
+              protein: Number(data.get('targetProtein')),
+              carbs: Number(data.get('targetCarbs')),
+              fat: Number(data.get('targetFat')),
+            },
+          },
+        },
+        save: (form) => saveProfileTargets({ ok: false }, form),
+      }),
+    () => {},
+    () => {}
+  );
+  const weightSave = useBackgroundSave(
+    (data) =>
+      updates.save({
+        key: 'weight',
+        label: 'Weight',
+        data,
+        change: {
+          measurement: {
+            date: String(data.get('date')),
+            weightKg: Math.round(Number(data.get('weightKg')) * 100) / 100,
+          },
+        },
+        save: (form) => saveWeightMeasurement({ ok: false }, form),
+      }),
+    () => {},
+    () => {}
+  );
+  const avatarSave = useBackgroundSave(
+    (data) => {
+      let file = data.get('avatarFile');
+      if (file instanceof File && file.size > 0) savedAvatarFile.current = file;
+      else if (selectedAvatar === 'upload' && avatarPreview && savedAvatarFile.current) {
+        file = savedAvatarFile.current;
+        data.set('avatarFile', file);
+      }
+      return updates.save({
+        key: 'avatar',
+        label: 'Profile picture',
+        data,
+        change: {
+          member: {
+            avatarPath:
+              file instanceof File && file.size > 0
+                ? updates.preview(file)
+                : String(data.get('avatarPath') ?? '') || null,
+          },
+        },
+        save: (form) => saveAvatar({ ok: false }, form),
+      });
+    },
+    () => setOpenPanel(null),
+    () => setOpenPanel('avatar')
+  );
+  const accentSave = useBackgroundSave(
+    (data) =>
+      updates.save({
+        key: 'accent',
+        label: 'Profile colour',
+        data,
+        change: { member: { accent: String(data.get('accent')) as Member['accent'] } },
+        save: (form) => saveProfileAccent({ ok: false }, form),
+      }),
+    () => setOpenPanel(null),
+    () => setOpenPanel('accent')
+  );
+  const accountSave = useBackgroundSave(
+    (data) =>
+      updates.save({
+        key: 'account',
+        label: 'Account settings',
+        data,
+        change: { email: String(data.get('email')).trim().toLowerCase() },
+        save: async (form) => {
+          const result = await saveAccountSettings({}, form);
+          return { ...result, ok: result.ok === true };
+        },
+      }),
+    () => setPasswordOpen(false),
+    () => {
+      if (newPasswordDraft) setPasswordOpen(true);
+    }
+  );
+  const { state: infoState, submit: infoAction, pending: infoPending } = infoSave;
+  const { state: targetsState, submit: targetsAction, pending: targetsPending } = targetsSave;
+  const { state: weightState, submit: weightAction, pending: weightPending } = weightSave;
+  const { state: avatarState, submit: avatarAction, pending: avatarPending } = avatarSave;
+  const { state: accentState, submit: accentAction, pending: accentPending } = accentSave;
+  const { state: accountState, submit: accountAction, pending: accountPending } = accountSave;
   const [theme, setTheme] = useState<Theme>('light');
   const [includeStepCalories, setIncludeStepCalories] = useStepCaloriesPreference();
 
@@ -187,34 +322,47 @@ export const ProfileView = ({
     toMacroDraft(percentsFromGrams(startingTargetGrams))
   );
 
+  const draftScope = useRef<string | null>(null);
   useEffect(() => {
-    if (!member?.id) {
-      return;
-    }
-
-    const nextWeight = String(currentDateMeasurement?.weightKg ?? currentWeight ?? '');
+    const nextScope = `${serverMember?.id}:${currentDate}`;
+    if (!serverMember?.id || draftScope.current === nextScope) return;
+    draftScope.current = nextScope;
+    const nextWeight = String(
+      serverMeasurements.find((item) => item.date === currentDate)?.weightKg ??
+        serverMeasurements.at(-1)?.weightKg ??
+        ''
+    );
     setWeightDate(currentDate);
     setCurrentWeightDraft(nextWeight);
     setMonthlyWeightDraft(nextWeight);
     setCurrentWeightChanged(false);
-    setSelectedAccent(member.accent);
+    setSelectedAccent(serverMember.accent);
+    setSelectedAvatar(
+      serverMember.avatarPath && !isAvatarPath(serverMember.avatarPath)
+        ? 'upload'
+        : (serverMember.avatarPath ?? '')
+    );
     const nextGrams = {
-      protein: member.targets.protein,
-      carbs: member.targets.carbs,
-      fat: member.targets.fat,
+      protein: serverMember.targets.protein,
+      carbs: serverMember.targets.carbs,
+      fat: serverMember.targets.fat,
     };
     setTargetMacroMode('grams');
-    setTargetCaloriesDraft(String(member.targets.calories));
+    setTargetCaloriesDraft(String(serverMember.targets.calories));
     setTargetGramDraft(toMacroDraft(nextGrams));
     setTargetPercentDraft(toMacroDraft(percentsFromGrams(nextGrams)));
-  }, [currentDate, currentDateMeasurement?.weightKg, currentWeight, member]);
+    setOpenPanel(null);
+    setAvatarPreview(null);
+    setCurrentPasswordDraft('');
+    setNewPasswordDraft('');
+  }, [currentDate, serverMember, serverMeasurements]);
 
   useEffect(() => {
-    if (avatarState.ok && avatarState.bookedAt) {
-      setOpenPanel(null);
-      setAvatarPreview(null);
+    if (accountState.ok) {
+      setCurrentPasswordDraft('');
+      setNewPasswordDraft('');
     }
-  }, [avatarState.ok, avatarState.bookedAt]);
+  }, [accountState.ok]);
 
   useEffect(() => {
     const activeTheme = document.documentElement.dataset.theme;
@@ -257,7 +405,7 @@ export const ProfileView = ({
   const chartX = (date: string) =>
     CHART_LEFT +
     ((new Date(`${date}T12:00:00`).getTime() - chartPeriodStart) / chartPeriodDuration) *
-    chartPlotWidth;
+      chartPlotWidth;
   const chartY = (weight: number) =>
     CHART_TOP + ((chartMax - weight) / chartRange) * chartPlotHeight;
   const chartPoints = chartMeasurements
@@ -283,7 +431,7 @@ export const ProfileView = ({
     document.documentElement.dataset.theme = nextTheme;
     try {
       window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
-    } catch { }
+    } catch {}
   };
 
   if (!member || !profile) {
@@ -299,7 +447,7 @@ export const ProfileView = ({
     );
   }
 
-  const accent = accentHex[selectedAccent];
+  const accent = accentHex[member.accent];
   const assignedAccents = new Set(
     members.filter((option) => option.id !== member.id).map((option) => option.accent)
   );
@@ -308,6 +456,7 @@ export const ProfileView = ({
   const chooseAvatar = (value: string) => {
     setSelectedAvatar(value);
     setAvatarPreview(null);
+    savedAvatarFile.current = null;
     if (avatarFileRef.current) {
       avatarFileRef.current.value = '';
     }
@@ -391,7 +540,7 @@ export const ProfileView = ({
          * opening the chooser first. The chooser below still offers the preset
          * avatars and a deliberate Save.
          */}
-        <form action={avatarAction} className={styles.avatarFrame}>
+        <form onSubmit={avatarAction} className={styles.avatarFrame}>
           <input type="hidden" name="memberId" value={member.id} />
           <input
             id="avatar-direct"
@@ -399,6 +548,7 @@ export const ProfileView = ({
             type="file"
             name="avatarFile"
             accept={avatarUploadTypes.join(',')}
+            disabled={avatarPending}
             aria-label="Change your profile picture"
             onChange={async (event) => {
               const input = event.currentTarget;
@@ -421,7 +571,9 @@ export const ProfileView = ({
                 /* Drawn at 88px; 3x wants ~264 device pixels. */
                 width={264}
                 height={264}
-                unoptimized={member.avatarPath.startsWith('http://')}
+                unoptimized={
+                  member.avatarPath.startsWith('http://') || member.avatarPath.startsWith('blob:')
+                }
               />
             ) : (
               member.name.charAt(0).toUpperCase()
@@ -503,8 +655,28 @@ export const ProfileView = ({
         </div>
       </section>
 
+      {updates.statuses.length > 0 && (
+        <div className={styles.saveStatus}>
+          {updates.statuses.map(({ request, error }) => (
+            <p key={request.key} role={error ? 'alert' : 'status'}>
+              {error ? `${request.label} wasn’t saved. ${error}` : `${request.label} saving…`}
+              {error && request.key !== 'account' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    void updates.save(request);
+                  }}
+                >
+                  Retry
+                </button>
+              )}
+            </p>
+          ))}
+        </div>
+      )}
+
       {openPanel === 'avatar' && (
-        <form id="avatar-picker" className={styles.avatarPicker} action={avatarAction}>
+        <form id="avatar-picker" className={styles.avatarPicker} onSubmit={avatarAction}>
           <input type="hidden" name="memberId" value={member.id} />
           <div className={styles.panelHead}>
             <h3>Profile picture</h3>
@@ -600,6 +772,7 @@ export const ProfileView = ({
                     // The preview shows the file that will actually be uploaded.
                     const shrunk = await shrinkImage(chosen);
                     replaceInputFile(input, shrunk);
+                    savedAvatarFile.current = shrunk;
                     setAvatarPreview(URL.createObjectURL(shrunk));
                     setSelectedAvatar('upload');
                   }}
@@ -627,7 +800,7 @@ export const ProfileView = ({
       )}
 
       {openPanel === 'accent' && (
-        <form id="accent-picker" className={styles.accentPicker} action={accentAction}>
+        <form id="accent-picker" className={styles.accentPicker} onSubmit={accentAction}>
           <input type="hidden" name="memberId" value={member.id} />
           <div className={styles.panelHead}>
             <h3>Profile colour</h3>
@@ -706,8 +879,10 @@ export const ProfileView = ({
 
       {/* With the other choices about how Profile looks, rather than buried in
           Account beside the password fields. */}
-      <fieldset className={styles.appearance}>
-        <legend>Appearance</legend>
+      <div className={styles.appearance} role="group" aria-labelledby="appearance-label">
+        <span id="appearance-label" className={styles.appearanceLabel}>
+          Appearance
+        </span>
         <div className={styles.themeOptions}>
           {(['light', 'dark'] as const).map((option) => (
             <button
@@ -720,7 +895,7 @@ export const ProfileView = ({
             </button>
           ))}
         </div>
-      </fieldset>
+      </div>
 
       <section className={styles.stats} aria-label="Current measurements">
         <div>
@@ -852,7 +1027,7 @@ export const ProfileView = ({
           <p className={styles.empty}>No weights saved for this period yet.</p>
         )}
 
-        <form className={styles.inlineForm} action={weightAction}>
+        <form className={styles.inlineForm} onSubmit={weightAction}>
           <input type="hidden" name="memberId" value={member.id} />
           <label htmlFor="profile-weight-date">
             <span>Date</span>
@@ -902,7 +1077,7 @@ export const ProfileView = ({
           </div>
         </div>
 
-        <form className={styles.detailsForm} action={infoAction}>
+        <form className={styles.detailsForm} onSubmit={infoAction}>
           <input type="hidden" name="memberId" value={member.id} />
           <input type="hidden" name="currentDate" value={currentDate} />
           <input type="hidden" name="saveCurrentWeight" value={String(currentWeightChanged)} />
@@ -999,7 +1174,7 @@ export const ProfileView = ({
           </div>
         </form>
 
-        <form className={styles.detailsForm} action={targetsAction}>
+        <form className={styles.detailsForm} onSubmit={targetsAction}>
           <input type="hidden" name="memberId" value={member.id} />
           <fieldset id="goals-and-targets" className={styles.detailGroup}>
             <legend>Goals and targets</legend>
@@ -1151,7 +1326,7 @@ export const ProfileView = ({
       <section id="account-settings" className={styles.account} aria-labelledby="account-heading">
         <h2 id="account-heading">Account</h2>
         {account && (
-          <form className={styles.accountForm} action={accountAction}>
+          <form className={styles.accountForm} onSubmit={accountAction}>
             <label>
               <span>Username</span>
               <input value={account.username} disabled />
@@ -1170,6 +1345,7 @@ export const ProfileView = ({
               type="button"
               className={styles.passwordToggle}
               aria-expanded={passwordOpen}
+              disabled={accountPending}
               onClick={() => setPasswordOpen((open) => !open)}
             >
               {passwordOpen ? 'Cancel password change' : 'Change password…'}
@@ -1181,6 +1357,9 @@ export const ProfileView = ({
                   <input
                     type="password"
                     name="currentPassword"
+                    value={currentPasswordDraft}
+                    onChange={(event) => setCurrentPasswordDraft(event.target.value)}
+                    disabled={!passwordOpen}
                     autoComplete="current-password"
                     required
                   />
@@ -1190,6 +1369,9 @@ export const ProfileView = ({
                   <input
                     type="password"
                     name="newPassword"
+                    value={newPasswordDraft}
+                    onChange={(event) => setNewPasswordDraft(event.target.value)}
+                    disabled={!passwordOpen}
                     minLength={8}
                     maxLength={128}
                     autoComplete="new-password"

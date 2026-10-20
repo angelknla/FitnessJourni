@@ -52,6 +52,8 @@ describe('SessionForm', () => {
   });
 
   it('builds a 14-day rail once the browser clock is known, with today preselected', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-27T05:00:00'));
     render(<SessionForm members={members} viewerId={null} />);
 
     const days = screen.getAllByRole('radio', { name: /\d/ });
@@ -62,6 +64,7 @@ describe('SessionForm', () => {
     expect(days[0]).toBeChecked();
     expect(screen.getByText('Today')).toBeInTheDocument();
     expect(screen.getByText('Tomorrow')).toBeInTheDocument();
+    vi.useRealTimers();
   });
 
   it('lets a quick-time chip set the time', () => {

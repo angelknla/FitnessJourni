@@ -22,8 +22,6 @@ export const metadata: Metadata = {
   description: 'Book a run, workout, swim or walk together',
 };
 
-export const dynamic = 'force-dynamic';
-
 const SessionsPage = async () => {
   // Gate before fetching — see the note in app/layout.tsx.
   if (!(await isUnlocked())) {
@@ -60,7 +58,7 @@ const SessionsPage = async () => {
 
   return (
     <PageLayout>
-      <SessionsReadMarker />
+      <SessionsReadMarker key={`${viewer.memberId}:${activeGroup.id}`} />
       <PageHeader eyebrow="Sessions" title="What's coming up" />
 
       <SessionList

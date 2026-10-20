@@ -1,8 +1,13 @@
 import { STEP_CALORIES_PREFERENCE_KEY } from '@hooks/useStepCaloriesPreference';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { saveProfileInfo, saveProfileTargets } from '@/app/actions';
+import {
+  saveProfileInfo,
+  saveProfileTargets,
+  saveWeightMeasurement,
+  saveAvatar,
+} from '@/app/actions';
 import type { Member, MemberProfile } from '@/types/fitness';
 
 vi.mock('@/app/actions', () => ({
@@ -87,7 +92,9 @@ describe('ProfileView', () => {
     const progressSection = screen.getByRole('region', { name: 'Weight progress' });
     expect(progressSection).toHaveAttribute('id', 'log-weight');
     expect(within(progressSection).getByText('Progress')).toBeInTheDocument();
-    expect(within(progressSection).getByRole('heading', { name: 'Weight progress' })).toBeInTheDocument();
+    expect(
+      within(progressSection).getByRole('heading', { name: 'Weight progress' })
+    ).toBeInTheDocument();
     expect(within(progressSection).getByLabelText('Date')).toBeInTheDocument();
     expect(document.querySelectorAll('#log-weight')).toHaveLength(1);
   });
@@ -611,5 +618,102 @@ describe('the identity panels', () => {
     await user.click(screen.getByRole('button', { name: 'Choose profile picture' }));
 
     expect(screen.getByRole('button', { name: 'Save picture' })).toBeInTheDocument();
+  });
+});
+
+describe('Profile optimistic saves', () => {
+  it('updates the name immediately and restores the summary on failure while preserving the draft', async () => {
+    let resolve!: (value: { ok: boolean; error?: string }) => void;
+    vi.mocked(saveProfileInfo).mockImplementationOnce(
+      () =>
+        new Promise((done) => {
+          resolve = done;
+        })
+    );
+    render(
+      <ProfileView
+        members={[member]}
+        member={member}
+        profile={profile}
+        measurements={[]}
+        currentDate="2026-09-27"
+      />
+    );
+    fireEvent.change(screen.getByLabelText('First name'), { target: { value: 'New name' } });
+    fireEvent.submit(screen.getByLabelText('First name').closest('form')!);
+    expect(screen.getByRole('heading', { name: 'New name' })).toBeInTheDocument();
+    expect(screen.getByText('Personal information saving…')).toBeInTheDocument();
+    await act(async () => resolve({ ok: false, error: 'Try again' }));
+    expect(screen.getByRole('heading', { name: 'Dillon' })).toBeInTheDocument();
+    expect(screen.getByLabelText('First name')).toHaveValue('New name');
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
+  });
+
+  it('updates weight and the chart before confirmation and keeps the confirmed value', async () => {
+    let resolve!: (value: { ok: boolean }) => void;
+    vi.mocked(saveWeightMeasurement).mockImplementationOnce(
+      () =>
+        new Promise((done) => {
+          resolve = done;
+        })
+    );
+    const props = {
+      members: [member],
+      member,
+      profile,
+      measurements: [{ date: '2026-09-27', weightKg: 80 }],
+      currentDate: '2026-09-27',
+    };
+    const { rerender } = render(<ProfileView {...props} />);
+    const progress = screen.getByRole('region', { name: 'Weight progress' });
+    fireEvent.change(within(progress).getByLabelText(/^Weight/), { target: { value: '78' } });
+    fireEvent.submit(
+      within(progress)
+        .getByLabelText(/^Weight/)
+        .closest('form')!
+    );
+    expect(
+      within(screen.getByRole('region', { name: 'Current measurements' })).getByText('78.0 kg')
+    ).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: /78.0 kilograms/ })).toBeInTheDocument();
+    await act(async () => {
+      rerender(<ProfileView {...props} measurements={[{ date: '2026-09-27', weightKg: 78 }]} />);
+      resolve({ ok: true });
+    });
+    expect(
+      within(screen.getByRole('region', { name: 'Current measurements' })).getByText('78.0 kg')
+    ).toBeInTheDocument();
+  });
+
+  it('closes the avatar picker and displays the chosen picture while saving', async () => {
+    let resolve!: (value: { ok: boolean }) => void;
+    vi.mocked(saveAvatar).mockImplementationOnce(
+      () =>
+        new Promise((done) => {
+          resolve = done;
+        })
+    );
+    render(
+      <ProfileView
+        members={[member]}
+        member={member}
+        profile={profile}
+        measurements={[]}
+        currentDate="2026-09-27"
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Choose profile picture' }));
+    const choice = screen
+      .getAllByRole('radio')
+      .find((radio) => (radio as HTMLInputElement).value.startsWith('/'))!;
+    fireEvent.click(choice);
+    const path = (choice as HTMLInputElement).value;
+    fireEvent.submit(choice.closest('form')!);
+    expect(screen.queryByRole('button', { name: 'Save picture' })).not.toBeInTheDocument();
+    expect(document.querySelector('label[for="avatar-direct"] img')).toHaveAttribute(
+      'src',
+      expect.stringContaining(path)
+    );
+    await act(async () => resolve({ ok: false }));
   });
 });

@@ -20,8 +20,6 @@ export const metadata: Metadata = {
   description: 'The four-day split, and who has trained this week',
 };
 
-export const dynamic = 'force-dynamic';
-
 const dayMonth = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric' });
 const monthOnly = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric' });
 const dayMonthFull = new Intl.DateTimeFormat('en-GB', {

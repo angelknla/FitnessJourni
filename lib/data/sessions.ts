@@ -39,7 +39,7 @@ export const getHasUnreadSessions = async (
   memberId: string,
   groupId: string | null
 ): Promise<boolean> => {
-  const supabase = getSupabase();
+  const supabase = getSupabase({ cacheReads: true });
   if (!supabase || !groupId) {
     return false;
   }
@@ -78,7 +78,7 @@ export const getHasUnreadSessions = async (
  */
 export const getUpcomingSessions = cache(
   async (fromDate: string, groupId: string | null): Promise<TrainingSession[]> => {
-    const supabase = getSupabase();
+    const supabase = getSupabase({ cacheReads: true });
     if (!supabase || !groupId) {
       return [];
     }

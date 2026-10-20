@@ -2,7 +2,8 @@
 
 import { BinIcon, CrossIcon, PlusIcon } from '@components/Icons/Icons';
 import { workoutFocuses, workoutFocusLabels } from '@data/fitnessData';
-import { useActionState, useEffect, useState } from 'react';
+import { useBackgroundSave, type SaveAction } from '@hooks/useBackgroundSave';
+import { useActionState, useState } from 'react';
 import { type ActionState, deleteWorkout, logWorkout } from '@/app/actions';
 import type { Member, Workout, WorkoutFocus } from '@/types/fitness';
 
@@ -17,6 +18,8 @@ interface WorkoutLoggerProps {
   /** False on someone else's tab, or for a visitor: the list stays, the form goes. */
   canEdit: boolean;
   isToday?: boolean;
+  save?: SaveAction;
+  remove?: (workout: Workout) => void;
 }
 
 const initial: ActionState = { ok: false };
@@ -24,7 +27,15 @@ const initial: ActionState = { ok: false };
 const describe = (workout: Workout) =>
   workout.focuses.map((focus) => workoutFocusLabels[focus]).join(' + ');
 
-const LoggedWorkout = ({ workout, canEdit }: { workout: Workout; canEdit: boolean }) => {
+const LoggedWorkout = ({
+  workout,
+  canEdit,
+  remove,
+}: {
+  workout: Workout;
+  canEdit: boolean;
+  remove?: (workout: Workout) => void;
+}) => {
   const [state, formAction, isPending] = useActionState(deleteWorkout, initial);
 
   return (
@@ -40,12 +51,22 @@ const LoggedWorkout = ({ workout, canEdit }: { workout: Workout; canEdit: boolea
       </span>
 
       {canEdit && (
-        <form action={formAction}>
+        <form
+          action={formAction}
+          onSubmit={
+            remove
+              ? (event) => {
+                  event.preventDefault();
+                  remove(workout);
+                }
+              : undefined
+          }
+        >
           <input type="hidden" name="id" value={workout.id} />
           <button
             type="submit"
             className={styles.remove}
-            disabled={isPending}
+            disabled={isPending || workout.id.startsWith('optimistic:')}
             aria-label={`Remove ${describe(workout)} workout`}
           >
             <BinIcon size={12} />
@@ -63,22 +84,26 @@ export const WorkoutLogger = ({
   weekCount,
   canEdit,
   isToday = true,
+  save,
+  remove,
 }: WorkoutLoggerProps) => {
-  const [state, formAction, isPending] = useActionState(logWorkout, initial);
   const [picked, setPicked] = useState<WorkoutFocus[]>([]);
   const [formOpen, setFormOpen] = useState(false);
+  const [note, setNote] = useState('');
+  const {
+    state,
+    pending: isPending,
+    submit,
+  } = useBackgroundSave(
+    save ?? ((data) => logWorkout(initial, data)),
+    () => setFormOpen(false),
+    () => setFormOpen(true)
+  );
 
   const target = member.targets.workoutsPerWeek;
   const trainedToday = logged.length > 0;
   const formTitle = trainedToday ? 'Log another session' : 'What did you train?';
   const formId = `workout-log-${member.id}`;
-
-  useEffect(() => {
-    if (state.ok && state.bookedAt) {
-      setPicked([]);
-      setFormOpen(false);
-    }
-  }, [state.ok, state.bookedAt]);
 
   const toggle = (focus: WorkoutFocus) =>
     setPicked((current) =>
@@ -110,7 +135,7 @@ export const WorkoutLogger = ({
       {logged.length > 0 && (
         <ul className={styles.loggedList}>
           {logged.map((workout) => (
-            <LoggedWorkout workout={workout} canEdit={canEdit} key={workout.id} />
+            <LoggedWorkout workout={workout} canEdit={canEdit} remove={remove} key={workout.id} />
           ))}
         </ul>
       )}
@@ -122,14 +147,21 @@ export const WorkoutLogger = ({
             className={styles.toggle}
             aria-expanded={formOpen}
             aria-controls={formId}
-            onClick={() => setFormOpen((current) => !current)}
+            disabled={isPending}
+            onClick={() => {
+              if (!formOpen && !state.error) {
+                setPicked([]);
+                setNote('');
+              }
+              setFormOpen((current) => !current);
+            }}
           >
             <span>{formTitle}</span>
             {formOpen ? <CrossIcon /> : <PlusIcon />}
           </button>
 
           {formOpen && (
-            <form className={styles.form} action={formAction} id={formId} key={logged.length}>
+            <form className={styles.form} onSubmit={submit} id={formId}>
               <input type="hidden" name="memberId" value={member.id} />
               <input type="hidden" name="date" value={date} />
 
@@ -155,7 +187,14 @@ export const WorkoutLogger = ({
 
               <label className={styles.noteField}>
                 <span className={styles.noteLabel}>Note (optional)</span>
-                <input type="text" name="note" maxLength={200} placeholder="Felt strong on bench" />
+                <input
+                  type="text"
+                  name="note"
+                  maxLength={200}
+                  placeholder="Felt strong on bench"
+                  value={note}
+                  onChange={(event) => setNote(event.target.value)}
+                />
               </label>
 
               <div className={styles.actions}>

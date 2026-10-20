@@ -4,7 +4,7 @@ import { SetupNotice } from '@components/SetupNotice/SetupNotice';
 import { earlier, fromISODate, startOfMonth, startOfWeek, toISODate } from '@utils/date';
 import type { Metadata } from 'next';
 import { getMemberships, getPendingSummary } from '@/lib/data/groups';
-import { getLogsForDate, getLogsSince, getOwnLog } from '@/lib/data/logs';
+import { getLogsSince } from '@/lib/data/logs';
 import { getScopedMembers } from '@/lib/data/members';
 import { readViewerContext } from '@/lib/data/viewerScope';
 import { getWorkoutsSince, tallyWorkouts } from '@/lib/data/workouts';
@@ -18,9 +18,6 @@ export const metadata: Metadata = {
   title: 'Home — FitnessJourni',
   description: 'Shared daily steps, water, nutrition, workouts and sleep',
 };
-
-/** Always render fresh: the whole point is seeing what the others just logged. */
-export const dynamic = 'force-dynamic';
 
 interface HomepageProps {
   searchParams: Promise<{ date?: string; medalDate?: string }>;
@@ -80,12 +77,11 @@ const Homepage = async ({ searchParams }: HomepageProps) => {
   // Which group this browser is looking at, resolved from an accepted membership.
   const { viewer, activeGroup, scope } = await readViewerContext();
 
-  const [members, logs, medalLogs, workouts, ownLog, pending] = await Promise.all([
+  const [members, medalLogs, workouts, pending] = await Promise.all([
     getScopedMembers(scope),
-    getLogsForDate(date, scope),
-    getLogsSince(medalFrom, scope),
+    // This range also includes the selected day's own log and group comparisons.
+    getLogsSince(earlier(date, medalFrom), scope),
     getWorkoutsSince(workoutFrom, scope),
-    viewer.memberId ? getOwnLog(viewer.memberId, date) : Promise.resolve(null),
     // Feeds the badge's marker: invitations for them, plus requests they can approve.
     viewer.memberId
       ? getMemberships(viewer.memberId).then((memberships) =>
@@ -100,18 +96,16 @@ const Homepage = async ({ searchParams }: HomepageProps) => {
   ]);
   const dashboardWorkouts = workouts.filter((workout) => workout.date >= dashboardWorkoutFrom);
 
-  /*
-   * Quick entry edits the viewer's own row, so it is shown from their own log
-   * rather than from the group view — a day logged before they joined this group
-   * is still theirs to correct.
-   */
-  const visibleLogs = ownLog ? { ...logs, [ownLog.memberId]: ownLog } : logs;
+  const visibleLogs = Object.fromEntries(
+    medalLogs.filter((log) => log.date === date).map((log) => [log.memberId, log])
+  );
 
   return (
     <Home
       members={viewerFirst(members, viewer.memberId)}
       logs={visibleLogs}
-      workouts={dashboardWorkouts}
+      workouts={workouts}
+      medalLogs={medalLogs}
       tallies={tallyWorkouts(dashboardWorkouts, date)}
       medalBoards={
         // Medals compare a group. In Personal mode there is nobody to compare with.
@@ -133,6 +127,7 @@ const Homepage = async ({ searchParams }: HomepageProps) => {
       viewerId={viewer.memberId}
       personalMode={!activeGroup}
       activeGroupName={activeGroup?.name ?? null}
+      activeGroupId={activeGroup?.id ?? null}
       activeGroupImage={activeGroup?.imagePath ?? null}
       pendingGroupCount={pending.invitations + pending.requests}
     />

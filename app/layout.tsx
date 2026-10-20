@@ -1,3 +1,4 @@
+import { AppResume } from '@components/AppResume/AppResume';
 import { Footer } from '@components/Footer/Footer';
 import { Header } from '@components/Header/Header';
 import { SessionBanner } from '@components/SessionBanner/SessionBanner';
@@ -118,10 +119,10 @@ const RootLayout = async ({ children }: LayoutProps) => {
     !context || !viewer.memberId
       ? [null, false, false]
       : await Promise.all([
-        nextSessionBanner(members, activeGroup?.id ?? null),
-        getHasUnreadMessages(viewer.memberId, activeGroup?.id ?? null),
-        getHasUnreadSessions(viewer.memberId, activeGroup?.id ?? null),
-      ]);
+          nextSessionBanner(members, activeGroup?.id ?? null),
+          getHasUnreadMessages(viewer.memberId, activeGroup?.id ?? null),
+          getHasUnreadSessions(viewer.memberId, activeGroup?.id ?? null),
+        ]);
 
   return (
     <html lang="en" data-scroll-behavior="smooth" data-theme={theme} suppressHydrationWarning>
@@ -131,6 +132,7 @@ const RootLayout = async ({ children }: LayoutProps) => {
         </Script>
       </head>
       <body className={inter.className}>
+        {unlocked && <AppResume />}
         <div className={styles.appWrapper}>
           <Header
             locked={locked}

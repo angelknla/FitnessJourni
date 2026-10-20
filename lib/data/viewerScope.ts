@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { getActiveGroup } from '@/lib/data/groups';
 import type { DataScope } from '@/lib/data/scope';
 import { readViewer, type Viewer } from '@/lib/session';
@@ -18,7 +19,7 @@ export interface ViewerContext {
  * browser sent, so a tampered form field or a stale link cannot widen it — and a
  * member removed a second ago is back in Personal mode on the next render.
  */
-export const readViewerContext = async (): Promise<ViewerContext> => {
+export const readViewerContext = cache(async (): Promise<ViewerContext> => {
   const viewer = await readViewer();
 
   if (!viewer.memberId) {
@@ -32,4 +33,4 @@ export const readViewerContext = async (): Promise<ViewerContext> => {
     activeGroup,
     scope: { groupId: activeGroup?.id ?? null, memberId: viewer.memberId },
   };
-};
+});

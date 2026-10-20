@@ -785,8 +785,7 @@
   border: 0;
 }
 
-.appearance legend {
-  float: left;
+.appearanceLabel {
   margin: 0;
   padding: 0;
   font-size: 0.88rem;
@@ -1186,4 +1185,27 @@
   color: var(--c-member-ink);
   background: var(--profile-accent, var(--c-accent));
   border-color: transparent;
+}
+
+.saveStatus {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--c-ink-muted);
+}
+
+.saveStatus p {
+  margin: 0;
+}
+.saveStatus button {
+  margin-inline-start: 0.75rem;
+}
+
+@media (min-width: 621px) {
+  .appearance {
+    width: 100%;
+  }
+  .themeOptions {
+    margin-inline-start: auto;
+  }
 }

@@ -18,8 +18,6 @@ export const metadata: Metadata = {
   description: 'Group runs, pace and weekly attendance',
 };
 
-export const dynamic = 'force-dynamic';
-
 /** How many recent runs the dashboard shows. */
 const LATEST_RUNS = 3;
 

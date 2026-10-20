@@ -1,6 +1,6 @@
 import { GroupIcon, SwitchIcon } from '@components/Icons/Icons';
 import Image from 'next/image';
-import Link from 'next/link';
+import Link from '@components/NavigationLink/NavigationLink';
 
 import styles from './GroupBadge.module.css';
 

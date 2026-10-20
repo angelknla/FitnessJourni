@@ -50,8 +50,9 @@ export const mapMember = (row: MemberRow): Member => ({
   },
 });
 
-export const getMembers = cache(async (): Promise<Member[]> => {
-  const supabase = getSupabase();
+// Actions use fresh rows for unique colours and account checks; pages opt in.
+export const getMembers = cache(async (cacheReads = false): Promise<Member[]> => {
+  const supabase = getSupabase({ cacheReads });
   if (!supabase) {
     return [];
   }
@@ -79,7 +80,7 @@ export const getMembers = cache(async (): Promise<Member[]> => {
  * narrowing those would break them.
  */
 export const getScopedMembers = async (scope: DataScope): Promise<Member[]> => {
-  const everyone = await getMembers();
+  const everyone = await getMembers(true);
 
   if (scope.groupId) {
     const ids = new Set(await getGroupMemberIds(scope.groupId));

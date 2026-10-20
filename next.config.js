@@ -17,6 +17,9 @@ try {
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
+    // Reuse visited pages without requesting another RSC payload on each tap.
+    // Saves and changes to login/group scope invalidate the router cache.
+    staleTimes: { dynamic: 30, static: 30 },
     serverActions: {
       // Allows a 5 MB avatar plus multipart form overhead.
       bodySizeLimit: '6mb',

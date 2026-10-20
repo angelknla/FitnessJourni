@@ -15,7 +15,7 @@ import {
   workoutFocuses,
 } from '@data/fitnessData';
 import { minutesOfTime, toISODate } from '@utils/date';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
 import { cookies } from 'next/headers';
 import {
   hashPassword,
@@ -27,6 +27,7 @@ import {
 } from '@/lib/account';
 import { COOKIE_MAX_AGE, createViewerToken, VIEWER_COOKIE } from '@/lib/auth';
 import { createCredentials, findAccountByUsername } from '@/lib/data/accounts';
+import { DATA_TAGS } from '@/lib/data/cache';
 import { getActiveGroup, getGroupMemberIds, getMemberships } from '@/lib/data/groups';
 import { getMembers } from '@/lib/data/members';
 import { canModifyMessage } from '@/lib/messagePolicy';
@@ -285,8 +286,7 @@ export const saveAvatar = async (_prev: ActionState, formData: FormData): Promis
     return fail('Could not save your profile picture.');
   }
 
-  revalidatePath('/profile');
-  revalidatePath('/', 'layout');
+  updateTag(DATA_TAGS.members);
   return { ok: true, message: 'Profile picture saved.', bookedAt: Date.now() };
 };
 
@@ -329,8 +329,7 @@ export const saveProfileAccent = async (
     return fail('Could not save your profile colour.');
   }
 
-  revalidatePath('/profile');
-  revalidatePath('/', 'layout');
+  updateTag(DATA_TAGS.members);
   return { ok: true, message: 'Profile colour saved.', bookedAt: Date.now() };
 };
 
@@ -413,13 +412,13 @@ export const saveProfileInfo = async (
 
     if (weightError) {
       console.error('[saveProfileInfo:weight]', weightError.message);
+      updateTag(DATA_TAGS.members);
       return fail('Your profile saved, but the current weight did not. Try that weight again.');
     }
   }
 
-  revalidatePath('/profile');
-  revalidatePath('/logs');
-  revalidatePath('/', 'layout');
+  updateTag(DATA_TAGS.members);
+  updateTag(DATA_TAGS.profile);
   return { ok: true, message: 'Information saved.' };
 };
 
@@ -498,9 +497,7 @@ export const saveProfileTargets = async (
     return fail('Could not save your goals and targets.');
   }
 
-  revalidatePath('/profile');
-  revalidatePath('/logs');
-  revalidatePath('/', 'layout');
+  updateTag(DATA_TAGS.members);
   return { ok: true, message: 'Goals and targets saved.' };
 };
 
@@ -549,7 +546,7 @@ export const saveWeightMeasurement = async (
     return fail('Could not save that weight.');
   }
 
-  revalidatePath('/profile');
+  updateTag(DATA_TAGS.profile);
   return { ok: true, message: 'Weight saved.' };
 };
 
@@ -621,8 +618,7 @@ export const saveDailyLog = async (
     await shareWithCurrentGroups(supabase, 'group_daily_logs', 'daily_log_id', saved.id, memberId);
   }
 
-  revalidatePath('/');
-  revalidatePath('/logs');
+  updateTag(DATA_TAGS.logs);
   return { ok: true, message: 'Data saved.', bookedAt: Date.now() };
 };
 
@@ -685,8 +681,7 @@ export const saveSleep = async (_prev: ActionState, formData: FormData): Promise
     await shareWithCurrentGroups(supabase, 'group_daily_logs', 'daily_log_id', saved.id, memberId);
   }
 
-  revalidatePath('/');
-  revalidatePath('/logs');
+  updateTag(DATA_TAGS.logs);
   return { ok: true, message: 'Sleep saved.', bookedAt: Date.now() };
 };
 
@@ -827,7 +822,7 @@ export const addMember = async (_prev: ActionState, formData: FormData): Promise
     }
   );
 
-  revalidatePath('/');
+  updateTag(DATA_TAGS.members);
   return {
     ok: true,
     newMemberId: data.id as string,
@@ -926,11 +921,15 @@ export const removeMember = async (
     (await cookies()).delete(VIEWER_COOKIE);
   }
 
-  revalidatePath('/');
-  revalidatePath('/profile');
-  revalidatePath('/logs');
-  revalidatePath('/workouts');
-  revalidatePath('/sessions');
+  updateTag(DATA_TAGS.members);
+  updateTag(DATA_TAGS.profile);
+  updateTag(DATA_TAGS.logs);
+  updateTag(DATA_TAGS.workouts);
+  updateTag(DATA_TAGS.runs);
+  updateTag(DATA_TAGS.messages);
+  updateTag(DATA_TAGS.messageReads);
+  updateTag(DATA_TAGS.sessions);
+  updateTag(DATA_TAGS.sessionReads);
 
   return { ok: true, message: `${target.name} and all their entries are gone.` };
 };
@@ -1014,8 +1013,7 @@ export const updateTargets = async (
     return fail('Could not save those targets.');
   }
 
-  revalidatePath('/');
-  revalidatePath('/logs');
+  updateTag(DATA_TAGS.members);
   return ok;
 };
 
@@ -1116,8 +1114,8 @@ export const bookSession = async (_prev: ActionState, formData: FormData): Promi
     }
   }
 
-  revalidatePath('/sessions');
-  revalidatePath('/', 'layout');
+  updateTag(DATA_TAGS.sessions);
+  updateTag(DATA_TAGS.sessionReads);
 
   const dayLabel = new Intl.DateTimeFormat('en-GB', {
     weekday: 'long',
@@ -1178,7 +1176,7 @@ export const respondToSession = async (
     return fail('Could not save your response.');
   }
 
-  revalidatePath('/sessions');
+  updateTag(DATA_TAGS.sessions);
   return ok;
 };
 
@@ -1222,9 +1220,7 @@ export const deleteSession = async (
     return fail('Could not remove that.');
   }
 
-  revalidatePath('/sessions');
-  // The next-session banner lives in the layout, so it needs refreshing too.
-  revalidatePath('/', 'layout');
+  updateTag(DATA_TAGS.sessions);
   return ok;
 };
 
@@ -1286,8 +1282,7 @@ export const logWorkout = async (_prev: ActionState, formData: FormData): Promis
 
   await shareWithCurrentGroups(supabase, 'group_workouts', 'workout_id', workout.id, memberId);
 
-  revalidatePath('/');
-  revalidatePath('/workouts');
+  updateTag(DATA_TAGS.workouts);
   return { ok: true, bookedAt: Date.now() };
 };
 
@@ -1335,8 +1330,7 @@ export const deleteWorkout = async (
     return fail('Could not remove that workout.');
   }
 
-  revalidatePath('/');
-  revalidatePath('/workouts');
+  updateTag(DATA_TAGS.workouts);
   return ok;
 };
 
@@ -1439,7 +1433,7 @@ export const logRun = async (_prev: ActionState, formData: FormData): Promise<Ac
 
   await shareWithCurrentGroups(supabase, 'group_runs', 'run_id', run.id as string, createdBy);
 
-  revalidatePath('/running');
+  updateTag(DATA_TAGS.runs);
   return ok;
 };
 
@@ -1544,7 +1538,7 @@ export const editRun = async (_prev: ActionState, formData: FormData): Promise<A
     return fail('Could not update who attended.');
   }
 
-  revalidatePath('/running');
+  updateTag(DATA_TAGS.runs);
   return { ok: true, bookedAt: Date.now() };
 };
 
@@ -1579,7 +1573,7 @@ export const deleteRun = async (_prev: ActionState, formData: FormData): Promise
     return fail('Could not remove that run.');
   }
 
-  revalidatePath('/running');
+  updateTag(DATA_TAGS.runs);
   return ok;
 };
 
@@ -1661,8 +1655,8 @@ export const postMessage = async (_prev: ActionState, formData: FormData): Promi
     console.error('[postMessage read cursor]', readError.message);
   }
 
-  revalidatePath('/messages');
-  revalidatePath('/', 'layout');
+  updateTag(DATA_TAGS.messages);
+  updateTag(DATA_TAGS.messageReads);
   return { ok: true, bookedAt: Date.now(), messageId: data.id as string };
 };
 
@@ -1729,7 +1723,7 @@ export const editMessage = async (_prev: ActionState, formData: FormData): Promi
     return fail('Could not update that message.');
   }
 
-  revalidatePath('/messages');
+  updateTag(DATA_TAGS.messages);
   return { ok: true, message: 'Message updated.', bookedAt: Date.now() };
 };
 
@@ -1753,8 +1747,7 @@ export const deleteMessage = async (
     return fail('Could not remove that message.');
   }
 
-  revalidatePath('/messages');
-  revalidatePath('/', 'layout');
+  updateTag(DATA_TAGS.messages);
   return ok;
 };
 
@@ -1829,7 +1822,7 @@ export const reactToMessage = async (
     return fail('Could not update that reaction.');
   }
 
-  revalidatePath('/messages');
+  updateTag(DATA_TAGS.messages);
   return { ok: true, bookedAt: Date.now() };
 };
 
@@ -1848,15 +1841,29 @@ export const markMessagesRead = async (): Promise<void> => {
     return;
   }
 
-  const { data: latest } = await supabase
-    .from('messages')
-    .select('created_at')
-    .eq('group_id', groupId)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const [latestResult, readResult] = await Promise.all([
+    supabase
+      .from('messages')
+      .select('created_at')
+      .eq('group_id', groupId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from('message_reads')
+      .select('last_read_at')
+      .eq('member_id', viewer.memberId)
+      .eq('group_id', groupId)
+      .maybeSingle(),
+  ]);
+  const latest = latestResult.data;
 
-  if (!latest?.created_at) {
+  if (
+    latestResult.error ||
+    readResult.error ||
+    !latest?.created_at ||
+    (readResult.data?.last_read_at && readResult.data.last_read_at >= latest.created_at)
+  ) {
     return;
   }
 
@@ -1872,7 +1879,7 @@ export const markMessagesRead = async (): Promise<void> => {
     return;
   }
 
-  revalidatePath('/', 'layout');
+  updateTag(DATA_TAGS.messageReads);
 };
 
 export const markSessionsRead = async (): Promise<void> => {
@@ -1890,14 +1897,28 @@ export const markSessionsRead = async (): Promise<void> => {
     return;
   }
 
-  const { data: latest } = await supabase
-    .from('sessions')
-    .select('created_at')
-    .eq('group_id', groupId)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (!latest?.created_at) {
+  const [latestResult, readResult] = await Promise.all([
+    supabase
+      .from('sessions')
+      .select('created_at')
+      .eq('group_id', groupId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from('session_reads')
+      .select('last_read_at')
+      .eq('member_id', viewer.memberId)
+      .eq('group_id', groupId)
+      .maybeSingle(),
+  ]);
+  const latest = latestResult.data;
+  if (
+    latestResult.error ||
+    readResult.error ||
+    !latest?.created_at ||
+    (readResult.data?.last_read_at && readResult.data.last_read_at >= latest.created_at)
+  ) {
     return;
   }
 
@@ -1909,7 +1930,8 @@ export const markSessionsRead = async (): Promise<void> => {
     );
   if (error) {
     console.error('[markSessionsRead]', error.message);
+    return;
   }
 
-  revalidatePath('/', 'layout');
+  updateTag(DATA_TAGS.sessionReads);
 };

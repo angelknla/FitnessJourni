@@ -2,7 +2,7 @@
 
 import { CrossIcon } from '@components/Icons/Icons';
 import { toISODate } from '@utils/date';
-import Link from 'next/link';
+import Link from '@components/NavigationLink/NavigationLink';
 import { useEffect, useState } from 'react';
 
 import styles from './SessionBanner.module.css';

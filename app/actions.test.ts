@@ -1,3 +1,4 @@
+import { revalidatePath, updateTag } from 'next/cache';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createSupabaseMock, type SupabaseMock } from '@/lib/testing/supabaseMock';
 
@@ -46,7 +47,7 @@ vi.mock('@/lib/data/members', () => ({
   ],
 }));
 
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), updateTag: vi.fn() }));
 vi.mock('next/headers', () => ({ cookies: async () => ({ set: vi.fn(), delete: vi.fn() }) }));
 
 import {
@@ -54,6 +55,8 @@ import {
   deleteSession,
   logRun,
   logWorkout,
+  markMessagesRead,
+  markSessionsRead,
   postMessage,
   saveDailyLog,
   saveProfileInfo,
@@ -86,11 +89,54 @@ const upsertOf = (table: string) =>
     ?.slice(1);
 
 beforeEach(() => {
+  vi.mocked(updateTag).mockClear();
+  vi.mocked(revalidatePath).mockClear();
   state.unlocked = true;
   state.memberId = 'angel';
   state.groups = [];
   state.groupMemberIds = [];
   supabase = createSupabaseMock();
+});
+
+describe('cache invalidation and read markers', () => {
+  it('expires log data after a successful save across all pages', async () => {
+    supabase = createSupabaseMock({
+      daily_logs: { data: { id: 'log-1' } },
+    });
+    const result = await saveDailyLog(initial, form({ memberId: 'angel', date: '2026-10-20' }));
+    expect(result.ok).toBe(true);
+    expect(updateTag).toHaveBeenCalledWith('fitnessjourni:logs');
+  });
+
+  it('keeps cached data when a write fails', async () => {
+    supabase = createSupabaseMock({ daily_logs: { error: { message: 'write failed' } } });
+    const result = await saveDailyLog(initial, form({ memberId: 'angel', date: '2026-10-20' }));
+    expect(result.ok).toBe(false);
+    expect(updateTag).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [markMessagesRead, 'messages', 'message_reads', 'fitnessjourni:message-reads'],
+    [markSessionsRead, 'sessions', 'session_reads', 'fitnessjourni:session-reads'],
+  ] as const)('only writes unread cursors when they advance (%s)', async (markRead, table, reads, tag) => {
+    inGroups('g1');
+    supabase = createSupabaseMock({
+      [table]: { data: { created_at: '2026-10-20T10:00:00Z' } },
+      [reads]: { data: { last_read_at: '2026-10-20T10:00:00Z' } },
+    });
+    await markRead();
+    expect(supabase.used(reads, 'upsert')).toBe(false);
+    expect(revalidatePath).not.toHaveBeenCalled();
+    expect(updateTag).not.toHaveBeenCalled();
+
+    supabase = createSupabaseMock({
+      [table]: { data: { created_at: '2026-10-20T10:01:00Z' } },
+      [reads]: { data: { last_read_at: '2026-10-20T10:00:00Z' } },
+    });
+    await markRead();
+    expect(supabase.used(reads, 'upsert')).toBe(true);
+    expect(updateTag).toHaveBeenCalledWith(tag);
+  });
 });
 
 describe('logging a day for the first time', () => {

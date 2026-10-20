@@ -18,8 +18,6 @@ export const metadata: Metadata = {
   description: 'Motivation and updates shared with the group',
 };
 
-export const dynamic = 'force-dynamic';
-
 const MessagesPage = async () => {
   if (!(await isUnlocked())) {
     return <Landing />;
@@ -51,6 +49,7 @@ const MessagesPage = async () => {
   return (
     <PageLayout className={styles.page} data-page="chat">
       <MessageBoard
+        key={`${viewer.memberId}:${activeGroup.id}`}
         members={viewerFirst(members, viewer.memberId)}
         messages={messages}
         viewerId={viewer.memberId}

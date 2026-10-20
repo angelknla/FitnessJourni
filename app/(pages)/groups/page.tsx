@@ -22,8 +22,6 @@ export const metadata: Metadata = {
   description: 'Who you share your training with, and who can see what',
 };
 
-export const dynamic = 'force-dynamic';
-
 const GroupsPage = async () => {
   // Gate before fetching — see the note in app/layout.tsx.
   if (!(await isUnlocked())) {
@@ -50,7 +48,7 @@ const GroupsPage = async () => {
    * invitation has to be able to name someone who is not a member yet.
    */
   const [members, membersByGroup, invitations, requests, pendingRequests] = await Promise.all([
-    getMembers(),
+    getMembers(true),
     getMembersForGroups(memberships.map((membership) => membership.group.id)),
     getInvitationsForMember(memberId),
     getJoinRequestsForMember(memberId),
