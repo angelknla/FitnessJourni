@@ -40,7 +40,7 @@
 }
 
 .summaryHeader::before {
-  content: '';
+  content: "";
   position: absolute;
   z-index: -1;
   right: -1rem;
@@ -449,4 +449,6 @@
   border-top: 3px solid var(--c-energy);
 }
 
-.carouselSlide > .panel { height: 100%; }
+.carouselSlide > .panel {
+  height: 100%;
+}

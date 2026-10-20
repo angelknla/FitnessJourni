@@ -1,11 +1,10 @@
 'use client';
 
-import ui from '@/styles/ui.module.css';
-
 import { CrossIcon, PlusIcon } from '@components/Icons/Icons';
-import { useBackgroundSave, type SaveAction } from '@hooks/useBackgroundSave';
+import { type SaveAction, useBackgroundSave } from '@hooks/useBackgroundSave';
 import { useEffect, useRef, useState } from 'react';
 import { saveDailyLog } from '@/app/actions';
+import ui from '@/styles/ui.module.css';
 import type { DailyLog, Member } from '@/types/fitness';
 
 import styles from './QuickEntry.module.css';

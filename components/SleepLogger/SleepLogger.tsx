@@ -1,11 +1,10 @@
 'use client';
 
-import ui from '@/styles/ui.module.css';
-
 import { CrossIcon, PlusIcon } from '@components/Icons/Icons';
-import { useBackgroundSave, type SaveAction } from '@hooks/useBackgroundSave';
-import { useState } from 'react';
+import { type SaveAction, useBackgroundSave } from '@hooks/useBackgroundSave';
+import { useEffect, useRef, useState } from 'react';
 import { saveSleep } from '@/app/actions';
+import ui from '@/styles/ui.module.css';
 import type { Member } from '@/types/fitness';
 
 import styles from './SleepLogger.module.css';
@@ -33,6 +32,8 @@ export const SleepLogger = ({
 }: SleepLoggerProps) => {
   const [formOpen, setFormOpen] = useState(false);
   const [draft, setDraft] = useState(sleepHours === null ? '' : String(sleepHours));
+  const disclosureRef = useRef<HTMLDivElement>(null);
+  const returnScrollRef = useRef<number | null>(null);
   const {
     state,
     pending: isPending,
@@ -51,6 +52,29 @@ export const SleepLogger = ({
     parsedDraft >= 0.1 &&
     parsedDraft <= 24 &&
     parsedDraft !== sleepHours;
+
+  useEffect(() => {
+    if (formOpen) {
+      if (returnScrollRef.current === null) return;
+
+      const frame = requestAnimationFrame(() => {
+        disclosureRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+
+      return () => cancelAnimationFrame(frame);
+    }
+
+    if (returnScrollRef.current === null) return;
+
+    const returnScroll = returnScrollRef.current;
+    returnScrollRef.current = null;
+
+    const frame = requestAnimationFrame(() => {
+      window.scrollTo({ top: returnScroll, behavior: 'smooth' });
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [formOpen]);
 
   return (
     <div className={styles.wrapper}>
@@ -72,7 +96,7 @@ export const SleepLogger = ({
       </div>
 
       {canEdit && (
-        <div className={styles.disclosure}>
+        <div className={styles.disclosure} ref={disclosureRef}>
           <button
             type="button"
             className={`${ui.entryToggle} ${ui.primaryButton}`}
@@ -82,6 +106,9 @@ export const SleepLogger = ({
             onClick={() => {
               if (!formOpen && !state.error)
                 setDraft(sleepHours === null ? '' : String(sleepHours));
+              if (!formOpen && window.matchMedia('(max-width: 599px)').matches) {
+                returnScrollRef.current = window.scrollY;
+              }
               setFormOpen((open) => !open);
             }}
           >

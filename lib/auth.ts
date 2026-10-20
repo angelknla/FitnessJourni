@@ -62,10 +62,7 @@ const sessionSignature = async (memberId: string, secret: string): Promise<strin
 export const createViewerToken = async (memberId: string, secret: string): Promise<string> =>
   `${memberId}.${await sessionSignature(memberId, secret)}`;
 
-export const readViewerToken = async (
-  token: string,
-  secret: string
-): Promise<string | null> => {
+export const readViewerToken = async (token: string, secret: string): Promise<string | null> => {
   const separator = token.lastIndexOf('.');
   if (separator < 1) return null;
 

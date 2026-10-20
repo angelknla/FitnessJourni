@@ -52,8 +52,9 @@ describe('member session tokens', () => {
   it('rejects a changed member id or a different secret', async () => {
     const token = await createViewerToken('member-1', 'session-secret');
 
-    await expect(readViewerToken(token.replace('member-1', 'member-2'), 'session-secret'))
-      .resolves.toBeNull();
+    await expect(
+      readViewerToken(token.replace('member-1', 'member-2'), 'session-secret')
+    ).resolves.toBeNull();
     await expect(readViewerToken(token, 'different-secret')).resolves.toBeNull();
   });
 });

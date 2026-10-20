@@ -1,8 +1,8 @@
 'use client';
 
+import type { SaveAction } from '@hooks/useBackgroundSave';
 import { useOptimistic, useRef, useState, useTransition } from 'react';
 import type { ActionState } from '@/app/actions';
-import type { SaveAction } from '@hooks/useBackgroundSave';
 
 export interface SaveRequest<Change> {
   key: string;

@@ -1,5 +1,5 @@
-import ui from '@/styles/ui.module.css';
 import Link from '@components/NavigationLink/NavigationLink';
+import ui from '@/styles/ui.module.css';
 
 import styles from './PersonalModeNotice.module.css';
 

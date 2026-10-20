@@ -1,6 +1,5 @@
 'use client';
 
-
 import { BinIcon } from '@components/Icons/Icons';
 import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
 import { activityLabels } from '@data/fitnessData';
@@ -157,9 +156,7 @@ export const SessionList = ({ sessions, members, viewerId, initialNow }: Session
 
   useEffect(() => {
     const current = Math.max(now, Date.now());
-    const nextExpiry = Math.min(
-      ...sessions.map(expiresAt).filter((expiry) => expiry > current)
-    );
+    const nextExpiry = Math.min(...sessions.map(expiresAt).filter((expiry) => expiry > current));
     if (!Number.isFinite(nextExpiry)) return;
 
     const timeout = window.setTimeout(() => setNow(Date.now()), nextExpiry - current + 50);

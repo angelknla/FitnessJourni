@@ -1,11 +1,10 @@
 'use client';
 
-import ui from '@/styles/ui.module.css';
-
 import { activityLabels, activityTypes, bookingWindowDays, quickTimes } from '@data/fitnessData';
 import { buildDays, minutesOfTime, toISODate } from '@utils/date';
 import { useActionState, useEffect, useMemo, useState } from 'react';
 import { type ActionState, bookSession } from '@/app/actions';
+import ui from '@/styles/ui.module.css';
 import type { ActivityType, Member } from '@/types/fitness';
 
 import styles from './SessionForm.module.css';

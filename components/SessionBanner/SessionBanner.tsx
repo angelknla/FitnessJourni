@@ -1,11 +1,10 @@
 'use client';
 
-import ui from '@/styles/ui.module.css';
-
 import { CrossIcon } from '@components/Icons/Icons';
-import { activityLabels } from '@data/fitnessData';
 import Link from '@components/NavigationLink/NavigationLink';
+import { activityLabels } from '@data/fitnessData';
 import { useEffect, useState } from 'react';
+import ui from '@/styles/ui.module.css';
 import type { TrainingSession } from '@/types/fitness';
 
 import styles from './SessionBanner.module.css';

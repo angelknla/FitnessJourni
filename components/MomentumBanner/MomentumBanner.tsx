@@ -34,7 +34,10 @@ export const MomentumBanner = ({
       <p className={styles.eyebrow}>{eyebrow}</p>
       <Heading className={styles.title}>{title}</Heading>
       {description && (
-        <p className={styles.description} data-desktop-only={Boolean(mobileDescription) || undefined}>
+        <p
+          className={styles.description}
+          data-desktop-only={Boolean(mobileDescription) || undefined}
+        >
           {description}
         </p>
       )}

@@ -1,321 +1,325 @@
 'use client';
 
-import ui from '@/styles/ui.module.css';
-
 import { CalendarIcon } from '@components/Icons/Icons';
 import { MedalIcon } from '@components/MedalIcon/MedalIcon';
 import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
-import { fromISODate } from '@utils/date';
 import Link from '@components/NavigationLink/NavigationLink';
+import { fromISODate } from '@utils/date';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import type { MedalAward, MedalRank } from '@/lib/aggregate';
 import type { MedalBoard } from '@/lib/medals';
+import ui from '@/styles/ui.module.css';
 import type { Member } from '@/types/fitness';
 
 import styles from './MedalLeaderboard.module.css';
 
 interface MedalLeaderboardProps {
-    members: Member[];
-    boards: MedalBoard[];
-    medalDate: string;
-    today: string;
+  members: Member[];
+  boards: MedalBoard[];
+  medalDate: string;
+  today: string;
 }
 
 interface MemberMedalsProps {
-    memberId: string;
-    boards: MedalBoard[];
-    medalDate: string;
-    today: string;
+  memberId: string;
+  boards: MedalBoard[];
+  medalDate: string;
+  today: string;
 }
 
 const rankLabel: Record<MedalRank, string> = {
-    gold: 'Gold',
-    silver: 'Silver',
-    bronze: 'Bronze',
+  gold: 'Gold',
+  silver: 'Silver',
+  bronze: 'Bronze',
 };
 
 const rankPoints: Record<MedalRank, number> = { gold: 5, silver: 3, bronze: 1 };
 const rankOrder: MedalRank[] = ['gold', 'silver', 'bronze'];
 const periodTabLabel: Record<MedalBoard['period'], string> = {
-    day: 'Today',
-    week: 'Week',
-    month: 'Month',
+  day: 'Today',
+  week: 'Week',
+  month: 'Month',
 };
 const shortDate = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' });
 
 export const medalPoints = (awards: MedalAward[]) =>
-    awards.reduce((total, award) => total + rankPoints[award.rank], 0);
+  awards.reduce((total, award) => total + rankPoints[award.rank], 0);
 
 const orderMembers = (members: Member[], awards: MedalAward[]) =>
-    [...members].sort((left, right) => {
-        const score = (memberId: string) => medalPoints(
-            awards.filter((award) => award.memberId === memberId)
-        );
-        return score(right.id) - score(left.id) || left.name.localeCompare(right.name);
-    });
+  [...members].sort((left, right) => {
+    const score = (memberId: string) =>
+      medalPoints(awards.filter((award) => award.memberId === memberId));
+    return score(right.id) - score(left.id) || left.name.localeCompare(right.name);
+  });
 
 const PeriodTabs = ({
-    boards,
-    activePeriod,
-    onChange,
-    label,
-    medalDate,
-    today,
+  boards,
+  activePeriod,
+  onChange,
+  label,
+  medalDate,
+  today,
 }: {
-    boards: MedalBoard[];
-    activePeriod: MedalBoard['period'] | null;
-    onChange: (period: MedalBoard['period']) => void;
-    label: string;
-    medalDate: string;
-    today: string;
+  boards: MedalBoard[];
+  activePeriod: MedalBoard['period'] | null;
+  onChange: (period: MedalBoard['period']) => void;
+  label: string;
+  medalDate: string;
+  today: string;
 }) => {
-    const router = useRouter();
-    const pathname = usePathname();
-    const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-    const choosePeriod = (period: MedalBoard['period']) => {
-        onChange(period);
-        if (medalDate === today) return;
+  const choosePeriod = (period: MedalBoard['period']) => {
+    onChange(period);
+    if (medalDate === today) return;
 
-        const params = new URLSearchParams(searchParams.toString());
-        params.set('medalDate', today);
-        router.push(`${pathname}?${params.toString()}`, { scroll: false });
-    };
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('medalDate', today);
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
-    return (
-        <div className={styles.tabs} role="tablist" aria-label={label}>
-            {boards.map((board) => (
-                <button
-                    type="button"
-                    role="tab"
-                    aria-selected={board.period === activePeriod}
-                    className={styles.tab}
-                    data-active={board.period === activePeriod}
-                    key={board.period}
-                    onClick={() => choosePeriod(board.period)}
-                >
-                    {periodTabLabel[board.period]}
-                </button>
-            ))}
-        </div>
-    );
+  return (
+    <div className={styles.tabs} role="tablist" aria-label={label}>
+      {boards.map((board) => (
+        <button
+          type="button"
+          role="tab"
+          aria-selected={board.period === activePeriod}
+          className={styles.tab}
+          data-active={board.period === activePeriod}
+          key={board.period}
+          onClick={() => choosePeriod(board.period)}
+        >
+          {periodTabLabel[board.period]}
+        </button>
+      ))}
+    </div>
+  );
 };
 
 const MedalDatePicker = ({
-    medalDate,
-    today,
-    onChange,
+  medalDate,
+  today,
+  onChange,
 }: {
-    medalDate: string;
-    today: string;
-    onChange: () => void;
+  medalDate: string;
+  today: string;
+  onChange: () => void;
 }) => {
-    const router = useRouter();
-    const pathname = usePathname();
-    const searchParams = useSearchParams();
-    const selectedDate = medalDate === today ? null : medalDate;
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const selectedDate = medalDate === today ? null : medalDate;
 
-    const chooseDate = (date: string) => {
-        onChange();
-        const params = new URLSearchParams(searchParams.toString());
-        if (date === today) params.delete('medalDate');
-        else params.set('medalDate', date);
-        const query = params.toString();
-        router.push(query ? `${pathname}?${query}` : pathname, { scroll: false });
-    };
+  const chooseDate = (date: string) => {
+    onChange();
+    const params = new URLSearchParams(searchParams.toString());
+    if (date === today) params.delete('medalDate');
+    else params.set('medalDate', date);
+    const query = params.toString();
+    router.push(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  };
 
-    return (
-        <label
-            className={`${styles.dateControl} ${selectedDate ? styles.dateActive : ''}`}
-            title="Choose medal date"
-        >
-            {!selectedDate && <CalendarIcon size={16} />}
-            {selectedDate && (
-                <span aria-hidden="true">{shortDate.format(fromISODate(selectedDate))}</span>
-            )}
-            <input
-                type="date"
-                value={selectedDate ?? ''}
-                max={today}
-                aria-label="Choose medal date"
-                onChange={(event) => event.target.value && chooseDate(event.target.value)}
-            />
-        </label>
-    );
+  return (
+    <label
+      className={`${styles.dateControl} ${selectedDate ? styles.dateActive : ''}`}
+      title="Choose medal date"
+    >
+      {!selectedDate && <CalendarIcon size={16} />}
+      {selectedDate && (
+        <span aria-hidden="true">{shortDate.format(fromISODate(selectedDate))}</span>
+      )}
+      <input
+        type="date"
+        value={selectedDate ?? ''}
+        max={today}
+        aria-label="Choose medal date"
+        onChange={(event) => event.target.value && chooseDate(event.target.value)}
+      />
+    </label>
+  );
 };
 
 export const MedalLeaderboard = ({ members, boards, medalDate, today }: MedalLeaderboardProps) => {
-    const [activePeriod, setActivePeriod] = useState<MedalBoard['period'] | null>(
-        medalDate === today ? 'day' : null
-    );
-    const selectedPeriod = medalDate === today ? (activePeriod ?? 'day') : 'day';
-    const visibleActivePeriod = medalDate === today ? activePeriod : null;
-    const board = boards.find((item) => item.period === selectedPeriod) ?? boards[0];
+  const [activePeriod, setActivePeriod] = useState<MedalBoard['period'] | null>(
+    medalDate === today ? 'day' : null
+  );
+  const selectedPeriod = medalDate === today ? (activePeriod ?? 'day') : 'day';
+  const visibleActivePeriod = medalDate === today ? activePeriod : null;
+  const board = boards.find((item) => item.period === selectedPeriod) ?? boards[0];
 
-    if (!board) {
-        return null;
-    }
+  if (!board) {
+    return null;
+  }
 
-    const rankedMembers = orderMembers(members, board.awards);
-    const leaderPoints = rankedMembers[0]
-        ? medalPoints(board.awards.filter((award) => award.memberId === rankedMembers[0].id))
-        : 0;
-    const leaders = leaderPoints > 0
-        ? rankedMembers.filter(
-            (member) => medalPoints(
-                board.awards.filter((award) => award.memberId === member.id)
-            ) === leaderPoints
+  const rankedMembers = orderMembers(members, board.awards);
+  const leaderPoints = rankedMembers[0]
+    ? medalPoints(board.awards.filter((award) => award.memberId === rankedMembers[0].id))
+    : 0;
+  const leaders =
+    leaderPoints > 0
+      ? rankedMembers.filter(
+          (member) =>
+            medalPoints(board.awards.filter((award) => award.memberId === member.id)) ===
+            leaderPoints
         )
-        : [];
-    const leaderNames = leaders.map((member) => member.name).join(' & ');
-    const historical = medalDate !== today;
-    const periodPhrase = board.period === 'day'
-        ? historical ? 'on this day' : 'today'
-        : board.period === 'week'
-            ? historical ? 'that week' : 'this week'
-            : historical ? 'that month' : 'this month';
+      : [];
+  const leaderNames = leaders.map((member) => member.name).join(' & ');
+  const historical = medalDate !== today;
+  const periodPhrase =
+    board.period === 'day'
+      ? historical
+        ? 'on this day'
+        : 'today'
+      : board.period === 'week'
+        ? historical
+          ? 'that week'
+          : 'this week'
+        : historical
+          ? 'that month'
+          : 'this month';
 
-    return (
-        <section className={styles.board} aria-labelledby="medal-leaderboard-heading">
-            <header className={styles.headingRow}>
-                <div className={styles.heading}>
-                    <h2 id="medal-leaderboard-heading">Medal leaderboard</h2>
-                </div>
-                <PeriodTabs
-                    boards={boards}
-                    activePeriod={visibleActivePeriod}
-                    onChange={setActivePeriod}
-                    label="Leaderboard period"
-                    medalDate={medalDate}
-                    today={today}
-                />
-                <MedalDatePicker
-                    medalDate={medalDate}
-                    today={today}
-                    onChange={() => setActivePeriod(null)}
-                />
-            </header>
-            <p className={styles.leaderNote}>
-                {leaders.length > 0 ? (
-                    <>
-                    <strong>{leaderNames}</strong> {leaders.length > 1 ? 'are' : 'is'} leading{' '}
-                    {periodPhrase} — you&apos;re {leaders.length > 1 ? 'winners' : 'a winner'}, baby!
-                    </>
-                ) : (
-                    <>No one is leading {periodPhrase} yet.</>
-                )}
-            </p>
-            <section className={styles.period} role="tabpanel" aria-label={board.label}>
-                <h3>{board.label}</h3>
-                <ol className={styles.ranking}>
-                    {rankedMembers.map((member) => {
-                        const awards = board.awards.filter((award) => award.memberId === member.id);
-                        const points = medalPoints(awards);
-                        const grouped = rankOrder
-                            .map((rank) => ({
-                                rank,
-                                awards: awards.filter((award) => award.rank === rank),
-                            }))
-                            .filter((group) => group.awards.length > 0);
-                        return (
-                            <li className={styles.person} key={member.id}>
-                                <span className={styles.personName}>
-                                    <MemberAvatar member={member} />
-                                    <strong>{member.name}</strong>
-                                </span>
-                                <span className={styles.result}>
-                                    {awards.length > 0 ? (
-                                        <span
-                                            className={styles.medals}
-                                            role="img"
-                                            aria-label={`${awards.length} medals`}
-                                        >
-                                            {grouped.map((group) => (
-                                                <span
-                                                    className={styles.medalCount}
-                                                    key={group.rank}
-                                                    title={`${rankLabel[group.rank]}: ${group.awards
-                                                        .map((award) => award.categoryLabel)
-                                                        .join(', ')}`}
-                                                >
-                                                    <MedalIcon rank={group.rank} size="large" />
-                                                    <strong>{group.awards.length}</strong>
-                                                </span>
-                                            ))}
-                                        </span>
-                                    ) : (
-                                        <span className={styles.none}>No medals</span>
-                                    )}
-                                    <strong className={styles.points}>
-                                        {points} pts
-                                    </strong>
-                                </span>
-                            </li>
-                        );
-                    })}
-                </ol>
-            </section>
-            <p className={styles.detailNote}>
-                See where your medals came from in <Link href="/profile">your profile</Link>.
-            </p>
-        </section>
-    );
+  return (
+    <section className={styles.board} aria-labelledby="medal-leaderboard-heading">
+      <header className={styles.headingRow}>
+        <div className={styles.heading}>
+          <h2 id="medal-leaderboard-heading">Medal leaderboard</h2>
+        </div>
+        <PeriodTabs
+          boards={boards}
+          activePeriod={visibleActivePeriod}
+          onChange={setActivePeriod}
+          label="Leaderboard period"
+          medalDate={medalDate}
+          today={today}
+        />
+        <MedalDatePicker
+          medalDate={medalDate}
+          today={today}
+          onChange={() => setActivePeriod(null)}
+        />
+      </header>
+      <p className={styles.leaderNote}>
+        {leaders.length > 0 ? (
+          <>
+            <strong>{leaderNames}</strong> {leaders.length > 1 ? 'are' : 'is'} leading{' '}
+            {periodPhrase} — you&apos;re {leaders.length > 1 ? 'winners' : 'a winner'}, baby!
+          </>
+        ) : (
+          <>No one is leading {periodPhrase} yet.</>
+        )}
+      </p>
+      <section className={styles.period} role="tabpanel" aria-label={board.label}>
+        <h3>{board.label}</h3>
+        <ol className={styles.ranking}>
+          {rankedMembers.map((member) => {
+            const awards = board.awards.filter((award) => award.memberId === member.id);
+            const points = medalPoints(awards);
+            const grouped = rankOrder
+              .map((rank) => ({
+                rank,
+                awards: awards.filter((award) => award.rank === rank),
+              }))
+              .filter((group) => group.awards.length > 0);
+            return (
+              <li className={styles.person} key={member.id}>
+                <span className={styles.personName}>
+                  <MemberAvatar member={member} />
+                  <strong>{member.name}</strong>
+                </span>
+                <span className={styles.result}>
+                  {awards.length > 0 ? (
+                    <span
+                      className={styles.medals}
+                      role="img"
+                      aria-label={`${awards.length} medals`}
+                    >
+                      {grouped.map((group) => (
+                        <span
+                          className={styles.medalCount}
+                          key={group.rank}
+                          title={`${rankLabel[group.rank]}: ${group.awards
+                            .map((award) => award.categoryLabel)
+                            .join(', ')}`}
+                        >
+                          <MedalIcon rank={group.rank} size="large" />
+                          <strong>{group.awards.length}</strong>
+                        </span>
+                      ))}
+                    </span>
+                  ) : (
+                    <span className={styles.none}>No medals</span>
+                  )}
+                  <strong className={styles.points}>{points} pts</strong>
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
+      <p className={styles.detailNote}>
+        See where your medals came from in <Link href="/profile">your profile</Link>.
+      </p>
+    </section>
+  );
 };
 
 export const MemberMedals = ({ memberId, boards, medalDate, today }: MemberMedalsProps) => {
-    const [activePeriod, setActivePeriod] = useState<MedalBoard['period'] | null>(
-        medalDate === today ? 'day' : null
-    );
-    const selectedPeriod = medalDate === today ? (activePeriod ?? 'day') : 'day';
-    const visibleActivePeriod = medalDate === today ? activePeriod : null;
-    const board = boards.find((item) => item.period === selectedPeriod) ?? boards[0];
+  const [activePeriod, setActivePeriod] = useState<MedalBoard['period'] | null>(
+    medalDate === today ? 'day' : null
+  );
+  const selectedPeriod = medalDate === today ? (activePeriod ?? 'day') : 'day';
+  const visibleActivePeriod = medalDate === today ? activePeriod : null;
+  const board = boards.find((item) => item.period === selectedPeriod) ?? boards[0];
 
-    if (!board) {
-        return null;
-    }
+  if (!board) {
+    return null;
+  }
 
-    const awards = board.awards.filter((award) => award.memberId === memberId);
+  const awards = board.awards.filter((award) => award.memberId === memberId);
 
-    return (
-        <section className={`${styles.shelf} ${ui.card}`} aria-labelledby="profile-medals-heading">
-            <header className={styles.headingRow}>
-                <div className={styles.heading}>
-                    <p>Achievements</p>
-                    <h2 id="profile-medals-heading">Your medals</h2>
-                </div>
-                <PeriodTabs
-                    boards={boards}
-                    activePeriod={visibleActivePeriod}
-                    onChange={setActivePeriod}
-                    label="Medal period"
-                    medalDate={medalDate}
-                    today={today}
-                />
-                <MedalDatePicker
-                    medalDate={medalDate}
-                    today={today}
-                    onChange={() => setActivePeriod(null)}
-                />
-            </header>
-            <section className={styles.period} role="tabpanel" aria-label={board.label}>
-                <h3>{board.label}</h3>
-                {awards.length > 0 ? (
-                    <ul className={styles.awards}>
-                        {awards.map((award) => (
-                            <li key={award.category}>
-                                <MedalIcon rank={award.rank} />
-                                <span>
-                                    <strong>{award.categoryLabel}</strong>
-                                    <small>{rankLabel[award.rank]}</small>
-                                </span>
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <p className={styles.empty}>No medals awarded yet.</p>
-                )}
-            </section>
-        </section>
-    );
+  return (
+    <section className={`${styles.shelf} ${ui.card}`} aria-labelledby="profile-medals-heading">
+      <header className={styles.headingRow}>
+        <div className={styles.heading}>
+          <p>Achievements</p>
+          <h2 id="profile-medals-heading">Your medals</h2>
+        </div>
+        <PeriodTabs
+          boards={boards}
+          activePeriod={visibleActivePeriod}
+          onChange={setActivePeriod}
+          label="Medal period"
+          medalDate={medalDate}
+          today={today}
+        />
+        <MedalDatePicker
+          medalDate={medalDate}
+          today={today}
+          onChange={() => setActivePeriod(null)}
+        />
+      </header>
+      <section className={styles.period} role="tabpanel" aria-label={board.label}>
+        <h3>{board.label}</h3>
+        {awards.length > 0 ? (
+          <ul className={styles.awards}>
+            {awards.map((award) => (
+              <li key={award.category}>
+                <MedalIcon rank={award.rank} />
+                <span>
+                  <strong>{award.categoryLabel}</strong>
+                  <small>{rankLabel[award.rank]}</small>
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className={styles.empty}>No medals awarded yet.</p>
+        )}
+      </section>
+    </section>
+  );
 };

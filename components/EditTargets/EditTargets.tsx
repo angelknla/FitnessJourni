@@ -1,9 +1,8 @@
 'use client';
 
-import ui from '@/styles/ui.module.css';
+import { type SaveAction, useBackgroundSave } from '@hooks/useBackgroundSave';
 
 import { useEffect, useState } from 'react';
-import { useBackgroundSave, type SaveAction } from '@hooks/useBackgroundSave';
 import { updateTargets } from '@/app/actions';
 import {
   gramsFromPercents,
@@ -16,6 +15,7 @@ import {
   percentTotal,
 } from '@/lib/macros';
 import { formatCount } from '@/lib/progress';
+import ui from '@/styles/ui.module.css';
 import type { Member } from '@/types/fitness';
 
 import styles from './EditTargets.module.css';

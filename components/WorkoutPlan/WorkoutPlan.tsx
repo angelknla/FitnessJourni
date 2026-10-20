@@ -1,5 +1,5 @@
-import ui from '@/styles/ui.module.css';
 import { progressionRules, sessionStructure, workoutBundles } from '@data/workoutPlanData';
+import ui from '@/styles/ui.module.css';
 
 import styles from './WorkoutPlan.module.css';
 

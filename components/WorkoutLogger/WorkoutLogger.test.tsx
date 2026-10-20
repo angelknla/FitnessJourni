@@ -1,6 +1,6 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Member, Workout } from '@/types/fitness';
 
 vi.mock('@/app/actions', () => ({
@@ -50,7 +50,65 @@ const openForm = async (user: ReturnType<typeof userEvent.setup>, name: RegExp) 
   await user.click(screen.getByRole('button', { name }));
 };
 
+beforeEach(() => {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn(() => ({ matches: false }) as MediaQueryList)
+  );
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
+
 describe('WorkoutLogger', () => {
+  it.each([
+    'toggle',
+    'save',
+  ])('centres the mobile form and restores the previous scroll after closing by %s', async (closeBy) => {
+    const user = userEvent.setup();
+    vi.mocked(window.matchMedia).mockReturnValue({ matches: true } as MediaQueryList);
+    vi.stubGlobal('scrollY', 360);
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+    setup();
+    const toggle = screen.getByRole('button', { name: 'What did you train?' });
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(toggle.parentElement, 'scrollIntoView', { value: scrollIntoView });
+
+    await user.click(toggle);
+    await waitFor(() => {
+      expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' });
+    });
+
+    vi.stubGlobal('scrollY', 700);
+    if (closeBy === 'save') {
+      await user.click(screen.getByRole('checkbox', { name: 'Legs' }));
+      await user.click(screen.getByRole('button', { name: 'Log workout' }));
+    } else {
+      await user.click(toggle);
+    }
+
+    await waitFor(() => {
+      expect(scrollTo).toHaveBeenCalledWith({ top: 360, behavior: 'smooth' });
+    });
+  });
+
+  it('keeps the desktop scroll position when toggling the form', async () => {
+    const user = userEvent.setup();
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+    setup();
+    const toggle = screen.getByRole('button', { name: 'What did you train?' });
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(toggle.parentElement, 'scrollIntoView', { value: scrollIntoView });
+
+    await user.click(toggle);
+    await user.click(toggle);
+
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    expect(scrollTo).not.toHaveBeenCalled();
+  });
+
   it('says nothing is logged when the day is empty', () => {
     setup();
 

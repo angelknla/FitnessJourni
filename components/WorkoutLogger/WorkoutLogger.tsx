@@ -1,12 +1,11 @@
 'use client';
 
-import ui from '@/styles/ui.module.css';
-
 import { BinIcon, CrossIcon, PlusIcon } from '@components/Icons/Icons';
 import { workoutFocuses, workoutFocusLabels } from '@data/fitnessData';
-import { useBackgroundSave, type SaveAction } from '@hooks/useBackgroundSave';
-import { useActionState, useState } from 'react';
+import { type SaveAction, useBackgroundSave } from '@hooks/useBackgroundSave';
+import { useActionState, useEffect, useRef, useState } from 'react';
 import { type ActionState, deleteWorkout, logWorkout } from '@/app/actions';
+import ui from '@/styles/ui.module.css';
 import type { Member, Workout, WorkoutFocus } from '@/types/fitness';
 
 import styles from './WorkoutLogger.module.css';
@@ -92,6 +91,8 @@ export const WorkoutLogger = ({
   const [picked, setPicked] = useState<WorkoutFocus[]>([]);
   const [formOpen, setFormOpen] = useState(false);
   const [note, setNote] = useState('');
+  const disclosureRef = useRef<HTMLDivElement>(null);
+  const returnScrollRef = useRef<number | null>(null);
   const {
     state,
     pending: isPending,
@@ -106,6 +107,29 @@ export const WorkoutLogger = ({
   const trainedToday = logged.length > 0;
   const formTitle = trainedToday ? 'Log another session' : 'What did you train?';
   const formId = `workout-log-${member.id}`;
+
+  useEffect(() => {
+    if (formOpen) {
+      if (returnScrollRef.current === null) return;
+
+      const frame = requestAnimationFrame(() => {
+        disclosureRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+
+      return () => cancelAnimationFrame(frame);
+    }
+
+    if (returnScrollRef.current === null) return;
+
+    const returnScroll = returnScrollRef.current;
+    returnScrollRef.current = null;
+
+    const frame = requestAnimationFrame(() => {
+      window.scrollTo({ top: returnScroll, behavior: 'smooth' });
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [formOpen]);
 
   const toggle = (focus: WorkoutFocus) =>
     setPicked((current) =>
@@ -143,7 +167,7 @@ export const WorkoutLogger = ({
       )}
 
       {canEdit && (
-        <div className={styles.disclosure}>
+        <div className={styles.disclosure} ref={disclosureRef}>
           <button
             type="button"
             className={`${ui.entryToggle} ${ui.primaryButton}`}
@@ -154,6 +178,9 @@ export const WorkoutLogger = ({
               if (!formOpen && !state.error) {
                 setPicked([]);
                 setNote('');
+              }
+              if (!formOpen && window.matchMedia('(max-width: 599px)').matches) {
+                returnScrollRef.current = window.scrollY;
               }
               setFormOpen((current) => !current);
             }}

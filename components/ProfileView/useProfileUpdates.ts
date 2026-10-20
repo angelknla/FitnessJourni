@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import { useOptimisticSave } from '@hooks/useOptimisticSave';
-import type { Member, MemberProfile, WeightMeasurement } from '@/types/fitness';
+import { useEffect, useRef } from 'react';
 import type { MemberAccount } from '@/lib/data/accounts';
+import type { Member, MemberProfile, WeightMeasurement } from '@/types/fitness';
 
 interface ProfileData {
   member: Member | null;

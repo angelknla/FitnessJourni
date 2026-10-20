@@ -14,8 +14,8 @@ describe('Landing', () => {
   it('leads with the product, not a bare password box', () => {
     render(<Landing />);
 
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Own your fitness journey');
-    expect(screen.getByText(/shared log for you and your fitness friends/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Stronger days\.\s*Together\./);
+    expect(screen.getByText(/shared with the people who keep you going/)).toBeInTheDocument();
   });
 
   it('explains what it does in three points', () => {

@@ -67,11 +67,7 @@ describe('SessionBanner', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-09-26T18:59:00'));
     render(
-      <SessionBanner
-        session={session}
-        whenLabel="Today at 18:30"
-        expiresAt={Date.now() + 60_000}
-      />
+      <SessionBanner session={session} whenLabel="Today at 18:30" expiresAt={Date.now() + 60_000} />
     );
 
     expect(screen.getByRole('complementary', { name: 'Next session' })).toBeInTheDocument();

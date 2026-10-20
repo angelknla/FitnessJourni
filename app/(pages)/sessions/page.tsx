@@ -1,4 +1,3 @@
-import ui from '@/styles/ui.module.css';
 import { Landing } from '@components/Landing/Landing';
 import { PageHeader } from '@components/PageHeader/PageHeader';
 import { PageLayout } from '@components/PageLayout/PageLayout';
@@ -15,6 +14,7 @@ import { readViewerContext } from '@/lib/data/viewerScope';
 import { viewerFirst } from '@/lib/ownership';
 import { isUnlocked } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
+import ui from '@/styles/ui.module.css';
 
 import styles from './page.module.css';
 

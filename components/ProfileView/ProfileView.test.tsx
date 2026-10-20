@@ -3,10 +3,10 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import userEvent from '@testing-library/user-event';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import {
+  saveAvatar,
   saveProfileInfo,
   saveProfileTargets,
   saveWeightMeasurement,
-  saveAvatar,
 } from '@/app/actions';
 import type { Member, MemberProfile } from '@/types/fitness';
 

@@ -67,7 +67,9 @@ describe('SessionList', () => {
   });
 
   it('groups sessions under one heading per day', () => {
-    render(<SessionList sessions={sessions} members={members} viewerId="m1" initialNow={initialNow} />);
+    render(
+      <SessionList sessions={sessions} members={members} viewerId="m1" initialNow={initialNow} />
+    );
 
     expect(screen.getByRole('heading', { name: 'Saturday 26 September' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Sunday 27 September' })).toBeInTheDocument();
@@ -75,7 +77,9 @@ describe('SessionList', () => {
   });
 
   it('shows the time, activity and note', () => {
-    render(<SessionList sessions={sessions} members={members} viewerId="m1" initialNow={initialNow} />);
+    render(
+      <SessionList sessions={sessions} members={members} viewerId="m1" initialNow={initialNow} />
+    );
 
     expect(screen.getByText('07:30')).toBeInTheDocument();
     expect(screen.getByText('Run')).toBeInTheDocument();
@@ -83,21 +87,27 @@ describe('SessionList', () => {
   });
 
   it('names who booked it, and stays quiet when nobody claimed it', () => {
-    render(<SessionList sessions={sessions} members={members} viewerId="m1" initialNow={initialNow} />);
+    render(
+      <SessionList sessions={sessions} members={members} viewerId="m1" initialNow={initialNow} />
+    );
 
     expect(screen.getAllByText('Booked by Dillon')).toHaveLength(2);
     expect(screen.queryByText(/Booked by null/)).not.toBeInTheDocument();
   });
 
   it('gives each row a distinctly labelled remove button', () => {
-    render(<SessionList sessions={sessions} members={members} viewerId="m1" initialNow={initialNow} />);
+    render(
+      <SessionList sessions={sessions} members={members} viewerId="m1" initialNow={initialNow} />
+    );
 
     expect(screen.getByRole('button', { name: 'Remove Run at 07:30' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Remove Swim at 18:00' })).toBeInTheDocument();
   });
 
   it('shows responses and marks the current member response', () => {
-    render(<SessionList sessions={sessions} members={members} viewerId="m1" initialNow={initialNow} />);
+    render(
+      <SessionList sessions={sessions} members={members} viewerId="m1" initialNow={initialNow} />
+    );
 
     expect(screen.getByLabelText('Going: Dillon')).toBeInTheDocument();
     expect(screen.getByLabelText("Can't go: Angel")).toBeInTheDocument();
@@ -108,7 +118,9 @@ describe('SessionList', () => {
   });
 
   it('does not offer RSVP controls to a visitor', () => {
-    render(<SessionList sessions={sessions} members={members} viewerId={null} initialNow={initialNow} />);
+    render(
+      <SessionList sessions={sessions} members={members} viewerId={null} initialNow={initialNow} />
+    );
 
     expect(screen.queryByRole('form', { name: 'RSVP' })).not.toBeInTheDocument();
   });

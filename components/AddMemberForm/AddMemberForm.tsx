@@ -1,9 +1,8 @@
 'use client';
 
-import ui from '@/styles/ui.module.css';
-
 import { useActionState } from 'react';
-import { linkMemberByUsername, type ActionState } from '@/app/actions';
+import { type ActionState, linkMemberByUsername } from '@/app/actions';
+import ui from '@/styles/ui.module.css';
 
 import styles from './AddMemberForm.module.css';
 

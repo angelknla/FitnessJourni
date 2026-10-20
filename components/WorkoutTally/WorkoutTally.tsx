@@ -1,7 +1,7 @@
-import ui from '@/styles/ui.module.css';
 import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
 import { accentHex } from '@data/fitnessData';
 import type { CSSProperties } from 'react';
+import ui from '@/styles/ui.module.css';
 import type { Member, WorkoutTally as Tally } from '@/types/fitness';
 
 import styles from './WorkoutTally.module.css';

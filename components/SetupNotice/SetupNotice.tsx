@@ -21,7 +21,11 @@ export const SetupNotice = () => (
         Create <code className={styles.code}>.env.local</code> in the project root with your project
         URL, <strong>secret</strong> key and app passcode, then restart the dev server:
         <pre className={styles.pre}>
-          <code>{'SUPABASE_URL=https://xxxxx.supabase.co\nSUPABASE_SECRET_KEY=sb_secret_...\nAPP_PASSCODE=...'}</code>
+          <code>
+            {
+              'SUPABASE_URL=https://xxxxx.supabase.co\nSUPABASE_SECRET_KEY=sb_secret_...\nAPP_PASSCODE=...'
+            }
+          </code>
         </pre>
       </li>
     </ol>

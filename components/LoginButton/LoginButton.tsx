@@ -1,7 +1,5 @@
 'use client';
 
-import ui from '@/styles/ui.module.css';
-
 import { MemberCreateForm } from '@components/AddMemberForm/MemberCreateForm';
 import { CrossIcon, EyeIcon, EyeOffIcon } from '@components/Icons/Icons';
 import { useRouter } from 'next/navigation';
@@ -12,6 +10,7 @@ import {
   type UnlockState,
   unlockEnrollment,
 } from '@/app/auth-actions';
+import ui from '@/styles/ui.module.css';
 
 import styles from './LoginButton.module.css';
 

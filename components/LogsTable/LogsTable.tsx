@@ -1,4 +1,3 @@
-import ui from '@/styles/ui.module.css';
 import { MedalIcon } from '@components/MedalIcon/MedalIcon';
 import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
 import { accentHex } from '@data/fitnessData';
@@ -12,6 +11,7 @@ import {
   sleepTargetScore,
 } from '@/lib/aggregate';
 import { formatCount, formatMl } from '@/lib/progress';
+import ui from '@/styles/ui.module.css';
 import type { Member } from '@/types/fitness';
 
 import styles from './LogsTable.module.css';
@@ -102,12 +102,12 @@ export const LogsTable = ({
     shown.map((column) => [
       column.key,
       column.fixedMaximum ??
-      Math.max(
-        1,
-        ...members.map((member) =>
-          column.value(summaries[member.id] ?? emptySummary, member, workoutCounts)
-        )
-      ),
+        Math.max(
+          1,
+          ...members.map((member) =>
+            column.value(summaries[member.id] ?? emptySummary, member, workoutCounts)
+          )
+        ),
     ])
   );
 
@@ -119,7 +119,8 @@ export const LogsTable = ({
         const chartLabel = `${member.name} progress: ${shown
           .map((column) => {
             const value = column.value(summary, member, workoutCounts);
-            const display = column.key === 'workouts' ? String(value) : column.format(summary, member);
+            const display =
+              column.key === 'workouts' ? String(value) : column.format(summary, member);
             const award = memberMedals.find((item) => item.category === column.key);
             return `${column.label} ${display}${award ? `, ${award.rank} medal` : ''}`;
           })
@@ -145,7 +146,8 @@ export const LogsTable = ({
             >
               {shown.map((column, columnIndex) => {
                 const value = column.value(summary, member, workoutCounts);
-                const display = column.key === 'workouts' ? String(value) : column.format(summary, member);
+                const display =
+                  column.key === 'workouts' ? String(value) : column.format(summary, member);
                 const medal = memberMedals.find((award) => award.category === column.key);
 
                 return (

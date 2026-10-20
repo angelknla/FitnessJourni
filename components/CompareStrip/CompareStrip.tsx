@@ -1,8 +1,8 @@
-import ui from '@/styles/ui.module.css';
 import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
 import { accentHex } from '@data/fitnessData';
 import type { CSSProperties } from 'react';
 import { fillPercent, formatCount, formatMl } from '@/lib/progress';
+import ui from '@/styles/ui.module.css';
 import type { DailyLog, Member } from '@/types/fitness';
 
 import styles from './CompareStrip.module.css';

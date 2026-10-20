@@ -1,9 +1,8 @@
 'use client';
 
-import ui from '@/styles/ui.module.css';
-
 import { CrossIcon, GroupIcon, PencilIcon, SwitchIcon, UploadIcon } from '@components/Icons/Icons';
 import { MemberMedals } from '@components/MedalLeaderboard/MedalLeaderboard';
+import Link from '@components/NavigationLink/NavigationLink';
 import { RemoveMemberDialog } from '@components/RemoveMemberDialog/RemoveMemberDialog';
 import { avatarOptions, avatarUploadTypes, isAvatarPath } from '@data/avatarData';
 import { accentHex, accentNames, defaultTargets } from '@data/fitnessData';
@@ -11,7 +10,6 @@ import { useBackgroundSave } from '@hooks/useBackgroundSave';
 import { useStepCaloriesPreference } from '@hooks/useStepCaloriesPreference';
 import { replaceInputFile, shrinkImage } from '@utils/image';
 import Image from 'next/image';
-import Link from '@components/NavigationLink/NavigationLink';
 import { useRouter } from 'next/navigation';
 import { type CSSProperties, useEffect, useRef, useState, useTransition } from 'react';
 import {
@@ -35,6 +33,7 @@ import {
   percentTotal,
 } from '@/lib/macros';
 import type { MedalBoard } from '@/lib/medals';
+import ui from '@/styles/ui.module.css';
 import type { Member, MemberProfile, WeightMeasurement } from '@/types/fitness';
 
 import styles from './ProfileView.module.css';

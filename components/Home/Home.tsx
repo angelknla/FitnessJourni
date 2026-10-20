@@ -1,7 +1,5 @@
 'use client';
 
-import ui from '@/styles/ui.module.css';
-
 import { AddMemberForm } from '@components/AddMemberForm/AddMemberForm';
 import { CompareStrip } from '@components/CompareStrip/CompareStrip';
 import { EditTargets } from '@components/EditTargets/EditTargets';
@@ -14,20 +12,20 @@ import {
   DumbbellIcon,
   PencilIcon,
 } from '@components/Icons/Icons';
-import { MomentumBanner } from '@components/MomentumBanner/MomentumBanner';
 import { MacroBars } from '@components/MacroBars/MacroBars';
 import { MedalLeaderboard } from '@components/MedalLeaderboard/MedalLeaderboard';
 import { MemberTabs } from '@components/MemberTabs/MemberTabs';
+import { MomentumBanner } from '@components/MomentumBanner/MomentumBanner';
+import Link from '@components/NavigationLink/NavigationLink';
 import { PersonalModeNotice } from '@components/PersonalModeNotice/PersonalModeNotice';
 import { ProgressRing } from '@components/ProgressRing/ProgressRing';
 import { QuickEntry } from '@components/QuickEntry/QuickEntry';
 import { SleepLogger } from '@components/SleepLogger/SleepLogger';
 import { WorkoutLogger } from '@components/WorkoutLogger/WorkoutLogger';
 import { accentHex } from '@data/fitnessData';
-import { useStepCaloriesPreference } from '@hooks/useStepCaloriesPreference';
 import type { SaveAction } from '@hooks/useBackgroundSave';
+import { useStepCaloriesPreference } from '@hooks/useStepCaloriesPreference';
 import { fromISODate, toISODate } from '@utils/date';
-import Link from '@components/NavigationLink/NavigationLink';
 import { useRouter } from 'next/navigation';
 import {
   type CSSProperties,
@@ -37,11 +35,12 @@ import {
   useRef,
   useState,
 } from 'react';
+import { deleteWorkout, logWorkout, saveDailyLog, saveSleep, updateTargets } from '@/app/actions';
 import { emptyLog } from '@/lib/data/logs';
 import { tallyWorkouts, workoutsForToday } from '@/lib/data/workouts';
 import { buildMedalBoards, type MedalBoard } from '@/lib/medals';
-import { deleteWorkout, logWorkout, saveDailyLog, saveSleep, updateTargets } from '@/app/actions';
 import { caloriesBurnedFromSteps, formatCount, formatMl } from '@/lib/progress';
+import ui from '@/styles/ui.module.css';
 import type {
   DailyLog,
   Member,
@@ -50,9 +49,8 @@ import type {
   WorkoutFocus,
   WorkoutTally,
 } from '@/types/fitness';
-import { useHomeUpdates } from './useHomeUpdates';
-
 import styles from './Home.module.css';
+import { useHomeUpdates } from './useHomeUpdates';
 
 interface HomeProps {
   members: Member[];
