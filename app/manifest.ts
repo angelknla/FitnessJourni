@@ -10,19 +10,19 @@ const manifest = (): MetadataRoute.Manifest => ({
   theme_color: '#edf7fc',
   icons: [
     {
-      src: '/fitnessjourni-icon-192-v2.png',
+      src: '/fitnessjourni-icon-192-v8.png',
       sizes: '192x192',
       type: 'image/png',
       purpose: 'any',
     },
     {
-      src: '/fitnessjourni-icon-512-v2.png',
+      src: '/fitnessjourni-icon-512-v8.png',
       sizes: '512x512',
       type: 'image/png',
       purpose: 'any',
     },
     {
-      src: '/fitnessjourni-icon-512-v2.png',
+      src: '/fitnessjourni-icon-512-v8.png',
       sizes: '512x512',
       type: 'image/png',
       purpose: 'maskable',

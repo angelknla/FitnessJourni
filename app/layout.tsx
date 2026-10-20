@@ -55,10 +55,10 @@ export const metadata: Metadata = {
   manifest: '/manifest.webmanifest',
   icons: {
     icon: [
-      { url: '/fitnessjourni-icon-v2.svg', type: 'image/svg+xml' },
-      { url: '/fitnessjourni-icon-192-v2.png', sizes: '192x192', type: 'image/png' },
+      { url: '/fitnessjourni-icon-32-v8.png', sizes: '32x32', type: 'image/png' },
+      { url: '/fitnessjourni-icon-v8.svg', sizes: 'any', type: 'image/svg+xml' },
     ],
-    apple: [{ url: '/fitnessjourni-apple-touch-v2.png', sizes: '180x180', type: 'image/png' }],
+    apple: [{ url: '/fitnessjourni-apple-touch-v8.png', sizes: '180x180', type: 'image/png' }],
   },
 };
 

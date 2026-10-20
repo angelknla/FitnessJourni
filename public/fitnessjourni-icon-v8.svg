@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="brand-blue" x1="0%" y1="0%" x2="100%" y2="46.63%">
+      <stop offset="0%" stop-color="#122d68" />
+      <stop offset="100%" stop-color="#245ade" />
+    </linearGradient>
+    <clipPath id="tile">
+      <rect width="512" height="512" rx="112" />
+    </clipPath>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#brand-blue)" />
+  <!-- Momentum banner artwork: cropped concentric rings and three staggered bars. -->
+  <g clip-path="url(#tile)">
+    <g fill="none" stroke="#ffffff">
+      <path d="M296 -104 A360 360 0 0 0 296 616" stroke-width="64" opacity="0.03" />
+      <path d="M296 -40 A296 296 0 0 0 296 552" stroke-width="64" opacity="0.04" />
+      <path d="M296 -8 A264 264 0 0 0 296 520" stroke-width="3" opacity="0.15" />
+    </g>
+    <g transform="translate(256 256) rotate(-18) scale(1.2)" fill="#c2ef66">
+      <g transform="translate(-82 0) skewX(-18)">
+        <rect x="-29" y="-118" width="58" height="236" rx="8" />
+      </g>
+      <g transform="skewX(-18)" opacity="0.6">
+        <rect x="-29" y="-118" width="58" height="236" rx="8" />
+      </g>
+      <g transform="translate(82 0) skewX(-18)" opacity="0.25">
+        <rect x="-29" y="-118" width="58" height="236" rx="8" />
+      </g>
+    </g>
+  </g>
+</svg>
