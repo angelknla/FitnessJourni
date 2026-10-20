@@ -1,5 +1,6 @@
 'use client';
 
+
 import { BinIcon } from '@components/Icons/Icons';
 import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
 import { activityLabels } from '@data/fitnessData';
@@ -7,6 +8,7 @@ import { fromISODate } from '@utils/date';
 import { useActionState, useEffect, useState } from 'react';
 import { type ActionState, deleteSession, respondToSession } from '@/app/actions';
 import { SESSION_GRACE_MINUTES } from '@/lib/data/sessions';
+import ui from '@/styles/ui.module.css';
 import type { Member, RsvpStatus, TrainingSession } from '@/types/fitness';
 
 import styles from './SessionList.module.css';
@@ -49,7 +51,7 @@ const SessionRow = ({
   const notGoing = membersFor('not_going');
 
   return (
-    <li className={styles.row}>
+    <li className={`${styles.row} ${ui.card}`}>
       <span className={styles.time}>{session.time}</span>
 
       <span className={styles.details}>

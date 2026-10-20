@@ -1,3 +1,4 @@
+import ui from '@/styles/ui.module.css';
 import Link from '@components/NavigationLink/NavigationLink';
 
 import styles from './PersonalModeNotice.module.css';
@@ -14,7 +15,7 @@ interface PersonalModeNoticeProps {
  * empty and links to the one place that changes it.
  */
 export const PersonalModeNotice = ({ title, description }: PersonalModeNoticeProps) => (
-  <section className={styles.notice} aria-labelledby="personal-mode-heading">
+  <section className={`${styles.notice} ${ui.card}`} aria-labelledby="personal-mode-heading">
     <p className={styles.eyebrow}>Personal</p>
     <h2 id="personal-mode-heading">{title}</h2>
     <p className={styles.description}>{description}</p>

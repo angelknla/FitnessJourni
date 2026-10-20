@@ -11,12 +11,3 @@
   line-height: 1.55;
   color: var(--c-ink-soft);
 }
-
-.sectionHeading {
-  margin: 0;
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--c-ink-muted);
-}

@@ -1,5 +1,6 @@
 import { Landing } from '@components/Landing/Landing';
 import { MessageBoard } from '@components/MessageBoard/MessageBoard';
+import { PageHeader } from '@components/PageHeader/PageHeader';
 import { PageLayout } from '@components/PageLayout/PageLayout';
 import { PersonalModeNotice } from '@components/PersonalModeNotice/PersonalModeNotice';
 import { SetupNotice } from '@components/SetupNotice/SetupNotice';
@@ -33,6 +34,7 @@ const MessagesPage = async () => {
   if (!activeGroup) {
     return (
       <PageLayout className={styles.page} data-page="chat">
+        <PageHeader eyebrow="Chat" title="Keep each other going." />
         <PersonalModeNotice
           title="No group, no chat"
           description="Chat is shared with one group at a time. Join a group or create one to start talking."

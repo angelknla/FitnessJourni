@@ -1,3 +1,4 @@
+import ui from '@/styles/ui.module.css';
 import { progressionRules, sessionStructure, workoutBundles } from '@data/workoutPlanData';
 
 import styles from './WorkoutPlan.module.css';
@@ -9,8 +10,11 @@ import styles from './WorkoutPlan.module.css';
 export const WorkoutPlan = () => (
   <div className={styles.plan}>
     {workoutBundles.map((bundle, index) => (
-      <details className={styles.bundle} key={bundle.focus}>
+      <details className={`${styles.bundle} ${ui.card}`} key={bundle.focus}>
         <summary className={styles.summary}>
+          <span className={styles.sessionNumber} aria-hidden="true">
+            {String(index + 1).padStart(2, '0')}
+          </span>
           <span className={styles.summaryMain}>
             <span className={styles.day}>Session {index + 1}</span>
             <span className={styles.title}>{bundle.title}</span>
@@ -35,7 +39,7 @@ export const WorkoutPlan = () => (
       </details>
     ))}
 
-    <details className={styles.bundle}>
+    <details className={`${styles.bundle} ${ui.card}`}>
       <summary className={styles.summary}>
         <span className={styles.summaryMain}>
           <span className={styles.day}>Every session</span>

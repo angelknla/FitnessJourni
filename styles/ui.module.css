@@ -1,0 +1,49 @@
+/* Shared visual treatments. Layout and member identity remain component-owned. */
+.card {
+  background: var(--card-background);
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--card-shadow);
+  transform: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-family: var(--font-display), var(--font-sans);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--c-ink);
+}
+
+.primaryButton {
+  color: var(--c-primary-ink);
+  background: var(--c-primary);
+  border: 1px solid var(--c-primary);
+  border-radius: var(--r-pill);
+  font-weight: 700;
+  box-shadow: 0 4px 10px rgb(36 90 222 / 15%);
+}
+.primaryButton:hover:not(:disabled) {
+  color: var(--c-primary-ink);
+  background: var(--c-primary-hover);
+  border-color: var(--c-primary-hover);
+}
+
+.disclosure {
+  padding: 0.7rem 0.8rem;
+  color: var(--c-accent);
+  background: var(--c-surface-soft);
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-md);
+  font-weight: 700;
+}
+.disclosure:hover:not(:disabled) {
+  color: var(--c-accent);
+  background: var(--c-surface-hover);
+  border-color: var(--c-accent);
+}

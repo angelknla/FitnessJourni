@@ -25,7 +25,7 @@
 .track {
   position: relative;
   display: block;
-  height: 8px;
+  height: 10px;
   border-radius: var(--r-pill);
   background: var(--meter-track);
   overflow: hidden;
@@ -34,7 +34,11 @@
 .fill {
   display: block;
   height: 100%;
-  background: var(--member-accent);
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--member-accent) 85%, var(--c-surface)),
+    var(--member-accent)
+  );
   /* Square where it meets the baseline, rounded at the data end. */
   border-radius: 0 4px 4px 0;
   transition: width 0.5s var(--ease-flow);

@@ -26,33 +26,7 @@
   flex-shrink: 0;
   padding: 0.85rem 0.85rem 0.85rem 0.95rem;
   overflow: clip;
-  background:
-    var(--surface-metal-wash),
-    linear-gradient(
-      145deg,
-      color-mix(in oklab, var(--accent-green) 8%, transparent),
-      transparent 45%
-    ),
-    var(--c-glass);
-  border: 1px solid color-mix(in oklab, var(--accent-green) 22%, var(--c-border));
-  border-radius: var(--r-lg);
-  box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--accent-green) 21%, transparent),
-    var(--card-shadow),
-    0 0 19px color-mix(in oklab, var(--accent-green) 3%, transparent);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   animation: slideIn 0.35s var(--ease-flow);
-}
-
-.banner::before {
-  content: "";
-  position: absolute;
-  inset: 0.05rem 12% auto;
-  height: 1px;
-  pointer-events: none;
-  background: linear-gradient(90deg, transparent, var(--accent-green), transparent);
-  opacity: var(--surface-top-glint-opacity, 0.5);
 }
 
 @keyframes slideIn {
@@ -149,4 +123,13 @@
     left: 0.75rem;
     width: auto;
   }
+}
+
+.banner {
+  border-inline-start: 3px solid var(--c-energy);
+}
+.headline {
+  font-family: var(--font-display), var(--font-sans);
+  font-size: 1.3rem;
+  text-transform: uppercase;
 }

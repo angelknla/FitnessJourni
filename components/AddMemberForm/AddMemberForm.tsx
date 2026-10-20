@@ -1,5 +1,7 @@
 'use client';
 
+import ui from '@/styles/ui.module.css';
+
 import { useActionState } from 'react';
 import { linkMemberByUsername, type ActionState } from '@/app/actions';
 
@@ -32,7 +34,11 @@ export const AddMemberForm = ({ viewerId }: AddMemberFormProps) => {
       </fieldset>
       <p className={styles.hint}>Enter the username of an existing FitnessJourni account.</p>
       <div className={styles.actions}>
-        <button type="submit" className={styles.submit} disabled={isPending || !viewerId}>
+        <button
+          type="submit"
+          className={`${styles.submit} ${ui.primaryButton}`}
+          disabled={isPending || !viewerId}
+        >
           {isPending ? 'Linking…' : 'Link user'}
         </button>
         {(state.error || state.message) && (

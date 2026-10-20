@@ -1,3 +1,4 @@
+import ui from '@/styles/ui.module.css';
 import { Landing } from '@components/Landing/Landing';
 import { PageHeader } from '@components/PageHeader/PageHeader';
 import { PageLayout } from '@components/PageLayout/PageLayout';
@@ -69,7 +70,7 @@ const SessionsPage = async () => {
       />
 
       <section className={styles.booking}>
-        <h2 className={styles.sectionHeading}>Book one</h2>
+        <h2 className={ui.sectionTitle}>Book one</h2>
         <SessionForm members={orderedMembers} viewerId={viewer.memberId} />
       </section>
     </PageLayout>

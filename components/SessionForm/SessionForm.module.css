@@ -4,16 +4,6 @@
   flex-direction: column;
   gap: 1.1rem;
   padding: 1.1rem;
-  background:
-    var(--surface-metal-wash),
-    linear-gradient(145deg, color-mix(in oklab, var(--c-accent) 9%, transparent), transparent 46%),
-    var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-xl);
-  box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--c-accent) 18%, transparent),
-    var(--card-shadow);
-  transform: var(--card-transform);
   transform-origin: top center;
   animation: form-arrive 0.6s var(--ease-flow) backwards;
 }
@@ -102,8 +92,8 @@
 }
 
 .control:checked + .chipInner {
-  color: #fff;
-  background: var(--c-accent);
+  color: var(--c-primary-ink);
+  background: var(--c-primary);
   border-color: transparent;
 }
 
@@ -239,14 +229,6 @@
 .submit {
   padding: 0.45rem 1.05rem;
   font-size: 0.88rem;
-  background: var(--c-accent);
-  border-color: transparent;
-  color: #fff;
-}
-
-.submit:hover:not(:disabled) {
-  background: color-mix(in oklab, var(--c-accent) 85%, #fff);
-  border-color: transparent;
 }
 
 .error {

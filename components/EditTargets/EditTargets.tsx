@@ -1,5 +1,7 @@
 'use client';
 
+import ui from '@/styles/ui.module.css';
+
 import { useEffect, useState } from 'react';
 import { useBackgroundSave, type SaveAction } from '@hooks/useBackgroundSave';
 import { updateTargets } from '@/app/actions';
@@ -28,7 +30,6 @@ interface EditTargetsProps {
 
 type Mode = 'grams' | 'percent';
 type MacroDraft = Record<MacroKey, string>;
-
 
 const LABELS: Record<MacroKey, string> = {
   protein: 'Protein',
@@ -113,7 +114,11 @@ export const EditTargets = ({
           </label>
         </fieldset>
         <div className={styles.actions}>
-          <button type="submit" className={styles.submit} disabled={isPending}>
+          <button
+            type="submit"
+            className={`${styles.submit} ${ui.primaryButton}`}
+            disabled={isPending}
+          >
             {isPending ? 'Saving…' : 'Save sleep target'}
           </button>
           <button type="button" className={styles.cancel} onClick={onSaved}>
@@ -316,7 +321,11 @@ export const EditTargets = ({
       )}
 
       <div className={styles.actions}>
-        <button type="submit" className={styles.submit} disabled={isPending || splitOff}>
+        <button
+          type="submit"
+          className={`${styles.submit} ${ui.primaryButton}`}
+          disabled={isPending || splitOff}
+        >
           {isPending ? 'Saving…' : 'Save targets'}
         </button>
         <button type="button" className={styles.cancel} onClick={onSaved}>

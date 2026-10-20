@@ -20,11 +20,14 @@
 
 .block h2 {
   margin: 0;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+
+  font-family: var(--font-display), var(--font-sans);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
   text-transform: uppercase;
-  color: var(--c-ink-muted);
+  color: var(--c-ink);
 }
 
 /* ---- One group: the same pill as the triggers at the bottom of the page, in
@@ -149,9 +152,6 @@
   flex-direction: column;
   gap: 1.25rem;
   padding: 1rem;
-  background: var(--c-surface-soft);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-lg);
 }
 
 /*
@@ -398,9 +398,8 @@
 }
 
 .primary {
-  color: var(--c-accent-ink);
-  background: var(--c-accent);
-  border: 1px solid transparent;
+  font-size: 0.82rem;
+  padding: 0.45rem 0.9rem;
 }
 
 .quiet {
@@ -802,4 +801,20 @@
   .groupBody {
     padding-inline: 0.8rem;
   }
+}
+
+.groupToggle {
+  padding: 0.85rem 1rem;
+  border-radius: var(--r-lg);
+  background: var(--card-background);
+  border-color: var(--card-border);
+}
+.groupName {
+  font-family: var(--font-display), var(--font-sans);
+  font-size: 1.4rem;
+  text-transform: uppercase;
+}
+.currentChip {
+  color: var(--c-energy-ink);
+  background: var(--c-energy);
 }

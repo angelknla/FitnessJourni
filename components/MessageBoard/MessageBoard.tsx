@@ -769,13 +769,13 @@ export const MessageBoard = ({ members, messages, viewerId }: MessageBoardProps)
     );
 
     return (
-        <>
+        <section className={styles.chatShell} aria-label="Group chat">
             <PageHeader
                 eyebrow="Chat"
                 title="Keep moving together"
                 actions={messages.length > 0 ? filterControls : undefined}
             />
-            <section className={styles.board} aria-label="Group chat">
+            <div className={styles.board}>
                 <div ref={conversationRef} className={styles.conversation}>
                     {filteredMessages.length > 0 || optimisticMessages.length > 0 ? (
                         <ol className={styles.feed} aria-label="Conversation">
@@ -931,7 +931,7 @@ export const MessageBoard = ({ members, messages, viewerId }: MessageBoardProps)
                 ) : (
                     <p className={styles.choosePerson}>Choose who you are from Profile to share a post.</p>
                 )}
-            </section>
-        </>
+            </div>
+        </section>
     );
 };

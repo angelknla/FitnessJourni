@@ -1,5 +1,7 @@
 'use client';
 
+import ui from '@/styles/ui.module.css';
+
 import { BinIcon, CrossIcon, PlusIcon } from '@components/Icons/Icons';
 import { workoutFocuses, workoutFocusLabels } from '@data/fitnessData';
 import { useBackgroundSave, type SaveAction } from '@hooks/useBackgroundSave';
@@ -144,7 +146,7 @@ export const WorkoutLogger = ({
         <div className={styles.disclosure}>
           <button
             type="button"
-            className={styles.toggle}
+            className={`${styles.toggle} ${ui.disclosure}`}
             aria-expanded={formOpen}
             aria-controls={formId}
             disabled={isPending}
@@ -200,7 +202,7 @@ export const WorkoutLogger = ({
               <div className={styles.actions}>
                 <button
                   type="submit"
-                  className={styles.submit}
+                  className={`${styles.submit} ${ui.primaryButton}`}
                   disabled={isPending || picked.length === 0}
                 >
                   {isPending ? 'Logging…' : 'Log workout'}

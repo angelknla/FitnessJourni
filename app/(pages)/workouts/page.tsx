@@ -1,3 +1,4 @@
+import ui from '@/styles/ui.module.css';
 import { Landing } from '@components/Landing/Landing';
 import { PageHeader } from '@components/PageHeader/PageHeader';
 import { PageLayout } from '@components/PageLayout/PageLayout';
@@ -58,10 +59,10 @@ const WorkoutsPage = async () => {
 
   return (
     <PageLayout>
-      <PageHeader eyebrow="Workouts" title="The split, and who has shown up" />
+      <PageHeader eyebrow="Workouts" title="Show up. Build strength." />
 
       <section className={styles.section}>
-        <h2 className={styles.sectionHeading}>This week and month</h2>
+        <h2 className={ui.sectionTitle}>This week and month</h2>
         <WorkoutTally
           members={viewerFirst(members, viewer.memberId)}
           tallies={tallies}
@@ -71,7 +72,7 @@ const WorkoutsPage = async () => {
       </section>
 
       <section className={styles.section}>
-        <h2 className={styles.sectionHeading}>The playbook split</h2>
+        <h2 className={ui.sectionTitle}>The playbook split</h2>
         <WorkoutPlan />
       </section>
     </PageLayout>

@@ -248,16 +248,6 @@
   -webkit-backdrop-filter: blur(16px);
 }
 
-.accentPicker::before {
-  content: "";
-  position: absolute;
-  inset: 0.05rem 12% auto;
-  height: 1px;
-  pointer-events: none;
-  background: linear-gradient(90deg, transparent, var(--c-ink), transparent);
-  opacity: var(--surface-top-glint-opacity, 0.38);
-}
-
 .accentPicker > fieldset {
   margin: 0;
   padding: 0;
@@ -687,55 +677,11 @@
   gap: 0.75rem;
 }
 
-/* ---- Primary actions ----------------------------------------------------
-   Matched to the login modal's submit (components/LoginButton), so committing a
-   change looks the same wherever it happens. Kept in step by the tokens rather
-   than by copying values: both are accent mixed into the control surface. */
-.saveButton,
-.themeOptions button[aria-pressed="true"] {
-  color: var(--c-ink);
-  border: 1px solid color-mix(in oklab, var(--c-accent) 54%, var(--c-border-strong));
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--c-accent) 18%, rgb(255 255 255 / 7%)),
-    color-mix(in oklab, var(--c-accent) 10%, rgb(255 255 255 / 2%))
-  );
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 12%),
-    0 5px 13px color-mix(in oklab, var(--c-accent) 10%, rgb(0 0 0 / 19%));
-}
-
-.saveButton:hover:not(:disabled),
-.themeOptions button[aria-pressed="true"]:hover:not(:disabled) {
-  color: var(--c-ink);
-  border-color: color-mix(in oklab, var(--c-accent) 70%, var(--c-border-strong));
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--c-accent) 23%, rgb(255 255 255 / 10%)),
-    color-mix(in oklab, var(--c-accent) 14%, rgb(255 255 255 / 4%))
-  );
-}
-
-/* In light theme the login button drops the tinted gradient for the plain control
-   surface, keeping only the accent border. Copied too, or these would be the one
-   blue-filled control on an otherwise white page. */
-:global(:root[data-theme="light"]) .saveButton,
-:global(:root[data-theme="light"]) .themeOptions button[aria-pressed="true"] {
-  background: var(--control-surface);
-  box-shadow: var(--control-shadow);
-}
-
-:global(:root[data-theme="light"]) .saveButton:hover:not(:disabled),
-:global(:root[data-theme="light"]) .themeOptions button[aria-pressed="true"]:hover:not(:disabled) {
-  background: var(--control-surface-hover);
-}
-
 .saveButton {
   width: 7.25rem;
   min-height: 2.3rem;
   padding: 0.45rem 0.75rem;
   font-size: 0.84rem;
-  font-weight: 600;
 }
 
 .success,
@@ -776,12 +722,9 @@
 
 .appearance {
   width: min(100%, 34rem);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  display: block;
   margin: 0;
-  padding-block: 0.35rem;
+  padding: 0.35rem 0;
   border: 0;
 }
 
@@ -1208,4 +1151,83 @@
   .themeOptions {
     margin-inline-start: auto;
   }
+}
+
+.identity {
+  padding: 1.2rem;
+}
+
+.identityDetails h2 {
+  font-family: var(--font-display), var(--font-sans);
+  font-size: 2rem;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+.avatar {
+  box-shadow:
+    0 0 0 4px var(--c-surface),
+    0 0 0 6px color-mix(in oklab, var(--profile-accent) 55%, transparent);
+}
+.stats strong {
+  font-family: var(--font-display), var(--font-sans);
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+.appearanceRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.sectionHead h2 {
+  font-family: var(--font-display), var(--font-sans);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--c-ink);
+}
+
+.account h2 {
+  font-family: var(--font-display), var(--font-sans);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--c-ink);
+}
+
+.stats > div {
+  background: var(--card-background);
+  border: 1px solid var(--card-border);
+  border-top: 3px solid var(--c-accent);
+  box-shadow: var(--card-shadow);
+}
+.section,
+.account {
+  padding: 1.2rem;
+  background: var(--card-background);
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-xl);
+}
+.sectionHead p,
+.identity p {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--c-accent);
+}
+.themeOptions button[aria-pressed="true"],
+:global(:root[data-theme="light"]) .themeOptions button[aria-pressed="true"] {
+  color: var(--c-primary-ink);
+  background: var(--c-primary);
+  border-color: var(--c-primary);
+}
+.themeOptions button[aria-pressed="true"]:hover:not(:disabled),
+:global(:root[data-theme="light"]) .themeOptions button[aria-pressed="true"]:hover:not(:disabled) {
+  color: var(--c-primary-ink);
+  background: var(--c-primary-hover);
 }

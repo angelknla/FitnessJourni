@@ -1,5 +1,7 @@
 'use client';
 
+import ui from '@/styles/ui.module.css';
+
 import { CrossIcon, GroupIcon, PencilIcon, SwitchIcon, UploadIcon } from '@components/Icons/Icons';
 import { MemberMedals } from '@components/MedalLeaderboard/MedalLeaderboard';
 import { RemoveMemberDialog } from '@components/RemoveMemberDialog/RemoveMemberDialog';
@@ -533,7 +535,7 @@ export const ProfileView = ({
 
   return (
     <div className={styles.profile} style={{ '--profile-accent': accent } as CSSProperties}>
-      <section className={styles.identity} aria-labelledby="profile-name">
+      <section className={`${styles.identity} ${ui.card}`} aria-labelledby="profile-name">
         {/*
          * The picture is its own uploader: the label opens the file dialog and
          * choosing a file submits at once, so changing your photo does not mean
@@ -783,7 +785,7 @@ export const ProfileView = ({
           <div className={styles.avatarActions}>
             <button
               type="submit"
-              className={styles.saveButton}
+              className={`${styles.saveButton} ${ui.primaryButton}`}
               disabled={
                 avatarPending || (selectedAvatar === 'upload' && !avatarPreview && !uploadedAvatar)
               }
@@ -843,7 +845,7 @@ export const ProfileView = ({
           </fieldset>
           <button
             type="submit"
-            className={styles.saveButton}
+            className={`${styles.saveButton} ${ui.primaryButton}`}
             disabled={accentPending || selectedAccent === member.accent}
           >
             {accentPending ? 'Saving…' : 'Save colour'}
@@ -879,23 +881,26 @@ export const ProfileView = ({
 
       {/* With the other choices about how Profile looks, rather than buried in
           Account beside the password fields. */}
-      <div className={styles.appearance} role="group" aria-labelledby="appearance-label">
-        <span id="appearance-label" className={styles.appearanceLabel}>
-          Appearance
-        </span>
-        <div className={styles.themeOptions}>
-          {(['light', 'dark'] as const).map((option) => (
-            <button
-              key={option}
-              type="button"
-              aria-pressed={theme === option}
-              onClick={() => selectTheme(option)}
-            >
-              {option.charAt(0).toUpperCase() + option.slice(1)}
-            </button>
-          ))}
+      <fieldset className={styles.appearance}>
+        <legend className="sr-only">Appearance</legend>
+        <div className={styles.appearanceRow}>
+          <span className={styles.appearanceLabel} aria-hidden="true">
+            Appearance
+          </span>
+          <div className={styles.themeOptions}>
+            {(['light', 'dark'] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                aria-pressed={theme === option}
+                onClick={() => selectTheme(option)}
+              >
+                {option.charAt(0).toUpperCase() + option.slice(1)}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      </fieldset>
 
       <section className={styles.stats} aria-label="Current measurements">
         <div>
@@ -921,7 +926,11 @@ export const ProfileView = ({
         </div>
       </section>
 
-      <section id="log-weight" className={styles.section} aria-labelledby="weight-history-heading">
+      <section
+        id="log-weight"
+        className={`${styles.section} ${ui.card}`}
+        aria-labelledby="weight-history-heading"
+      >
         <div className={styles.sectionHead}>
           <div>
             <p>Progress</p>
@@ -1058,7 +1067,11 @@ export const ProfileView = ({
               <span>kg</span>
             </span>
           </label>
-          <button type="submit" className={styles.saveButton} disabled={weightPending}>
+          <button
+            type="submit"
+            className={`${styles.saveButton} ${ui.primaryButton}`}
+            disabled={weightPending}
+          >
             {weightPending ? 'Saving…' : 'Save weight'}
           </button>
           {(weightState.error || weightState.message) && (
@@ -1069,7 +1082,7 @@ export const ProfileView = ({
         </form>
       </section>
 
-      <section className={styles.section} aria-labelledby="details-heading">
+      <section className={`${styles.section} ${ui.card}`} aria-labelledby="details-heading">
         <div className={styles.sectionHead}>
           <div>
             <p>Profile details</p>
@@ -1163,7 +1176,11 @@ export const ProfileView = ({
             </div>
           </fieldset>
           <div className={styles.formActions}>
-            <button type="submit" className={styles.saveButton} disabled={infoPending}>
+            <button
+              type="submit"
+              className={`${styles.saveButton} ${ui.primaryButton}`}
+              disabled={infoPending}
+            >
               {infoPending ? 'Saving…' : 'Save info'}
             </button>
             {(infoState.error || infoState.message) && (
@@ -1309,7 +1326,7 @@ export const ProfileView = ({
           <div className={styles.formActions}>
             <button
               type="submit"
-              className={styles.saveButton}
+              className={`${styles.saveButton} ${ui.primaryButton}`}
               disabled={targetsPending || targetSplitOff}
             >
               {targetsPending ? 'Saving…' : 'Save targets'}
@@ -1323,7 +1340,11 @@ export const ProfileView = ({
         </form>
       </section>
 
-      <section id="account-settings" className={styles.account} aria-labelledby="account-heading">
+      <section
+        id="account-settings"
+        className={`${styles.account} ${ui.card}`}
+        aria-labelledby="account-heading"
+      >
         <h2 id="account-heading">Account</h2>
         {account && (
           <form className={styles.accountForm} onSubmit={accountAction}>
@@ -1381,7 +1402,11 @@ export const ProfileView = ({
               </div>
             )}
             <div className={styles.accountSave}>
-              <button type="submit" className={styles.saveButton} disabled={accountPending}>
+              <button
+                type="submit"
+                className={`${styles.saveButton} ${ui.primaryButton}`}
+                disabled={accountPending}
+              >
                 {accountPending ? 'Saving…' : 'Save account'}
               </button>
               {(accountState.error || accountState.message) && (

@@ -41,7 +41,7 @@ export const ProgressRing = ({
   const dash = (filled / 100) * CIRCUMFERENCE;
 
   const isOver = pct > 100;
-  const state = isOver ? (overIsBad ? 'over' : 'complete') : 'partial';
+  const state = isOver && overIsBad ? 'over' : !overIsBad && pct >= 100 ? 'complete' : 'partial';
 
   // Where the "minimum" tick sits, as a fraction of the way round the ring.
   const floorFraction = floor && target > 0 ? Math.min(1, floor / target) : null;
@@ -104,6 +104,7 @@ export const ProgressRing = ({
       </div>
 
       <p className={styles.label}>{label}</p>
+      {state === 'complete' && <span className={styles.achievement}>Goal hit</span>}
     </div>
   );
 };

@@ -1,5 +1,7 @@
 'use client';
 
+import ui from '@/styles/ui.module.css';
+
 import { BinIcon, CrossIcon, PencilIcon, PlusIcon } from '@components/Icons/Icons';
 import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
 import { accentHex } from '@data/fitnessData';
@@ -65,7 +67,7 @@ const RunForm = ({
     }, [onSaved, state.bookedAt, state.ok]);
 
     return (
-        <form className={run ? `${styles.form} ${styles.editForm}` : styles.form} action={formAction}>
+        <form className={`${styles.form} ${ui.card} ${run ? styles.editForm : ''}`} action={formAction}>
             {run ? (
                 <input type="hidden" name="id" value={run.id} />
             ) : (
@@ -195,7 +197,7 @@ const RunForm = ({
             </fieldset>
 
             <div className={styles.formActions}>
-                <button type="submit" className={styles.submit} disabled={isPending || !valid}>
+                <button type="submit" className={`${styles.submit} ${ui.primaryButton}`} disabled={isPending || !valid}>
                     {isPending ? (run ? 'Saving…' : 'Logging…') : (run ? 'Save changes' : 'Log run')}
                 </button>
                 {run && (
@@ -229,7 +231,7 @@ const RunCard = ({
     const attendees = members.filter((member) => run.attendeeIds.includes(member.id));
 
     return (
-        <li className={styles.runCard}>
+        <li className={`${styles.runCard} ${ui.card}`}>
             <div className={styles.runLead}>
                 <span className={styles.runDate}>{runDate.format(fromISODate(run.date))}</span>
                 <strong>{run.distanceKm.toFixed(2)}</strong>
@@ -350,7 +352,7 @@ export const RunningDashboard = ({
 
     return (
         <div className={styles.dashboard}>
-            <section className={styles.highlights} aria-label="Running highlights">
+            <section className={`${styles.highlights} ${ui.card}`} aria-label="Running highlights">
                 <div className={styles.primaryHighlight}>
                     <span>This month</span>
                     <strong>{monthDistance.toFixed(1)} km</strong>
@@ -381,7 +383,7 @@ export const RunningDashboard = ({
                         const tally = tallies[member.id] ?? { week: 0, month: 0 };
                         return (
                             <li
-                                className={styles.tally}
+                                className={`${styles.tally} ${ui.card}`}
                                 key={member.id}
                                 style={{ '--person-accent': accentHex[member.accent] } as CSSProperties}
                             >

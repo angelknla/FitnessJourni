@@ -1,5 +1,7 @@
 'use client';
 
+import ui from '@/styles/ui.module.css';
+
 import {
   BinIcon,
   ChevronRightIcon,
@@ -251,7 +253,7 @@ export const GroupsPanel = ({
                   <form action={invitationAction}>
                     <input type="hidden" name="invitationId" value={invitation.id} />
                     <input type="hidden" name="decision" value="accept" />
-                    <button type="submit" className={styles.primary} disabled={answering}>
+                    <button type="submit" className={`${styles.primary} ${ui.primaryButton}`} disabled={answering}>
                       Accept
                     </button>
                   </form>
@@ -311,7 +313,7 @@ export const GroupsPanel = ({
                   </button>
                 </h2>
 
-                <div id={`group-${group.id}`} className={styles.groupBody} hidden={!open}>
+                <div id={`group-${group.id}`} className={`${styles.groupBody} ${ui.card}`} hidden={!open}>
                   {/* Picture and description share the width; the icon stands in
                       for a group that has no picture. */}
                   <div className={styles.info}>
@@ -378,7 +380,7 @@ export const GroupsPanel = ({
                   {!current && (
                     <form action={switchAction} className={styles.inlineForm}>
                       <input type="hidden" name="groupId" value={group.id} />
-                      <button type="submit" className={styles.primary} disabled={switching}>
+                      <button type="submit" className={`${styles.primary} ${ui.primaryButton}`} disabled={switching}>
                         <SwitchIcon />
                         Switch to {group.name}
                       </button>
@@ -405,7 +407,7 @@ export const GroupsPanel = ({
                                 <input type="hidden" name="decision" value="approve" />
                                 <button
                                   type="submit"
-                                  className={styles.primary}
+                                  className={`${styles.primary} ${ui.primaryButton}`}
                                   disabled={reviewing}
                                 >
                                   Approve
@@ -655,7 +657,7 @@ export const GroupsPanel = ({
                               onInput={(event) => autoGrow(event.currentTarget)}
                             />
                           </label>
-                          <button type="submit" className={styles.primary} disabled={savingDetails}>
+                          <button type="submit" className={`${styles.primary} ${ui.primaryButton}`} disabled={savingDetails}>
                             {savingDetails ? 'Saving…' : 'Save details'}
                           </button>
                           <Status state={detailsState} />
@@ -700,7 +702,7 @@ export const GroupsPanel = ({
                               <div className={styles.pictureActions}>
                                 <button
                                   type="submit"
-                                  className={styles.primary}
+                                  className={`${styles.primary} ${ui.primaryButton}`}
                                   disabled={savingImage}
                                 >
                                   {savingImage ? 'Saving…' : 'Save picture'}
@@ -753,7 +755,7 @@ export const GroupsPanel = ({
                               required
                             />
                           </label>
-                          <button type="submit" className={styles.primary} disabled={inviting}>
+                          <button type="submit" className={`${styles.primary} ${ui.primaryButton}`} disabled={inviting}>
                             {inviting ? 'Inviting…' : 'Send invitation'}
                           </button>
                           <p className={styles.hint}>
@@ -919,7 +921,7 @@ export const GroupsPanel = ({
                 onInput={(event) => autoGrow(event.currentTarget)}
               />
             </label>
-            <button type="submit" className={styles.primary} disabled={creating}>
+            <button type="submit" className={`${styles.primary} ${ui.primaryButton}`} disabled={creating}>
               {creating ? 'Creating…' : 'Create group'}
             </button>
             <p className={styles.hint}>You become its owner, and it becomes your current group.</p>
@@ -950,7 +952,7 @@ export const GroupsPanel = ({
                 required
               />
             </label>
-            <button type="submit" className={styles.primary} disabled={joining}>
+            <button type="submit" className={`${styles.primary} ${ui.primaryButton}`} disabled={joining}>
               {joining ? 'Asking…' : 'Ask to join'}
             </button>
             <p className={styles.hint}>

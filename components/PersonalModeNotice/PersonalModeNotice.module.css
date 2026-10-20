@@ -4,10 +4,6 @@
   align-items: flex-start;
   gap: 0.55rem;
   padding: 1.5rem;
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: var(--r-lg);
-  box-shadow: var(--card-shadow);
 }
 
 .eyebrow {
@@ -20,7 +16,9 @@
 
 .notice h2 {
   margin: 0;
-  font-size: 1.05rem;
+  font-family: var(--font-display), var(--font-sans);
+  font-size: 1.7rem;
+  text-transform: uppercase;
   color: var(--c-ink);
 }
 
@@ -37,9 +35,9 @@
   padding: 0.5rem 0.9rem;
   font-size: 0.84rem;
   font-weight: 600;
-  color: var(--c-accent-ink);
+  color: var(--c-primary-ink);
   text-decoration: none;
-  background: var(--c-accent);
+  background: var(--c-primary);
   border-radius: var(--r-pill);
 }
 

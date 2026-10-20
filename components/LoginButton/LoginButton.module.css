@@ -1,6 +1,5 @@
 .trigger,
-.primaryTrigger,
-.submit {
+.primaryTrigger {
   height: 2.6rem;
   padding: 0.42rem 0.75rem;
   font-family: var(--font-sans);
@@ -20,8 +19,7 @@
 }
 
 .trigger:hover:not(:disabled),
-.primaryTrigger:hover:not(:disabled),
-.submit:hover:not(:disabled) {
+.primaryTrigger:hover:not(:disabled) {
   color: var(--c-ink);
   border-color: color-mix(in oklab, var(--c-accent) 70%, var(--c-border-strong));
   background: linear-gradient(
@@ -72,15 +70,13 @@
 }
 
 :global(:root[data-theme="light"]) .trigger,
-:global(:root[data-theme="light"]) .primaryTrigger,
-:global(:root[data-theme="light"]) .submit {
+:global(:root[data-theme="light"]) .primaryTrigger {
   background: var(--control-surface);
   box-shadow: var(--control-shadow);
 }
 
 :global(:root[data-theme="light"]) .trigger:hover:not(:disabled),
-:global(:root[data-theme="light"]) .primaryTrigger:hover:not(:disabled),
-:global(:root[data-theme="light"]) .submit:hover:not(:disabled) {
+:global(:root[data-theme="light"]) .primaryTrigger:hover:not(:disabled) {
   background: var(--control-surface-hover);
 }
 
@@ -261,4 +257,18 @@
     color-mix(in oklab, var(--c-accent) 23%, rgb(255 255 255 / 10%)),
     color-mix(in oklab, var(--c-accent) 14%, rgb(255 255 255 / 4%))
   );
+}
+
+.primaryTrigger,
+:global(:root[data-theme="light"]) .primaryTrigger {
+  color: var(--c-energy-ink);
+  background: var(--c-energy);
+  border-color: var(--c-energy);
+  padding-inline: 1.3rem;
+}
+.primaryTrigger:hover:not(:disabled),
+:global(:root[data-theme="light"]) .primaryTrigger:hover:not(:disabled) {
+  color: var(--c-energy-ink);
+  background: #d2fa87;
+  border-color: #d2fa87;
 }

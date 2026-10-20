@@ -15,45 +15,11 @@
   padding: 0.7rem 0.8rem;
   font-size: 0.92rem;
   font-weight: 700;
-  color: var(--c-ink);
-  background: linear-gradient(180deg, rgb(255 255 255 / 7%), transparent 48%), var(--c-bg-alt);
-  border: 1px solid var(--c-border-strong);
-  border-radius: var(--r-sm);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 7%),
-    0 5px 12px rgb(0 0 0 / 24%);
-}
-
-.toggle:hover:not(:disabled) {
-  color: var(--c-ink);
-  background:
-    linear-gradient(180deg, rgb(255 255 255 / 10%), transparent 52%), var(--c-surface-soft);
-  border-color: color-mix(in oklab, var(--c-ink) 22%, var(--c-border-strong));
 }
 
 .toggle svg {
   flex-shrink: 0;
-  color: var(--c-ink-soft);
-}
-
-:global(:root[data-theme="light"]) .toggle {
-  background: linear-gradient(135deg, #fff 0%, #fbfdff 56%, #f0f8fc 100%);
-  border-color: color-mix(in oklab, var(--c-accent) 22%, var(--c-border));
-  box-shadow:
-    inset 0 1px 0 #fff,
-    0 3px 9px rgb(11 91 151 / 12%);
-}
-
-:global(:root[data-theme="light"]) .toggle:hover:not(:disabled) {
-  background: linear-gradient(135deg, #fff 0%, #f7fbfe 54%, #e8f5fb 100%);
-  border-color: color-mix(in oklab, var(--c-accent) 38%, var(--c-border-strong));
-  box-shadow:
-    inset 0 1px 0 #fff,
-    0 4px 11px rgb(11 91 151 / 15%);
-}
-
-:global(:root[data-theme="light"]) .toggle svg {
-  color: var(--c-ink);
+  color: inherit;
 }
 
 .grid {
@@ -84,14 +50,6 @@
 .submit {
   padding: 0.45rem 1.05rem;
   font-size: 0.88rem;
-  background: var(--c-accent);
-  border-color: transparent;
-  color: #fff;
-}
-
-.submit:hover:not(:disabled) {
-  background: color-mix(in oklab, var(--c-accent) 85%, #fff);
-  border-color: transparent;
 }
 
 .error {

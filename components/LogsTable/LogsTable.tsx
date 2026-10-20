@@ -1,3 +1,4 @@
+import ui from '@/styles/ui.module.css';
 import { MedalIcon } from '@components/MedalIcon/MedalIcon';
 import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
 import { accentHex } from '@data/fitnessData';
@@ -126,7 +127,7 @@ export const LogsTable = ({
 
         return (
           <li
-            className={styles.profile}
+            className={`${styles.profile} ${ui.card}`}
             key={member.id}
             style={{ '--member-accent': accentHex[member.accent] } as CSSProperties}
           >

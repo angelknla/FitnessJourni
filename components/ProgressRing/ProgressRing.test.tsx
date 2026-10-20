@@ -86,6 +86,31 @@ describe('ProgressRing', () => {
     expect(container.firstElementChild).toHaveAttribute('data-state', 'complete');
   });
 
+  it('celebrates reaching a goal exactly without treating a calorie budget as an achievement', () => {
+    const { rerender, container } = render(
+      <ProgressRing
+        label="Steps"
+        display="10,000"
+        targetDisplay="10,000"
+        value={10000}
+        target={10000}
+      />
+    );
+    expect(container.firstElementChild).toHaveAttribute('data-state', 'complete');
+    expect(screen.getByText('Goal hit')).toBeInTheDocument();
+    rerender(
+      <ProgressRing
+        label="Calories"
+        display="2,500"
+        targetDisplay="2,500"
+        value={2500}
+        target={2500}
+        overIsBad
+      />
+    );
+    expect(screen.queryByText('Goal hit')).not.toBeInTheDocument();
+  });
+
   it('draws the floor tick only when a floor is given', () => {
     const { container: withFloor } = render(
       <ProgressRing

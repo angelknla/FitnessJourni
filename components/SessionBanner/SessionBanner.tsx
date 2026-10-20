@@ -1,5 +1,7 @@
 'use client';
 
+import ui from '@/styles/ui.module.css';
+
 import { CrossIcon } from '@components/Icons/Icons';
 import { activityLabels } from '@data/fitnessData';
 import Link from '@components/NavigationLink/NavigationLink';
@@ -59,7 +61,7 @@ export const SessionBanner = ({ session, bookedBy, whenLabel, expiresAt }: Sessi
   }
 
   return (
-    <aside className={styles.banner} aria-label="Next session">
+    <aside className={`${styles.banner} ${ui.card}`} aria-label="Next session">
       <div className={styles.body}>
         <p className={styles.eyebrow}>Next session</p>
         <p className={styles.headline}>

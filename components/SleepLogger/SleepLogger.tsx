@@ -1,5 +1,7 @@
 'use client';
 
+import ui from '@/styles/ui.module.css';
+
 import { CrossIcon, PlusIcon } from '@components/Icons/Icons';
 import { useBackgroundSave, type SaveAction } from '@hooks/useBackgroundSave';
 import { useState } from 'react';
@@ -73,7 +75,7 @@ export const SleepLogger = ({
         <div className={styles.disclosure}>
           <button
             type="button"
-            className={styles.toggle}
+            className={`${styles.toggle} ${ui.disclosure}`}
             aria-expanded={formOpen}
             aria-controls={formId}
             disabled={isPending}
@@ -107,7 +109,11 @@ export const SleepLogger = ({
                 />
               </label>
               <div className={styles.actions}>
-                <button type="submit" className={styles.submit} disabled={isPending || !canSave}>
+                <button
+                  type="submit"
+                  className={`${styles.submit} ${ui.primaryButton}`}
+                  disabled={isPending || !canSave}
+                >
                   {isPending ? 'Saving…' : 'Save sleep'}
                 </button>
                 {state.error && (

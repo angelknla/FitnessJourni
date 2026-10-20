@@ -1,5 +1,7 @@
 'use client';
 
+import ui from '@/styles/ui.module.css';
+
 import { MemberCreateForm } from '@components/AddMemberForm/MemberCreateForm';
 import { CrossIcon, EyeIcon, EyeOffIcon } from '@components/Icons/Icons';
 import { useRouter } from 'next/navigation';
@@ -139,7 +141,7 @@ export const LoginButton = ({ variant = 'header' }: LoginButtonProps) => {
               </button>
               <button
                 type="submit"
-                className={styles.submit}
+                className={`${styles.submit} ${ui.primaryButton}`}
                 disabled={loginPending || !login.trim() || !password}
               >
                 {loginPending ? 'Logging in…' : 'Log in'}
@@ -177,7 +179,11 @@ export const LoginButton = ({ variant = 'header' }: LoginButtonProps) => {
               <button type="button" className={styles.cancel} onClick={() => setMode('login')}>
                 Back
               </button>
-              <button type="submit" className={styles.submit} disabled={unlockPending}>
+              <button
+                type="submit"
+                className={`${styles.submit} ${ui.primaryButton}`}
+                disabled={unlockPending}
+              >
                 {unlockPending ? 'Checking…' : 'Continue'}
               </button>
             </div>

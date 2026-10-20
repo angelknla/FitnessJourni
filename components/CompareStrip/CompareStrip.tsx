@@ -1,3 +1,4 @@
+import ui from '@/styles/ui.module.css';
 import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
 import { accentHex } from '@data/fitnessData';
 import type { CSSProperties } from 'react';
@@ -56,7 +57,7 @@ export const CompareStrip = ({
 
   return (
     <section className={styles.wrapper} aria-labelledby="compare-heading">
-      <h2 className={styles.heading} id="compare-heading">
+      <h2 className={ui.sectionTitle} id="compare-heading">
         {heading}
       </h2>
 
@@ -66,7 +67,7 @@ export const CompareStrip = ({
 
           return (
             <li
-              className={styles.card}
+              className={`${styles.card} ${ui.card}`}
               key={member.id}
               data-active={member.id === activeMemberId}
               style={{ '--member-accent': accentHex[member.accent] } as CSSProperties}

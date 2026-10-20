@@ -103,3 +103,11 @@
     flex-basis: 1.95rem;
   }
 }
+
+.period[data-active="true"],
+:global(:root[data-theme="light"]) .period[data-active="true"] {
+  color: var(--c-energy-ink);
+  background: var(--c-energy);
+  border-color: var(--c-energy);
+  box-shadow: none;
+}

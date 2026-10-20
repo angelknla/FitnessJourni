@@ -1,5 +1,7 @@
 'use client';
 
+import ui from '@/styles/ui.module.css';
+
 import { CrossIcon, PlusIcon } from '@components/Icons/Icons';
 import { useBackgroundSave, type SaveAction } from '@hooks/useBackgroundSave';
 import { useEffect, useRef, useState } from 'react';
@@ -81,7 +83,7 @@ export const QuickEntry = ({ member, log, date, save }: QuickEntryProps) => {
     <div className={styles.wrapper} ref={wrapperRef}>
       <button
         type="button"
-        className={styles.toggle}
+        className={`${styles.toggle} ${ui.primaryButton}`}
         aria-expanded={open}
         aria-controls={formId}
         disabled={isPending}
@@ -129,7 +131,11 @@ export const QuickEntry = ({ member, log, date, save }: QuickEntryProps) => {
           </div>
 
           <div className={styles.actions}>
-            <button type="submit" className={styles.submit} disabled={isPending || !dirty}>
+            <button
+              type="submit"
+              className={`${styles.submit} ${ui.primaryButton}`}
+              disabled={isPending || !dirty}
+            >
               {isPending ? 'Saving…' : 'Save'}
             </button>
 

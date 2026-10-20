@@ -46,7 +46,8 @@
 }
 
 .logoText {
-  font-size: 1.15rem;
+  font-family: var(--font-display), var(--font-sans);
+  font-size: 1.65rem;
   font-weight: 700;
   letter-spacing: -0.02em;
   white-space: nowrap;
@@ -338,5 +339,38 @@
      profile control. */
   .inner {
     padding-inline: 1rem;
+  }
+}
+
+@media (min-width: 961px) {
+  .nav {
+    gap: 0.35rem;
+    padding: 0.3rem;
+    background: color-mix(in oklab, var(--c-surface) 88%, transparent);
+    border: 1px solid var(--c-border);
+    border-radius: var(--r-pill);
+  }
+  .link {
+    gap: 0.35rem;
+    padding: 0.45rem 0.65rem;
+    font-size: 0.82rem;
+    border-radius: var(--r-pill);
+  }
+  .link svg {
+    display: block;
+    width: 16px;
+    height: 16px;
+  }
+  .link[aria-current="page"] {
+    color: var(--c-primary-ink);
+    background: var(--c-primary);
+  }
+}
+@media (max-width: 960px) {
+  .logoText {
+    font-size: 1.5rem;
+  }
+  .nav .link[aria-current="page"] {
+    background: color-mix(in oklab, var(--c-accent) 13%, transparent);
   }
 }

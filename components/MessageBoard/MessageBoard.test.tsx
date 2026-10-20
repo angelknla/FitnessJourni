@@ -229,7 +229,7 @@ describe('MessageBoard', () => {
         const { rerender } = render(
             <MessageBoard members={[member]} viewerId="m1" messages={[]} />
         );
-        const conversation = screen.getByLabelText('Group chat').querySelector('div');
+        const conversation = screen.getByLabelText('Group chat').querySelector('[class*="conversation"]');
         const scrollTo = vi.fn();
         Object.defineProperty(conversation, 'scrollHeight', { configurable: true, value: 240 });
         Object.defineProperty(conversation, 'scrollTo', { configurable: true, value: scrollTo });

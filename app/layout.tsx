@@ -6,7 +6,7 @@ import bannerStyles from '@components/SessionBanner/SessionBanner.module.css';
 import { WeightReminderBanner } from '@components/SessionBanner/WeightReminderBanner';
 import { toISODate } from '@utils/date';
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Barlow_Condensed, Inter } from 'next/font/google';
 import { cookies } from 'next/headers';
 import Script from 'next/script';
 import { getScopedMembers } from '@/lib/data/members';
@@ -22,7 +22,14 @@ import type { LayoutProps } from '@/types/LayoutProps';
 import '@/styles/globals.css';
 import styles from './page.module.css';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ['latin'], variable: '--font-body' });
+const display = Barlow_Condensed({
+  subsets: ['latin'],
+  weight: '700',
+  variable: '--font-display',
+  display: 'swap',
+  preload: false,
+});
 
 const themeInitializer = `
 try {
@@ -131,7 +138,7 @@ const RootLayout = async ({ children }: LayoutProps) => {
           {themeInitializer}
         </Script>
       </head>
-      <body className={inter.className}>
+      <body className={`${inter.variable} ${display.variable}`}>
         {unlocked && <AppResume />}
         <div className={styles.appWrapper}>
           <Header

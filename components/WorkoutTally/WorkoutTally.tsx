@@ -1,3 +1,4 @@
+import ui from '@/styles/ui.module.css';
 import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
 import { accentHex } from '@data/fitnessData';
 import type { CSSProperties } from 'react';
@@ -25,7 +26,7 @@ export const WorkoutTally = ({ members, tallies, weekLabel, monthLabel }: Workou
 
       return (
         <li
-          className={styles.card}
+          className={`${styles.card} ${ui.card}`}
           key={member.id}
           style={
             {

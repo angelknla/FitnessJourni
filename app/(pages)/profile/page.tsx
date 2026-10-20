@@ -1,4 +1,5 @@
 import { Landing } from '@components/Landing/Landing';
+import { PageHeader } from '@components/PageHeader/PageHeader';
 import { PageLayout } from '@components/PageLayout/PageLayout';
 import { ProfileView } from '@components/ProfileView/ProfileView';
 import { SetupNotice } from '@components/SetupNotice/SetupNotice';
@@ -14,8 +15,6 @@ import { buildMedalBoards, medalFetchStart } from '@/lib/medals';
 import { canRemoveMembers } from '@/lib/ownership';
 import { isUnlocked } from '@/lib/session';
 import { isSupabaseConfigured } from '@/lib/supabase/server';
-
-import styles from './page.module.css';
 
 export const metadata: Metadata = {
   title: 'Profile — FitnessJourni',
@@ -76,10 +75,7 @@ const ProfilePage = async ({ searchParams }: ProfilePageProps) => {
 
   return (
     <PageLayout>
-      <header className={styles.head}>
-        <p>Profile</p>
-        <h1>Your numbers, over time</h1>
-      </header>
+      <PageHeader eyebrow="Profile" title="Your numbers, over time" />
 
       <ProfileView
         key={`${member?.id}:${today}`}

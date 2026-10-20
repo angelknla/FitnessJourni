@@ -1,5 +1,7 @@
 'use client';
 
+import ui from '@/styles/ui.module.css';
+
 import { CalendarIcon } from '@components/Icons/Icons';
 import { MedalIcon } from '@components/MedalIcon/MedalIcon';
 import { MemberAvatar } from '@components/MemberAvatar/MemberAvatar';
@@ -276,7 +278,7 @@ export const MemberMedals = ({ memberId, boards, medalDate, today }: MemberMedal
     const awards = board.awards.filter((award) => award.memberId === memberId);
 
     return (
-        <section className={styles.shelf} aria-labelledby="profile-medals-heading">
+        <section className={`${styles.shelf} ${ui.card}`} aria-labelledby="profile-medals-heading">
             <header className={styles.headingRow}>
                 <div className={styles.heading}>
                     <p>Achievements</p>

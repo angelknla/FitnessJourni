@@ -30,16 +30,6 @@
   transform-origin: top center;
 }
 
-.shelf::before {
-  content: "";
-  position: absolute;
-  inset: 0.05rem 12% auto;
-  height: 1px;
-  pointer-events: none;
-  background: linear-gradient(90deg, transparent, var(--c-warning), transparent);
-  opacity: var(--surface-top-glint-opacity, 0.65);
-}
-
 .heading p {
   margin: 0 0 0.15rem;
   font-size: 0.72rem;
@@ -53,10 +43,13 @@
 }
 
 .board .heading h2 {
-  font-size: 0.82rem;
-  font-weight: 600;
+  font-family: var(--font-display), var(--font-sans);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
   text-transform: uppercase;
-  color: var(--c-ink-muted);
+  color: var(--c-ink);
 }
 
 .headingRow {
@@ -379,4 +372,17 @@
   .personName {
     font-size: 0.86rem;
   }
+}
+
+.shelf {
+  border-top: 3px solid var(--c-energy);
+}
+.tab[data-active="true"] {
+  color: var(--c-energy-ink);
+  background: var(--c-energy);
+  border-color: var(--c-energy);
+}
+.period h3 {
+  font-weight: 700;
+  color: var(--c-ink-soft);
 }

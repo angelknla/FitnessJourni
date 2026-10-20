@@ -1,5 +1,7 @@
 'use client';
 
+import ui from '@/styles/ui.module.css';
+
 import { activityLabels, activityTypes, bookingWindowDays, quickTimes } from '@data/fitnessData';
 import { buildDays, minutesOfTime, toISODate } from '@utils/date';
 import { useActionState, useEffect, useMemo, useState } from 'react';
@@ -85,7 +87,7 @@ export const SessionForm = ({ members, viewerId }: SessionFormProps) => {
   };
 
   return (
-    <form className={styles.form} action={formAction}>
+    <form className={`${styles.form} ${ui.card}`} action={formAction}>
       <input type="hidden" name="activity" value={activity} />
       <input type="hidden" name="date" value={dateISO} />
 
@@ -220,7 +222,11 @@ export const SessionForm = ({ members, viewerId }: SessionFormProps) => {
       </label>
 
       <div className={styles.actions}>
-        <button type="submit" className={styles.submit} disabled={isPending || !dateISO}>
+        <button
+          type="submit"
+          className={`${styles.submit} ${ui.primaryButton}`}
+          disabled={isPending || !dateISO}
+        >
           {isPending ? 'Booking…' : 'Book it'}
         </button>
 

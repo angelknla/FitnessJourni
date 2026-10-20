@@ -1,5 +1,7 @@
 'use client';
 
+import ui from '@/styles/ui.module.css';
+
 import { AddMemberForm } from '@components/AddMemberForm/AddMemberForm';
 import { CompareStrip } from '@components/CompareStrip/CompareStrip';
 import { EditTargets } from '@components/EditTargets/EditTargets';
@@ -9,8 +11,10 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   CrossIcon,
+  DumbbellIcon,
   PencilIcon,
 } from '@components/Icons/Icons';
+import { MomentumBanner } from '@components/MomentumBanner/MomentumBanner';
 import { MacroBars } from '@components/MacroBars/MacroBars';
 import { MedalLeaderboard } from '@components/MedalLeaderboard/MedalLeaderboard';
 import { MemberTabs } from '@components/MemberTabs/MemberTabs';
@@ -123,17 +127,20 @@ const MemberSummary = ({
 
   return (
     <section
-      className={styles.panel}
+      className={`${styles.panel} ${ui.card}`}
       aria-hidden={preview || undefined}
       inert={preview || undefined}
       style={{ '--member-accent': accentHex[member.accent] } as CSSProperties}
     >
-      {canEdit && (
-        <Link href="/profile#log-weight" className={styles.weightCta}>
-          <span>Log your weight</span>
-          <ChevronRightIcon size={14} />
-        </Link>
-      )}
+      <header className={styles.summaryHeader}>
+        <h2 className={styles.summaryTitle}>Daily progress</h2>
+        {canEdit && (
+          <Link href="/profile#log-weight" className={`${styles.momentumLink} ${styles.weightCta}`}>
+            <span>Log your weight</span>
+            <ChevronRightIcon size={14} />
+          </Link>
+        )}
+      </header>
       <div className={styles.rings}>
         <ProgressRing
           label="Steps"
@@ -166,7 +173,7 @@ const MemberSummary = ({
           <strong>{formatCount(caloriesBurned)} kcal</strong> burned from steps
         </p>
         <div className={styles.macrosHead}>
-          <h2 className={styles.sectionHeading}>Macros</h2>
+          <h2 className={ui.sectionTitle}>Macros</h2>
           {canEdit && (
             <button
               type="button"
@@ -626,6 +633,19 @@ export const Home = ({
           </div>
         </div>
         <h1 className={styles.date}>{dateLabel}</h1>
+        <MomentumBanner
+          heading="h2"
+          eyebrow={isToday ? 'Your pace. Your progress.' : 'Every day adds up.'}
+          title={isToday ? 'Build your momentum.' : 'See how far you’ve come.'}
+          description="Small steps. Stronger days. Keep showing up for yourself."
+          mobileDescription="Small steps. Stronger days."
+          mobileSingleLine
+          actions={
+            <Link href="/workouts" className={styles.momentumLink}>
+              <DumbbellIcon size={18} /> Find your next workout <ChevronRightIcon size={16} />
+            </Link>
+          }
+        />
       </header>
 
       {updates.statuses.length > 0 && (
@@ -734,9 +754,9 @@ export const Home = ({
           </div>
         </div>
 
-        <section className={styles.panel}>
+        <section className={`${styles.panel} ${ui.card}`}>
           <div className={styles.workoutsHead}>
-            <h2 className={styles.sectionHeading}>Workouts</h2>
+            <h2 className={ui.sectionTitle}>Workouts</h2>
             <Link href="/workouts" className={styles.planLink}>
               See the split
             </Link>
@@ -754,9 +774,9 @@ export const Home = ({
           />
         </section>
 
-        <section className={styles.panel}>
+        <section className={`${styles.panel} ${ui.card}`}>
           <div className={styles.workoutsHead}>
-            <h2 className={styles.sectionHeading}>Sleep</h2>
+            <h2 className={ui.sectionTitle}>Sleep</h2>
             <div className={styles.sleepActions}>
               {canEdit && (
                 <button
@@ -812,7 +832,7 @@ export const Home = ({
         />
       ) : (
         <>
-          <section className={`${styles.panel} ${styles.medalPanel}`}>
+          <section className={`${styles.panel} ${ui.card} ${styles.medalPanel}`}>
             <MedalLeaderboard
               members={tabOrder}
               boards={boards}

@@ -10,7 +10,14 @@
   flex-direction: column;
   gap: 0.9rem;
   align-items: flex-start;
-  max-width: 34rem;
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  overflow: hidden;
+  color: var(--c-hero-ink);
+  background: var(--hero-background);
+  border-radius: var(--r-xl);
 }
 
 .eyebrow {
@@ -19,12 +26,14 @@
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--c-ink-muted);
+  color: var(--c-energy);
 }
 
 .title {
   margin: 0;
-  font-size: clamp(2rem, 9vw, 3rem);
+  font-family: var(--font-display), var(--font-sans);
+  font-size: clamp(3.1rem, 10vw, 5.8rem);
+  text-transform: uppercase;
   font-weight: 700;
   line-height: 1.08;
   letter-spacing: -0.03em;
@@ -32,14 +41,15 @@
 }
 
 .accent {
-  color: var(--c-accent);
+  color: var(--c-energy);
 }
 
 .subtitle {
   margin: 0;
   font-size: 1rem;
   line-height: 1.6;
-  color: var(--c-ink-soft);
+  max-width: 28rem;
+  color: var(--c-hero-muted);
   text-wrap: pretty;
 }
 
@@ -94,5 +104,67 @@
     min-height: calc(100dvh - 12rem);
     justify-content: center;
     gap: 3rem;
+  }
+}
+
+.hero > :not(.heroArt) {
+  position: relative;
+  z-index: 1;
+}
+.heroArt {
+  position: absolute;
+  z-index: -1;
+  inset: 0 -3rem 0 auto;
+  width: 35%;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transform: rotate(-12deg);
+  opacity: 0.45;
+}
+.heroArt span {
+  height: 85%;
+  width: 4rem;
+  transform: skewX(-18deg);
+  background: var(--c-energy);
+  border-radius: 0.5rem;
+}
+.heroArt span:nth-child(2) {
+  opacity: 0.5;
+}
+.heroArt span:nth-child(3) {
+  opacity: 0.25;
+}
+.point {
+  border-top: 3px solid var(--c-accent);
+}
+.pointMark {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  margin-bottom: 0.8rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--c-accent);
+  background: color-mix(in oklab, var(--c-accent) 12%, var(--c-surface));
+  border-radius: 50%;
+}
+@media (max-width: 520px) {
+  .heroArt {
+    inset: auto 0.7rem 1rem auto;
+    width: 5.5rem;
+    height: 3.5rem;
+    gap: 0.35rem;
+    transform: rotate(-18deg);
+    opacity: 1;
+  }
+  .heroArt span {
+    flex: 0 0 0.85rem;
+    height: 100%;
+    border-radius: 0.25rem;
+  }
+  .subtitle {
+    font-size: 0.92rem;
   }
 }
