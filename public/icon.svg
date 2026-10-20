@@ -12,7 +12,7 @@
   <!-- Momentum banner artwork: thin inner ring and two soft outer shadow bands. -->
   <g clip-path="url(#tile)">
     <g fill="none" stroke="#ffffff">
-      <circle cx="256" cy="256" r="232" stroke-width="32" opacity="0.03" />
+      <circle cx="256" cy="256" r="240" stroke-width="48" opacity="0.03" />
       <circle cx="256" cy="256" r="200" stroke-width="32" opacity="0.04" />
       <circle cx="256" cy="256" r="184" stroke-width="1.5" opacity="0.15" />
     </g>

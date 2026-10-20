@@ -122,7 +122,8 @@
   .banner[data-compact] {
     padding: 1rem 1.2rem;
   }
-  .banner[data-compact] .art {
+  .banner[data-compact] .art,
+  .banner[data-mobile-single-line] .art {
     width: 6rem;
     right: 0.3rem;
     top: 50%;
@@ -131,7 +132,8 @@
   .banner[data-compact] .title {
     padding-right: 5rem;
   }
-  .banner[data-compact] .art span {
+  .banner[data-compact] .art span,
+  .banner[data-mobile-single-line] .art span {
     width: 0.8rem;
     height: 2.8rem;
   }
@@ -158,22 +160,6 @@
     max-width: none;
     font-size: 0.78rem;
     white-space: nowrap;
-  }
-  .banner[data-mobile-single-line] .art {
-    inset: 50% -8.333% auto auto;
-    width: 50%;
-    height: auto;
-    aspect-ratio: 1;
-    gap: 4.0625%;
-    transform: translateY(-50%) rotate(-18deg);
-    box-shadow:
-      0 0 0 0.5rem rgb(255 255 255 / 4%),
-      0 0 0 1rem rgb(255 255 255 / 3%);
-  }
-  .banner[data-mobile-single-line] .art span {
-    width: 15.625%;
-    height: 50%;
-    transform: skewX(-18deg);
   }
 }
 
