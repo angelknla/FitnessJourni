@@ -10,6 +10,7 @@
   box-shadow: 0 12px 28px rgb(24 64 149 / 16%);
 }
 
+
 .content {
   position: relative;
   z-index: 1;
@@ -174,5 +175,56 @@
     width: 15.625%;
     height: 50%;
     transform: skewX(-18deg);
+  }
+}
+
+.banner[data-inline] {
+  padding: 0.65rem 0.9rem;
+}
+.banner[data-inline] .content {
+  max-width: none;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.banner[data-inline] .eyebrow {
+  margin: 0;
+  flex-shrink: 0;
+}
+.banner[data-inline] .title {
+  min-width: 0;
+  padding: 0;
+  font-size: 1.5rem;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.banner[data-inline] .actions {
+  margin: 0 0 0 auto;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+}
+.banner[data-inline] .art {
+  width: 5rem;
+  right: 0.25rem;
+  top: 50%;
+  gap: 0.2rem;
+  opacity: 0.45;
+}
+.banner[data-inline] .art span {
+  width: 0.78rem;
+  height: 2.5rem;
+}
+@media (max-width: 520px) {
+  .banner[data-inline] {
+    padding: 0.6rem 0.75rem;
+  }
+  .banner[data-inline] .content {
+    gap: 0.5rem;
+  }
+  .banner[data-inline] .eyebrow {
+    display: none;
+  }
+  .banner[data-inline] .title {
+    font-size: 1.05rem;
   }
 }

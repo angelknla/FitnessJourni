@@ -5,6 +5,7 @@ interface PageHeaderProps {
   actions?: ReactNode;
   eyebrow: string;
   title: string;
+  inline?: boolean;
 }
 
 export const PageHeader = (props: PageHeaderProps) => (

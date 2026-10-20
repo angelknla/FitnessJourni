@@ -26,9 +26,9 @@
 }
 
 .badge[data-done="true"] {
-  color: var(--c-good);
-  background: color-mix(in oklab, var(--c-good) 14%, var(--c-surface));
-  border-color: color-mix(in oklab, var(--c-good) 45%, var(--c-border-strong));
+  color: var(--c-energy-ink);
+  background: var(--c-energy);
+  border-color: var(--c-energy);
 }
 
 .duration {

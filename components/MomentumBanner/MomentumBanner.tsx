@@ -10,6 +10,7 @@ interface MomentumBannerProps {
   actions?: ReactNode;
   heading?: 'h1' | 'h2';
   compact?: boolean;
+  inline?: boolean;
 }
 
 export const MomentumBanner = ({
@@ -21,11 +22,13 @@ export const MomentumBanner = ({
   actions,
   heading: Heading = 'h1',
   compact = false,
+  inline = false,
 }: MomentumBannerProps) => (
   <div
     className={styles.banner}
     data-compact={compact || undefined}
     data-mobile-single-line={mobileSingleLine || undefined}
+    data-inline={inline || undefined}
   >
     <div className={styles.content}>
       <p className={styles.eyebrow}>{eyebrow}</p>

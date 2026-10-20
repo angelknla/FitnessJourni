@@ -24,9 +24,9 @@
 }
 
 .badge[data-done="true"] {
-  color: var(--c-good);
-  border-color: color-mix(in oklab, var(--c-good) 45%, var(--c-border-strong));
-  background: color-mix(in oklab, var(--c-good) 14%, var(--c-surface));
+  color: var(--c-energy-ink);
+  border-color: var(--c-energy);
+  background: var(--c-energy);
 }
 
 .weekCount {

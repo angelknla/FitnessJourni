@@ -5,7 +5,13 @@
 
 @media (max-width: 960px) {
   .page {
-    height: calc(100dvh - 10.5rem - env(safe-area-inset-bottom));
+    height: calc(100dvh - 9.7rem - env(safe-area-inset-bottom));
     min-height: 20rem;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 960px) {
+  .page {
+    height: calc(100dvh - 10.7rem - env(safe-area-inset-bottom));
   }
 }

@@ -771,6 +771,7 @@ export const MessageBoard = ({ members, messages, viewerId }: MessageBoardProps)
     return (
         <section className={styles.chatShell} aria-label="Group chat">
             <PageHeader
+                inline
                 eyebrow="Chat"
                 title="Keep moving together"
                 actions={messages.length > 0 ? filterControls : undefined}
