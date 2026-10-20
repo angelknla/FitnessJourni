@@ -9,14 +9,14 @@
     </clipPath>
   </defs>
   <rect width="512" height="512" rx="112" fill="url(#brand-blue)" />
-  <!-- Momentum banner artwork: cropped concentric rings and three staggered bars. -->
+  <!-- Momentum banner artwork: thin inner ring and two soft outer shadow bands. -->
   <g clip-path="url(#tile)">
     <g fill="none" stroke="#ffffff">
-      <path d="M296 -104 A360 360 0 0 0 296 616" stroke-width="64" opacity="0.03" />
-      <path d="M296 -40 A296 296 0 0 0 296 552" stroke-width="64" opacity="0.04" />
-      <path d="M296 -8 A264 264 0 0 0 296 520" stroke-width="3" opacity="0.15" />
+      <circle cx="256" cy="256" r="232" stroke-width="32" opacity="0.03" />
+      <circle cx="256" cy="256" r="200" stroke-width="32" opacity="0.04" />
+      <circle cx="256" cy="256" r="184" stroke-width="1.5" opacity="0.15" />
     </g>
-    <g transform="translate(256 256) rotate(-18) scale(1.2)" fill="#c2ef66">
+    <g transform="translate(256 256) rotate(-18) scale(0.92)" fill="#c2ef66">
       <g transform="translate(-82 0) skewX(-18)">
         <rect x="-29" y="-118" width="58" height="236" rx="8" />
       </g>
